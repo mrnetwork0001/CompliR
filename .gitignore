@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local db (keep the demo overrides)
+.data/*
+!.data/overrides.json
+.env
+.env.local
+!.env.example
+scripts/erc8004/agent.built.json
