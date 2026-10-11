@@ -1,0 +1,66 @@
+# yente (OpenSanctions matching API) + Elasticsearch, sanctions-only manifest.
+# Upstream reference: https://github.com/opensanctions/yente/blob/main/docker-compose.yml (yente 5.5.0, ES 9.4.2)
+# Docs: https://yente.followthemoney.tech/deploy/  ·  settings: https://yente.followthemoney.tech/settings/
+#
+#   docker compose -f docker/yente/docker-compose.yml up -d
+#   curl -s localhost:8000/healthz            # first index build takes ~5–10 min
+#
+# Non-commercial use pulls from data.opensanctions.org with no token (manifest.yml). For commercial use set
+# OPENSANCTIONS_DELIVERY_TOKEN and switch the manifest URL to delivery.opensanctions.com (see README.md).
+services:
+  index:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.2
+    container_name: complir-yente-index
+    expose:
+      - "9200"
+    ports:
+      - "127.0.0.1:9200:9200"
+    environment:
+      - node.name=index
+      - cluster.name=opensanctions-index
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=false
+      # sanctions scope is small (~ a few hundred MB); 2 GB heap is plenty. Raise to 4g for the full default scope.
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - index-os-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  app:
+    image: ghcr.io/opensanctions/yente:5.5.0
+    container_name: complir-yente
+    depends_on:
+      index:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      YENTE_INDEX_TYPE: "elasticsearch"
+      YENTE_INDEX_URL: http://index:9200
+      YENTE_MANIFEST: /app/manifests/complir.yml
+      # change this; it protects POST /updatez (forced re-index)
+      YENTE_UPDATE_TOKEN: "${YENTE_UPDATE_TOKEN:-change-me}"
+      # only needed for the commercial delivery catalog (see manifest.yml comments)
+      OPENSANCTIONS_DELIVERY_TOKEN: "${OPENSANCTIONS_DELIVERY_TOKEN:-}"
+    volumes:
+      - ./manifest.yml:/app/manifests/complir.yml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 3s
+    restart: unless-stopped
+
+volumes:
+  index-os-data: null

@@ -1,0 +1,20 @@
+# yente manifest limited to OpenSanctions' sanctions collection (OFAC SDN, EU FSF, UK HMT, UN, … plus
+# crypto-wallet entities those lists carry). Format: https://yente.followthemoney.tech/datasets/
+#
+# `scope: sanctions` indexes only entities from the "sanctions" collection instead of the ~full "default"
+# scope (which also carries PEPs, debarment, wanted lists). Smaller index, faster first build.
+# The API still answers at /match/default (the query runs against everything that is indexed); use
+# /match/sanctions to be explicit. CompliR's YENTE_DATASET env picks the segment.
+catalogs:
+  # Non-commercial (CC BY-NC) bulk data — fine for the hackathon. Hourly updates, no token.
+  - url: "https://data.opensanctions.org/datasets/latest/index.json"
+    scope: sanctions
+    resource_name: entities.ftm.json
+
+  # Commercial delivery (licensed): replace the entry above with this one and set OPENSANCTIONS_DELIVERY_TOKEN.
+  # - url: "https://delivery.opensanctions.com/datasets/latest/index.json"
+  #   auth_token: "$OPENSANCTIONS_DELIVERY_TOKEN"
+  #   scope: sanctions
+  #   resource_name: entities.ftm.json
+
+datasets: []
