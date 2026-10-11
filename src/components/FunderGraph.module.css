@@ -1,0 +1,100 @@
+.figure {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.svg {
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+  display: block;
+}
+.ring {
+  fill: none;
+  stroke: var(--line-2);
+  stroke-dasharray: 2 5;
+}
+.ringLabel {
+  fill: var(--faint);
+  font-size: 9.5px;
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.edge {
+  stroke: var(--faint);
+  stroke-width: 1.2;
+}
+.edgeTainted {
+  stroke: var(--high);
+  stroke-width: 1.6;
+}
+.arrow {
+  fill: var(--faint);
+}
+.nodeGroup[role="button"] {
+  cursor: pointer;
+}
+.nodeGroup[role="button"]:hover circle,
+.nodeGroup[role="button"]:focus-visible circle {
+  stroke: var(--acc);
+  stroke-width: 2.5;
+}
+.node {
+  fill: var(--panel-solid);
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.nodeSubject {
+  fill: color-mix(in srgb, var(--acc) 12%, var(--panel-solid));
+  stroke: var(--acc);
+  stroke-width: 2;
+}
+.nodeTainted {
+  fill: var(--high);
+  stroke: var(--high);
+  stroke-width: 1.5;
+}
+.bang {
+  fill: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  font-family: var(--mono);
+  pointer-events: none;
+}
+.label {
+  fill: var(--text);
+  font-size: 9.5px;
+  font-family: var(--mono);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  justify-content: center;
+}
+.legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+.swSubject {
+  background: var(--acc-dim);
+  border: 1.5px solid var(--acc);
+}
+.swNode {
+  background: var(--panel-solid);
+  border: 1.5px solid var(--muted);
+}
+.swTainted {
+  background: var(--high);
+}

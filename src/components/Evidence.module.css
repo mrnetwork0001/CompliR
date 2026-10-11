@@ -1,0 +1,36 @@
+.dl {
+  display: grid;
+  grid-template-columns: minmax(90px, max-content) 1fr;
+  gap: 4px 12px;
+  font-size: 0.85rem;
+}
+.row {
+  display: contents;
+}
+.row dt {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.row dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+@media (max-width: 480px) {
+  .dl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .row dd {
+    margin-bottom: 6px;
+    padding-left: 8px;
+  }
+}
