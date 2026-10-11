@@ -1,0 +1,13 @@
+{
+  "crons": [
+    { "path": "/api/internal/watcher",  "schedule": "*/10 * * * *" },
+    { "path": "/api/internal/trustmap", "schedule": "*/5 * * * *" },
+    { "path": "/api/internal/treasury", "schedule": "*/15 * * * *" },
+    { "path": "/api/internal/usyc",     "schedule": "0 * * * *" },
+    { "path": "/api/internal/operator", "schedule": "30 * * * *" },
+    { "path": "/api/internal/events",   "schedule": "*/5 * * * *" },
+    { "path": "/api/internal/refunds",  "schedule": "*/10 * * * *" },
+    { "path": "/api/internal/tips",     "schedule": "*/15 * * * *" },
+    { "path": "/api/internal/report",   "schedule": "5 0 * * *" }
+  ]
+}
