@@ -1,0 +1,49 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "CompliR",
+  "description": "Counterparty risk oracle on Arc. Screen any Arc address before you pay it: deterministic risk score (sanctions, USDC blacklist, funder trace), signed EIP-712 attestation, replayable hash-chained decision log. Paid per call over x402 in USDC. Never holds funds.",
+  "image": "{{PUBLIC_BASE_URL}}/icon.png",
+  "homepage": "{{PUBLIC_BASE_URL}}",
+  "services": [
+    { "name": "web", "endpoint": "{{PUBLIC_BASE_URL}}" },
+    {
+      "name": "x402",
+      "type": "x402",
+      "endpoint": "{{PUBLIC_BASE_URL}}/api/v1/screen",
+      "url": "{{PUBLIC_BASE_URL}}/api/v1/screen",
+      "method": "POST",
+      "price": "0.01 USDC",
+      "network": "eip155:5042",
+      "description": "POST {address, name?, amountUsdc?, payeeBook?} → Verdict {score, tier, reasons, recommendedLimits, eddRequested, attestation}"
+    },
+    {
+      "name": "x402-watch",
+      "type": "x402",
+      "endpoint": "{{PUBLIC_BASE_URL}}/api/v1/watch",
+      "url": "{{PUBLIC_BASE_URL}}/api/v1/watch",
+      "method": "POST",
+      "price": "0.05 USDC",
+      "network": "eip155:5042",
+      "description": "30 days of adaptive re-screening with webhook on tier change"
+    },
+    { "name": "attestation", "endpoint": "{{PUBLIC_BASE_URL}}/api/v1/attestation/{address}", "description": "Latest signed EIP-712 attestation for an address (free)" },
+    { "name": "decision-log", "endpoint": "{{PUBLIC_BASE_URL}}/api/v1/decision/{id}", "description": "Replayable hash-chained decision entry (free)" },
+    { "name": "docs", "endpoint": "{{PUBLIC_BASE_URL}}/docs" }
+  ],
+  "capabilities": [
+    "counterparty_screening",
+    "sanctions_check",
+    "usdc_blacklist_check",
+    "funder_trace_2hop",
+    "eip712_attestation",
+    "onchain_attestation_registry",
+    "enhanced_due_diligence",
+    "watch_and_rescreen"
+  ],
+  "x402Support": true,
+  "active": true,
+  "supportedTrust": ["reputation"],
+  "registrations": [
+    { "agentId": "{{AGENT_ID}}", "agentRegistry": "eip155:{{CHAIN_ID}}:{{IDENTITY_REGISTRY}}" }
+  ]
+}
