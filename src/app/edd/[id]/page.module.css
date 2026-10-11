@@ -1,0 +1,98 @@
+.wrap {
+  max-width: 680px;
+}
+.head {
+  margin-bottom: 20px;
+}
+.kicker {
+  font-family: var(--mono);
+  font-size: 11px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+.title {
+  margin-bottom: 12px;
+  font-size: clamp(1.4rem, 2.6vw, 1.8rem);
+  letter-spacing: -0.03em;
+}
+.head {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-2);
+}
+.foot {
+  margin-top: 20px;
+  overflow-wrap: anywhere;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.q {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.qLabel {
+  font-weight: 600;
+}
+.qNum {
+  color: var(--fg-muted);
+  font-weight: 500;
+  margin-right: 6px;
+}
+.textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-2);
+  background: var(--panel-solid);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+.textarea:focus {
+  outline: none;
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px var(--acc-dim);
+}
+.counter {
+  align-self: flex-end;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+}
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tierRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 14px;
+  font-size: 0.9rem;
+}
+.dl dt {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding-top: 3px;
+}
+.dl dd {
+  overflow-wrap: anywhere;
+}
