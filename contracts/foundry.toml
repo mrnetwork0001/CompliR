@@ -1,0 +1,31 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+solc_version = "0.8.28"
+# Arc's exact EVM fork is not documented in this repo; "paris" avoids PUSH0 /
+# MCOPY / TSTORE so the bytecode runs on any post-Merge EVM. Bump to "cancun"
+# once Arc is confirmed to support it (saves a little gas).
+evm_version = "paris"
+optimizer = true
+optimizer_runs = 1_000
+via_ir = false
+bytecode_hash = "none"
+cbor_metadata = false
+fs_permissions = [{ access = "read", path = "./out" }]
+gas_reports = ["AttestationRegistry", "GuardedTreasury"]
+
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+
+[rpc_endpoints]
+# Point ARC_RPC_URL at testnet (chain 5042002) or mainnet (chain 5042); the deploy
+# script logs block.chainid so you can confirm which one you hit.
+arc = "${ARC_RPC_URL}"
+
+# See https://book.getfoundry.sh/reference/config/
