@@ -1,0 +1,403 @@
+diff --git a/.env.example b/.env.example
+index aceadcf..39fb67c 100644
+--- a/.env.example
++++ b/.env.example
+@@ -32,6 +32,13 @@ DAILY_BUDGET_USDC=100.0
+ PER_TX_LIMIT_USDC=20.0
+ USYC_IDLE_THRESHOLD_DAYS=3
+ 
++# CompliR counterparty screening (optional). Set COMPLIR_URL and every vendor is graded before a payment is proposed:
++# HIGH escalates, MEDIUM escalates an amount above CompliR's recommended limit, LOW passes. 0.01 USDC per screen over
++# x402 from COMPLIR_PAYER_PRIVATE_KEY (a small purse, not the treasury); free for Tameion teams during the event.
++# On-chain: the approver may also call BudgetEnforcerV2.setComplir(registry) so pay() reverts for a HIGH-tier vendor.
++COMPLIR_URL=
++COMPLIR_PAYER_PRIVATE_KEY=
++
+ # App
+ BACKEND_URL=
+ CEEDEBOOKS_DB_PATH=./ceedebooks.db
+diff --git a/README.md b/README.md
+index 63afc45..614854d 100644
+--- a/README.md
++++ b/README.md
+@@ -281,6 +281,7 @@ One instance per business. This deployment is not multi-tenant, and a second bus
+ ### `BudgetEnforcerV2.sol`, `BudgetFactory.sol`, `LedgerAnchor.sol` (v1.2.8)
+ 
+ - **`BudgetEnforcerV2`** keeps everything above and adds a rolling 7-day limit (`setBudget(daily, perTx, weekly)` requires `0 < perTx <= daily <= weekly`), `reopenEscalation` (approver only, only for a Pending escalation, so the agent can re-evaluate and then pay through every normal limit or escalate again), commitments bound to the contract address and chain id, and distinct agent and approver roles.
++- **CompliR gate (opt-in)**: the approver can `setComplir(registry)` on a `BudgetEnforcerV2`; `pay()` then also requires `ICompliR(registry).isAllowed(vendor, Tier.MEDIUM)`, so a vendor whose [CompliR](https://github.com/mrnetwork0001/complir) attestation on Arc says HIGH is refused by the contract itself, whatever the agent was convinced of. Zero (the default) disables it. The agent runs the same screen off-chain before proposing a payment when `COMPLIR_URL` is set (`agent/complir.py`).
+ - **`BudgetFactory`**: `createBusiness(agent, daily, perTx, weekly)` deploys one enforcer per business, and the caller becomes its approver. The factory has no admin function, holds no funds and cannot touch any enforcer.
+ - **`LedgerAnchor`**: `anchor(head, sequence)` records a ledger head per sender, and the sequence must increase. A verifier trusts only events from a business's agent address.
+ 
+diff --git a/agent/complir.py b/agent/complir.py
+new file mode 100644
+index 0000000..bde20b5
+--- /dev/null
++++ b/agent/complir.py
+@@ -0,0 +1,82 @@
++"""CompliR (https://github.com/mrnetwork0001/complir): counterparty risk oracle on Arc. One call grades a wallet (2-hop funder
++trace, OpenSanctions, USDC blacklist, lookalikes) into a 0–100 score, a tier, a recommended per-payment limit and a signed
++EIP-712 attestation. Off unless COMPLIR_URL is set; `payables.decide` runs it after the on-chain vendor registry. The call is
++x402-paid (0.01 USDC, EIP-3009), signed by COMPLIR_PAYER_PRIVATE_KEY; with no key a 402 is logged and the vendor passes as before.
++"""
++import base64
++import json
++import logging
++import os
++import time
++from typing import Optional
++
++import httpx
++from eth_account import Account
++from web3 import Web3
++
++from agent.config import config
++
++log = logging.getLogger(__name__)
++_AUTH_TYPES = {"TransferWithAuthorization": [{"name": "from", "type": "address"}, {"name": "to", "type": "address"},
++                                             {"name": "value", "type": "uint256"}, {"name": "validAfter", "type": "uint256"},
++                                             {"name": "validBefore", "type": "uint256"}, {"name": "nonce", "type": "bytes32"}]}
++
++
++def _payment_header(required: dict) -> Optional[str]:
++    """Signs the first `exact` / eip155 requirement of an x402 v2 402 with the payer key; None without a key or above 1 USDC."""
++    key = config.complir_payer_private_key
++    if not key:
++        return None
++    req = next((a for a in required.get("accepts", []) if a.get("scheme") == "exact" and str(a.get("network", "")).startswith("eip155:")), None)
++    if req is None or int(req["amount"]) > 1_000_000:
++        return None
++    extra, acct = req.get("extra") or {}, Account.from_key(key)
++    auth = {"from": acct.address, "to": req["payTo"], "value": str(req["amount"]), "validAfter": "0",
++            "validBefore": str(int(time.time()) + int(req.get("maxTimeoutSeconds", 60)) + 540), "nonce": Web3.to_hex(os.urandom(32))}
++    domain = {"name": extra.get("name", "USDC"), "version": extra.get("version", "2"),
++              "chainId": int(req["network"].split(":")[1]), "verifyingContract": req["asset"]}
++    msg = {**auth, "value": int(auth["value"]), "validAfter": 0, "validBefore": int(auth["validBefore"]), "nonce": bytes.fromhex(auth["nonce"][2:])}
++    sig = Web3.to_hex(Account.sign_typed_data(key, domain, _AUTH_TYPES, msg).signature)
++    payload = {"x402Version": 2, "resource": required.get("resource"), "accepted": req, "payload": {"signature": sig, "authorization": auth}}
++    return base64.b64encode(json.dumps(payload).encode()).decode()
++
++
++async def screen(vendor_wallet: str, amount_usdc: float) -> Optional[dict]:
++    """POST /api/v1/screen → verdict (tier, score, recommendedLimits, decisionId, attestation), or None when CompliR is off,
++    unpaid or unreachable. None never changes a decision: the registry, the match and the contract's limits still apply."""
++    if not config.complir_url:
++        return None
++    url = f"{config.complir_url.rstrip('/')}/api/v1/screen"
++    body = {"address": vendor_wallet, "amountUsdc": amount_usdc, "clientId": "ceedebooks"}
++    try:
++        async with httpx.AsyncClient(timeout=15) as client:
++            r = await client.post(url, json=body)
++            if r.status_code == 402:
++                required = r.headers.get("PAYMENT-REQUIRED")
++                sig = _payment_header(json.loads(base64.b64decode(required)) if required else r.json())
++                if sig is None:
++                    log.warning("CompliR asks for payment and COMPLIR_PAYER_PRIVATE_KEY is not set; vendor not screened")
++                    return None
++                r = await client.post(url, json=body, headers={"PAYMENT-SIGNATURE": sig})
++            r.raise_for_status()
++            v = r.json()
++            log.info("CompliR %s: tier=%s score=%s decision=%s", vendor_wallet[:10], v.get("tier"), v.get("score"), v.get("decisionId"))
++            return v
++    except Exception:
++        log.exception("CompliR screening failed; vendor %s not screened this time", vendor_wallet[:10])
++        return None
++
++
++def gate(verdict: Optional[dict], amount_usdc: float) -> Optional[str]:
++    """The reason to escalate, or None. HIGH escalates; MEDIUM escalates an amount above CompliR's recommended per-payment
++    limit; LOW passes. The text goes into the hashed reasoning, so the verdict's decision id is replayable from the ledger."""
++    if not verdict:
++        return None
++    tier, decision = verdict.get("tier"), verdict.get("decisionId", "?")
++    if tier == "HIGH":
++        return f"CompliR grades this vendor HIGH risk ({verdict.get('score')}/100, decision {decision}); held for review"
++    if tier == "MEDIUM":
++        limit = float((verdict.get("recommendedLimits") or {}).get("maxPerTxUsdc", 0))
++        if amount_usdc > limit:
++            return f"CompliR grades this vendor MEDIUM risk with a {limit:g} USDC per-payment limit (decision {decision}); {amount_usdc:g} USDC is above it"
++    return None
+diff --git a/agent/config.py b/agent/config.py
+index 4f6ea39..0173dbc 100644
+--- a/agent/config.py
++++ b/agent/config.py
+@@ -63,6 +63,10 @@ class Config:
+     per_tx_limit_usdc: float
+     usyc_idle_threshold_days: int
+ 
++    # CompliR counterparty screening (optional; agent/complir.py)
++    complir_url: str
++    complir_payer_private_key: str  # pays 0.01 USDC per screen over x402; a small purse, not the treasury
++
+     # App
+     backend_url: str
+     db_path: str
+@@ -104,6 +108,8 @@ class Config:
+             daily_budget_usdc=float(_optional("DAILY_BUDGET_USDC", "100.0")),
+             per_tx_limit_usdc=float(_optional("PER_TX_LIMIT_USDC", "20.0")),
+             usyc_idle_threshold_days=int(_optional("USYC_IDLE_THRESHOLD_DAYS", "3")),
++            complir_url=_optional("COMPLIR_URL"),
++            complir_payer_private_key=_optional("COMPLIR_PAYER_PRIVATE_KEY"),
+             backend_url=_optional("BACKEND_URL", "https://api.ceedebooks.xyz"),
+             db_path=_optional("CEEDEBOOKS_DB_PATH", "./ceedebooks.db"),
+             ledger_signing_key=_optional("LEDGER_SIGNING_KEY"),
+diff --git a/agent/payables.py b/agent/payables.py
+index b921a5d..1450a7f 100644
+--- a/agent/payables.py
++++ b/agent/payables.py
+@@ -4,7 +4,7 @@ from dataclasses import dataclass
+ from enum import Enum
+ from typing import Optional
+ 
+-from agent import contract, decision_log
++from agent import complir, contract, decision_log
+ from agent.config import config
+ from agent.llm import escalation_reasoning
+ from backend import models
+@@ -71,6 +71,10 @@ async def three_way_match(invoice: Invoice) -> tuple[bool, str]:
+ async def decide(invoice: Invoice, treasury_runway_days: float, chain) -> tuple[Decision, str]:
+     if not chain.is_vendor_approved(invoice.vendor_wallet):
+         return Decision.ESCALATE, "Vendor not registered on-chain"
++    # Optional CompliR screening (COMPLIR_URL): HIGH escalates, MEDIUM escalates above its recommended limit, LOW passes.
++    blocked = complir.gate(await complir.screen(invoice.vendor_wallet, invoice.amount_usdc), invoice.amount_usdc)
++    if blocked:
++        return Decision.ESCALATE, blocked
+     if treasury_runway_days < 7:
+         return Decision.HOLD, f"Runway is {treasury_runway_days:.0f} days, holding non-critical spend"
+     return Decision.PAY, "Matched PO and receipt, treasury healthy, vendor registered"
+diff --git a/agent/tests/test_complir.py b/agent/tests/test_complir.py
+new file mode 100644
+index 0000000..12ef3fd
+--- /dev/null
++++ b/agent/tests/test_complir.py
+@@ -0,0 +1,46 @@
++"""CompliR screening sits after the vendor registry: off without COMPLIR_URL, HIGH escalates, MEDIUM caps, LOW passes."""
++import asyncio
++
++from agent import complir, payables
++from agent.config import config
++
++
++def _verdict(tier, max_per_tx=5.0):
++    return {"tier": tier, "score": 30, "recommendedLimits": {"maxPerTxUsdc": max_per_tx, "maxPerDayUsdc": 50.0}, "decisionId": "dec_1"}
++
++
++def _invoice(amount=10.0):
++    return payables.Invoice(business_id=1, id=1, invoice_number="INV-1", vendor_wallet="0xVENDOR", amount_usdc=amount,
++                            category=0, doc_hash="00" * 32, po_number="PO-1")
++
++
++def test_gate_maps_tiers_onto_escalation():
++    assert complir.gate(None, 10.0) is None
++    assert complir.gate(_verdict("LOW"), 10.0) is None
++    assert complir.gate(_verdict("MEDIUM", 20.0), 10.0) is None
++    assert "MEDIUM" in complir.gate(_verdict("MEDIUM", 5.0), 10.0)
++    assert "dec_1" in complir.gate(_verdict("HIGH"), 0.5)
++
++
++def test_screen_is_off_without_a_url(monkeypatch):
++    monkeypatch.setattr(config, "complir_url", "")
++    assert asyncio.run(complir.screen("0xVENDOR", 10.0)) is None
++
++
++def test_decide_escalates_a_vendor_complir_grades_high(chain, monkeypatch):
++    async def high(wallet, amount):
++        return _verdict("HIGH")
++
++    monkeypatch.setattr(payables.complir, "screen", high)
++    decision, reason = asyncio.run(payables.decide(_invoice(), 30, chain))
++    assert decision == payables.Decision.ESCALATE
++    assert "CompliR" in reason
++
++
++def test_decide_pays_a_low_tier_vendor_as_before(chain, monkeypatch):
++    async def low(wallet, amount):
++        return _verdict("LOW")
++
++    monkeypatch.setattr(payables.complir, "screen", low)
++    decision, _ = asyncio.run(payables.decide(_invoice(), 30, chain))
++    assert decision == payables.Decision.PAY
+diff --git a/contracts/BudgetEnforcerV2.sol b/contracts/BudgetEnforcerV2.sol
+index 8c8dfba..da4dcfa 100644
+--- a/contracts/BudgetEnforcerV2.sol
++++ b/contracts/BudgetEnforcerV2.sol
+@@ -1,6 +1,8 @@
+ // SPDX-License-Identifier: MIT
+ pragma solidity ^0.8.20;
+ 
++import {ICompliR} from "./interfaces/ICompliR.sol";
++
+ interface IERC20 {
+     function transfer(address to, uint256 amount) external returns (bool);
+ }
+@@ -22,6 +24,8 @@ contract BudgetEnforcerV2 {
+     mapping(uint256 => mapping(uint8 => uint256)) public categorySpentOnDay;
+ 
+     mapping(address => bool) public vendorApproved;
++    /// CompliR registry (ICompliR) consulted by pay(); zero means no on-chain screening. The approver opts in.
++    address public complir;
+     mapping(bytes32 => bool) public paid;
+     mapping(bytes32 => uint256) public commitBlock;
+ 
+@@ -68,6 +72,7 @@ contract BudgetEnforcerV2 {
+     event EscalationRejected(bytes32 indexed invoiceKey, bytes32 indexed reasoningHash);
+     event EscalationReopened(bytes32 indexed invoiceKey, bytes32 indexed reasoningHash);
+     event VendorSet(address indexed vendor, bool approved, address by);
++    event ComplirSet(address indexed complir);
+     event BudgetSet(uint256 dailyLimit, uint256 perTxLimit, uint256 weeklyLimit);
+     event CategoryLimitSet(uint8 indexed category, uint256 dailyLimit);
+     event PausedSet(bool paused);
+@@ -119,6 +124,12 @@ contract BudgetEnforcerV2 {
+         emit VendorSet(vendor, approved, msg.sender);
+     }
+ 
++    /// Zero disables the check; any ICompliR address makes pay() refuse a vendor whose attested tier is above MEDIUM.
++    function setComplir(address _complir) external onlyApprover {
++        complir = _complir;
++        emit ComplirSet(_complir);
++    }
++
+     function setPaused(bool _paused) external onlyApprover {
+         paused = _paused;
+         emit PausedSet(_paused);
+@@ -204,6 +215,7 @@ contract BudgetEnforcerV2 {
+     ) external onlyAgent {
+         require(!paused, "Paused");
+         require(vendorApproved[vendor], "Vendor not approved");
++        require(complir == address(0) || ICompliR(complir).isAllowed(vendor, ICompliR.Tier.MEDIUM), "CompliR: vendor tier too high");
+         require(amount > 0, "Zero amount");
+         require(invoiceNumber != bytes32(0), "No invoice number");
+         require(reasoningHash != bytes32(0), "No reasoning hash");
+diff --git a/contracts/interfaces/ICompliR.sol b/contracts/interfaces/ICompliR.sol
+new file mode 100644
+index 0000000..684a1cf
+--- /dev/null
++++ b/contracts/interfaces/ICompliR.sol
+@@ -0,0 +1,44 @@
++// SPDX-License-Identifier: MIT
++pragma solidity ^0.8.20;
++
++/// @title ICompliR — on-chain counterparty-risk tier lookup
++/// @notice Minimal read interface every integrator needs. Copy this file (or install the CompliR
++///         SDK npm package) and call `isAllowed` before releasing funds:
++///
++///         ```solidity
++///         require(ICompliR(registry).isAllowed(payee, ICompliR.Tier.MEDIUM), "CompliR: payee tier too high");
++///         ```
++///
++///         Tiers are written by the CompliR attester after an off-chain screening
++///         (sanctions, USDC blacklist, 2-hop funder taint, …). Every attestation carries a
++///         `decisionHash` that links back to the replayable decision log.
++interface ICompliR {
++    /// @dev Numeric values are part of the public ABI and mirrored in `src/lib/types.ts`
++    ///      (`TIER_ONCHAIN`): UNKNOWN=0, LOW=1, MEDIUM=2, HIGH=3.
++    enum Tier {
++        UNKNOWN,
++        LOW,
++        MEDIUM,
++        HIGH
++    }
++
++    /// @notice A new attestation was stored for `subject`.
++    event Attested(address indexed subject, Tier tier, uint64 validUntil, bytes32 decisionHash);
++
++    /// @notice `subject`'s tier differs from the previously stored one (also emitted on revoke).
++    event TierChanged(address indexed subject, Tier from, Tier to);
++
++    /// @notice A Merkle root of decision-log entries `[fromSeq, toSeq]` was anchored on-chain.
++    event Anchored(bytes32 indexed root, uint256 fromSeq, uint256 toSeq);
++
++    /// @notice Raw stored tier for `subject`. Callers MUST check `validUntil > block.timestamp`
++    ///         themselves, or use `isAllowed`.
++    /// @return tier         UNKNOWN when never attested or revoked.
++    /// @return validUntil   Unix seconds; 0 when UNKNOWN.
++    /// @return decisionHash keccak256 of the canonical decision JSON behind this tier.
++    function tierOf(address subject) external view returns (Tier tier, uint64 validUntil, bytes32 decisionHash);
++
++    /// @notice One-line integration helper.
++    /// @return true iff `tier != UNKNOWN && tier <= maxTier && validUntil > block.timestamp`.
++    function isAllowed(address subject, Tier maxTier) external view returns (bool);
++}
+diff --git a/test/BudgetEnforcerV2.t.sol b/test/BudgetEnforcerV2.t.sol
+index 907d2ce..a6a52a0 100644
+--- a/test/BudgetEnforcerV2.t.sol
++++ b/test/BudgetEnforcerV2.t.sol
+@@ -3,6 +3,8 @@ pragma solidity ^0.8.20;
+ 
+ import {Test} from "forge-std/Test.sol";
+ import {BudgetEnforcerV2} from "../contracts/BudgetEnforcerV2.sol";
++import {ICompliR} from "../contracts/interfaces/ICompliR.sol";
++import {MockCompliR} from "./mocks/MockCompliR.sol";
+ import {MockUSDC} from "./mocks/MockUSDC.sol";
+ 
+ contract BudgetEnforcerV2Test is Test {
+@@ -484,4 +486,43 @@ contract BudgetEnforcerV2Test is Test {
+         vm.expectRevert("Roles must differ");
+         enforcer.setAgent(approver);
+     }
++
++    // ---- CompliR (opt-in on-chain counterparty screening) ------------------
++
++    function test_setComplir_onlyApprover() public {
++        MockCompliR oracle = new MockCompliR();
++        vm.prank(agent);
++        vm.expectRevert("Not approver");
++        enforcer.setComplir(address(oracle));
++        vm.prank(approver);
++        enforcer.setComplir(address(oracle));
++        assertEq(enforcer.complir(), address(oracle));
++    }
++
++    function test_pay_revertsWhenCompliRGradesVendorHigh_zeroDisables() public {
++        MockCompliR oracle = new MockCompliR();
++        oracle.set(vendor, ICompliR.Tier.HIGH);
++        vm.prank(approver);
++        enforcer.setComplir(address(oracle));
++        _commitAndAdvance(vendor, 5_000_000, INV_1, DOC_1, CAT_DATA, REASON_1);
++
++        vm.prank(agent);
++        vm.expectRevert("CompliR: vendor tier too high");
++        enforcer.pay(vendor, 5_000_000, INV_1, DOC_1, CAT_DATA, REASON_1);
++
++        oracle.set(vendor, ICompliR.Tier.MEDIUM); // MEDIUM and below pass; every other limit still applies
++        vm.prank(agent);
++        enforcer.pay(vendor, 5_000_000, INV_1, DOC_1, CAT_DATA, REASON_1);
++        assertTrue(enforcer.paid(enforcer.invoiceKey(vendor, INV_1)));
++
++        oracle.set(otherVendor, ICompliR.Tier.HIGH);
++        vm.startPrank(approver);
++        enforcer.setVendor(otherVendor, true);
++        enforcer.setComplir(address(0)); // zero = disabled: pays exactly as before this change
++        vm.stopPrank();
++        _commitAndAdvance(otherVendor, 5_000_000, INV_1, DOC_1, CAT_DATA, REASON_1);
++        vm.prank(agent);
++        enforcer.pay(otherVendor, 5_000_000, INV_1, DOC_1, CAT_DATA, REASON_1);
++        assertTrue(enforcer.paid(enforcer.invoiceKey(otherVendor, INV_1)));
++    }
+ }
+diff --git a/test/mocks/MockCompliR.sol b/test/mocks/MockCompliR.sol
+new file mode 100644
+index 0000000..178eb43
+--- /dev/null
++++ b/test/mocks/MockCompliR.sol
+@@ -0,0 +1,21 @@
++// SPDX-License-Identifier: MIT
++pragma solidity ^0.8.20;
++
++import {ICompliR} from "../../contracts/interfaces/ICompliR.sol";
++
++/// @notice Test double for the CompliR registry: tiers are set by hand and never expire.
++contract MockCompliR is ICompliR {
++    mapping(address => Tier) public tiers;
++
++    function set(address subject, Tier tier) external {
++        tiers[subject] = tier;
++    }
++
++    function tierOf(address subject) external view returns (Tier tier, uint64 validUntil, bytes32 decisionHash) {
++        return (tiers[subject], type(uint64).max, bytes32(0));
++    }
++
++    function isAllowed(address subject, Tier maxTier) external view returns (bool) {
++        return tiers[subject] != Tier.UNKNOWN && tiers[subject] <= maxTier;
++    }
++}

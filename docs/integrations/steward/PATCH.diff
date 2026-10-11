@@ -1,0 +1,208 @@
+diff --git a/README.md b/README.md
+index 9db46fb..fda8782 100644
+--- a/README.md
++++ b/README.md
+@@ -94,7 +94,7 @@ sequenceDiagram
+ 
+ | Rule | Outcome |
+ |---|---|
+-| Payee is on the denylist | **SCREEN_FAIL**: recorded and escalated, cannot be approved |
++| Payee is on the denylist, or [CompliR](https://github.com/mrnetwork0001/complir) grades it HIGH | **SCREEN_FAIL**: recorded and escalated, cannot be approved |
+ | No evidence attached | **HOLD**: recorded, contractor asked for a link |
+ | Amount above the per-payment cap | **ESCALATE**: recorded, owner decides |
+ | Only part fits this period's budget | **PARTIAL**: pays what fits, escalates the rest under `keccak256("STEWARD/remainder" ‖ hash)` |
+@@ -103,6 +103,11 @@ sequenceDiagram
+ The model's reason is validated against a JSON schema (`additionalProperties: false`) with a rules-only fallback, so injected text can change the
+ wording of a reason and nothing else. Every cycle is recorded, including `HOLD`.
+ 
++**Optional: CompliR screening.** Set `COMPLIR_URL` (and `COMPLIR_PAYER_PRIVATE_KEY`, a small USDC purse that pays 0.01 USDC per
++screen over x402) and every payee is also graded by [CompliR](https://github.com/mrnetwork0001/complir) on Arc after the denylist:
++2-hop funder trace, OpenSanctions, USDC blacklist, lookalike check. `HIGH` is a `SCREEN_FAIL`; `MEDIUM` lowers the per-payment cap
++to CompliR's recommended limit, so a larger request goes to the owner (`ESCALATE`); `LOW` changes nothing. Unset, nothing changes.
++
+ ## The product
+ 
+ | Owner | Contractor |
+diff --git a/agent/.env.example b/agent/.env.example
+index e553b0e..2eb7155 100644
+--- a/agent/.env.example
++++ b/agent/.env.example
+@@ -10,6 +10,8 @@ API_BASE=http://127.0.0.1:8001
+ API_SECRET=
+ RESERVE_FLOOR=100000000          # per-allowance liquidity floor (6dp). 100 USDC for spec-sized budgets; 0 for faucet-sized demos
+ DENYLIST=0x70997970C51812dc3A010C7d01b50e0d17dc79C8
++COMPLIR_URL=                 # optional: CompliR risk oracle (HIGH → SCREEN_FAIL, MEDIUM → lower per-tx cap); unset = denylist only
++COMPLIR_PAYER_PRIVATE_KEY=   # optional: pays 0.01 USDC per screen over x402; free for Tameion teams during the event
+ LLM=none                     # groq | anthropic | none
+ GROQ_API_KEY=
+ ANTHROPIC_API_KEY=
+diff --git a/agent/complir.py b/agent/complir.py
+new file mode 100644
+index 0000000..d50ec97
+--- /dev/null
++++ b/agent/complir.py
+@@ -0,0 +1,78 @@
++"""CompliR: counterparty risk oracle on Arc (score 0–100, tier, recommended limit, signed verdict). Off unless COMPLIR_URL
++is set; the local denylist in screen.py always runs first and still wins. One x402 call (0.01 USDC) per screen, signed
++with COMPLIR_PAYER_PRIVATE_KEY (EIP-3009 TransferWithAuthorization); without a payer key an unpaid 402 is logged and ignored."""
++import base64
++import json
++import logging
++import os
++import time
++from typing import Optional
++
++import httpx
++from eth_account import Account
++from web3 import Web3
++
++from config import COMPLIR_PAYER_PRIVATE_KEY, COMPLIR_TIMEOUT, COMPLIR_URL
++
++log = logging.getLogger("steward.complir")
++_AUTH_TYPES = {"TransferWithAuthorization": [{"name": "from", "type": "address"}, {"name": "to", "type": "address"},
++                                             {"name": "value", "type": "uint256"}, {"name": "validAfter", "type": "uint256"},
++                                             {"name": "validBefore", "type": "uint256"}, {"name": "nonce", "type": "bytes32"}]}
++
++
++def _payment_header(required: dict) -> Optional[str]:
++    """Signs the first `exact` / eip155 requirement of a 402 (x402 v2) with the payer key. None when there is no key."""
++    if not COMPLIR_PAYER_PRIVATE_KEY:
++        return None
++    req = next((a for a in required.get("accepts", []) if a.get("scheme") == "exact" and str(a.get("network", "")).startswith("eip155:")), None)
++    if req is None or int(req["amount"]) > 1_000_000:       # never sign for more than 1 USDC per call
++        return None
++    extra = req.get("extra") or {}
++    acct = Account.from_key(COMPLIR_PAYER_PRIVATE_KEY)
++    auth = {"from": acct.address, "to": req["payTo"], "value": str(req["amount"]), "validAfter": "0",
++            "validBefore": str(int(time.time()) + int(req.get("maxTimeoutSeconds", 60)) + 540), "nonce": Web3.to_hex(os.urandom(32))}
++    domain = {"name": extra.get("name", "USDC"), "version": extra.get("version", "2"), "chainId": int(req["network"].split(":")[1]),
++              "verifyingContract": req["asset"]}
++    msg = {**auth, "value": int(auth["value"]), "validAfter": 0, "validBefore": int(auth["validBefore"]), "nonce": bytes.fromhex(auth["nonce"][2:])}
++    sig = Web3.to_hex(Account.sign_typed_data(COMPLIR_PAYER_PRIVATE_KEY, domain, _AUTH_TYPES, msg).signature)
++    payload = {"x402Version": 2, "resource": required.get("resource"), "accepted": req, "payload": {"signature": sig, "authorization": auth}}
++    return base64.b64encode(json.dumps(payload).encode()).decode()
++
++
++def verdict(addr: str, requested: int) -> Optional[dict]:
++    """POST /api/v1/screen → verdict dict (tier, score, recommendedLimits, decisionId, attestation) or None when CompliR is
++    off, unpaid or unreachable. A None never changes a decision: the denylist and the caps still apply as before."""
++    if not COMPLIR_URL:
++        return None
++    url, body = f"{COMPLIR_URL.rstrip('/')}/api/v1/screen", {"address": addr, "amountUsdc": requested / 1e6, "clientId": "steward"}
++    try:
++        with httpx.Client(timeout=COMPLIR_TIMEOUT) as c:
++            r = c.post(url, json=body)
++            if r.status_code == 402:
++                required = r.headers.get("PAYMENT-REQUIRED")
++                sig = _payment_header(json.loads(base64.b64decode(required)) if required else r.json())
++                if sig is None:
++                    log.warning("complir: 402 and no COMPLIR_PAYER_PRIVATE_KEY; screened by denylist only")
++                    return None
++                r = c.post(url, json=body, headers={"PAYMENT-SIGNATURE": sig})
++            r.raise_for_status()
++            v = r.json()
++            log.info("complir %s tier=%s score=%s maxPerTx=%s decision=%s", addr[:10], v.get("tier"), v.get("score"),
++                     (v.get("recommendedLimits") or {}).get("maxPerTxUsdc"), v.get("decisionId"))
++            return v
++    except Exception as e:                                   # a screening outage is logged, never a crash of the decide loop
++        log.warning("complir: %s", e)
++        return None
++
++
++def apply(v: Optional[dict], payee_screen: str, per_tx_cap: int) -> tuple[str, int]:
++    """Maps a verdict onto the rules engine's inputs. HIGH → payee_screen 'complir_high' (R1 SCREEN_FAIL, cannot be approved);
++    MEDIUM → per-tx cap lowered to CompliR's recommended limit, so a larger request takes the owner-approval path (R3);
++    LOW → unchanged. A denylist hit always wins, and both inputs are part of the hashed decision record."""
++    if v is None or payee_screen != "clear":
++        return payee_screen, per_tx_cap
++    if v.get("tier") == "HIGH":
++        return "complir_high", per_tx_cap
++    if v.get("tier") == "MEDIUM":
++        return payee_screen, min(per_tx_cap, int(round(float(v["recommendedLimits"]["maxPerTxUsdc"]) * 1e6)))
++    return payee_screen, per_tx_cap
+diff --git a/agent/config.py b/agent/config.py
+index ed42f37..6410371 100644
+--- a/agent/config.py
++++ b/agent/config.py
+@@ -25,6 +25,9 @@ API_SECRET = os.getenv("API_SECRET", "")
+ MIN_FEE_GWEI = 20                                    # Arc floor — never lower
+ RESERVE_FLOOR = int(os.getenv("RESERVE_FLOOR", "100000000"))   # 100 USDC, 6 dp
+ DENYLIST = {a.strip().lower() for a in os.getenv("DENYLIST", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8").split(",") if a.strip()}
++COMPLIR_URL = os.getenv("COMPLIR_URL")                 # e.g. https://complir.example — unset = denylist only (complir.py)
++COMPLIR_PAYER_PRIVATE_KEY = os.getenv("COMPLIR_PAYER_PRIVATE_KEY")   # small USDC purse that pays 0.01 USDC per screen over x402
++COMPLIR_TIMEOUT = float(os.getenv("COMPLIR_TIMEOUT", "15"))
+ LLM = os.getenv("LLM", "none")                       # anthropic (ANTHROPIC_API_KEY) | groq (GROQ_API_KEY) | none
+ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+ TELEGRAM_CHAT = os.getenv("TELEGRAM_CHAT")
+diff --git a/agent/decision.py b/agent/decision.py
+index a4ce148..4a6e66d 100644
+--- a/agent/decision.py
++++ b/agent/decision.py
+@@ -26,7 +26,7 @@ class DecisionInput:
+     obligations_next_7d: int
+     payee_streak: int
+     payee_late: int
+-    payee_screen: str         # "clear" | "denylist" | "circle_blocked" | "unknown"
++    payee_screen: str         # "clear" | "denylist" | "complir_high" | "circle_blocked" | "unknown"
+     evidence_present: bool
+     evidence_hash: str
+     block_number: int
+diff --git a/agent/main.py b/agent/main.py
+index 4838d88..93919f2 100644
+--- a/agent/main.py
++++ b/agent/main.py
+@@ -5,6 +5,7 @@ import logging
+ import httpx
+ 
+ import chain
++import complir
+ import db
+ import notify
+ import screen
+@@ -33,13 +34,15 @@ async def loop_signals():
+ 
+ def _decide_one(m: dict):
+     a = chain.get_allowance(m["allowance_id"])
++    # denylist first (unchanged); CompliR only when COMPLIR_URL is set: HIGH → SCREEN_FAIL, MEDIUM → lower per-tx cap
++    payee_screen, per_tx_cap = complir.apply(complir.verdict(a["payee"], m["amount"]), screen.screen(a["payee"]), a["perTxCap"])
+     i = DecisionInput(
+         allowance_id=m["allowance_id"], milestone_id=m["id"], payee=a["payee"],
+-        requested=m["amount"], per_tx_cap=a["perTxCap"], period_cap=a["capPerPeriod"],
++        requested=m["amount"], per_tx_cap=per_tx_cap, period_cap=a["capPerPeriod"],
+         spent_this_period=a["spentThisPeriod"], funded=a["funded"], reserve_floor=RESERVE_FLOOR,
+         obligations_next_7d=db.obligations_next_7d(m["allowance_id"], exclude_milestone=m["id"]),
+         payee_streak=db.streak(a["payee"]), payee_late=db.late(a["payee"]),
+-        payee_screen=screen.screen(a["payee"]), evidence_present=bool(m.get("evidence_url")),
++        payee_screen=payee_screen, evidence_present=bool(m.get("evidence_url")),
+         evidence_hash=m.get("evidence_hash", ""), block_number=chain.w3.eth.block_number,
+         payout_chain=m.get("payout_chain") or "arc",
+     )
+diff --git a/agent/test_decision.py b/agent/test_decision.py
+index 31b5761..2191792 100644
+--- a/agent/test_decision.py
++++ b/agent/test_decision.py
+@@ -7,6 +7,7 @@ os.environ.setdefault("ALLOWANCE_MANAGER", "0x" + "0" * 40)
+ os.environ.setdefault("AUDIT_LOG", "0x" + "0" * 40)
+ os.environ.setdefault("SIGNER", "circle")
+ 
++import complir  # noqa: E402
+ from decision import (REASON_SCHEMA, DecisionInput, apply_rules, canonical_json, decide, decision_hash,  # noqa: E402
+                       remainder_hash)
+ from jsonschema import ValidationError, validate  # noqa: E402
+@@ -53,6 +54,16 @@ class Rules(unittest.TestCase):
+         d = decide(inp(), use_llm=False)
+         self.assertEqual((d.action, d.amount, d.remainder, d.source, d.timing), ("PAY", 150 * ONE, 0, "rules", "now"))
+ 
++    def test_complir_tiers_map_onto_rules(self):
++        limits = {"recommendedLimits": {"maxPerTxUsdc": 50}}
++        self.assertEqual(complir.apply(None, "clear", 200 * ONE), ("clear", 200 * ONE))                      # COMPLIR_URL unset
++        self.assertEqual(complir.apply({"tier": "LOW", **limits}, "clear", 200 * ONE), ("clear", 200 * ONE))
++        self.assertEqual(complir.apply({"tier": "MEDIUM", **limits}, "clear", 200 * ONE), ("clear", 50 * ONE))
++        self.assertEqual(complir.apply({"tier": "HIGH", **limits}, "clear", 200 * ONE), ("complir_high", 200 * ONE))
++        self.assertEqual(complir.apply({"tier": "LOW", **limits}, "denylist", 200 * ONE), ("denylist", 200 * ONE))  # denylist wins
++        self.assertEqual(apply_rules(inp(payee_screen="complir_high"))[1], "SCREEN_FAIL")
++        self.assertEqual(apply_rules(inp(per_tx_cap=50 * ONE))[1], "ESCALATE")                                  # MEDIUM over its limit
++
+     def test_crosschain_pay_becomes_owner_escalation(self):
+         d = decide(inp(payout_chain="base-sepolia"), use_llm=False)
+         self.assertEqual((d.rule, d.action, d.amount, d.remainder), ("R5_pay_xchain", "ESCALATE", 0, 150 * ONE))

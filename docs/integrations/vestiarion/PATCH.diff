@@ -1,0 +1,363 @@
+diff --git a/.env.example b/.env.example
+index 979cb59..80d12e9 100644
+--- a/.env.example
++++ b/.env.example
+@@ -148,6 +148,16 @@ RESEND_RECEIVING_API_KEY=
+ OPENSANCTIONS_API_URL=
+ OPENSANCTIONS_API_KEY=
+ 
++# Optional: CompliR (https://github.com/mrnetwork0001/complir), a counterparty
++# risk oracle on Arc. Set it and every counterparty's *address* is also graded
++# each sweep (2-hop funder trace, OpenSanctions, USDC blacklist, lookalikes):
++# HIGH blocks it, MEDIUM lowers its limit to CompliR's recommended per-payment
++# figure, and the EIP-712 attestation CompliR signs is kept in the ledger entry.
++# 0.01 USDC per screen over x402, paid by a small purse key (not the treasury);
++# free for Tameion teams during the event. Unset, screening is exactly as above.
++COMPLIR_URL=
++COMPLIR_PAYER_PRIVATE_KEY=
++
+ # How long a screening stays fresh, in hours. Live mode defaults to 24 hours
+ # to avoid one network call per counterparty on every short cycle. Bundled
+ # zero-credential mode defaults to 0 and therefore re-screens every cycle.
+diff --git a/README.md b/README.md
+index 05f670a..9d7e26e 100644
+--- a/README.md
++++ b/README.md
+@@ -64,7 +64,7 @@ reads the whole book each time it runs:
+ | --- | --- |
+ | **Payables** | Three-way match (purchase order, goods received, invoice), duplicate and risk checks, then **pay**, **schedule**, **hold**, **request info** or **flag as fraud**, with its reasoning attached |
+ | **Contractors** | Releases a milestone once its evidence is verified, such as a merged GitHub pull request; on Arc testnet the milestone's USDC can sit in an escrow contract until then |
+-| **Compliance** | Re-screens every counterparty each cycle (OpenSanctions where configured) and tiers its payment limit down on a hit, reversibly |
++| **Compliance** | Re-screens every counterparty each cycle (OpenSanctions where configured; [CompliR](https://github.com/mrnetwork0001/complir) where configured grades the wallet too: 2-hop funder trace on Arc, signed attestation kept in the ledger) and tiers its payment limit down on a hit, reversibly |
+ | **Receivables** | A client pays through a link; the agent matches the transfer to what was owed and, when turned on, sends reminders within bounds code sets |
+ | **Treasury** | On Arc testnet, sweeps idle cash above a 7-day buffer into Circle's USYC only when the yield beats the round-trip fee, and redeems ahead of what falls due |
+ | **Audit** | Appends every decision, human action and system event to an Ed25519-signed, hash-chained ledger, exportable and verifiable in one click |
+diff --git a/src/lib/compliance.ts b/src/lib/compliance.ts
+index 2c72bed..643c11b 100644
+--- a/src/lib/compliance.ts
++++ b/src/lib/compliance.ts
+@@ -1,6 +1,7 @@
+ import { db, unwrap } from "./dal";
+ import { appendLedgerEntry } from "./ledger";
+ import { currentConfig } from "./context";
++import { complirEnabled, mergeCompliR, screenAddressWithCompliR, type CompliRSummary } from "./complir";
+ import { z } from "zod";
+ import {
+   COUNTERPARTY_HISTORY_ACTIONS,
+@@ -54,6 +55,10 @@ export interface ScreeningResult {
+   matchedTopics: string[];
+   /** Every match a live screening found that no one has dismissed, best first (review every match R2); absent otherwise. */
+   matches?: ScreeningCandidate[];
++  /** CompliR's recommended per-payment limit in USDC, a ceiling on the tiered limit; absent without CompliR. */
++  recommendedLimit?: number | null;
++  /** CompliR's verdict, with its signed attestation, kept beside the signed ledger entry; absent without CompliR. */
++  complir?: CompliRSummary;
+ }
+ 
+ /** One match of a live screening, as the card lists it and Not this person dismisses it. */
+@@ -276,6 +281,8 @@ export interface CounterpartyScreeningRow {
+   /** The source of the current verdict: 'live', 'simulate', or null when unknown (migration 0041). */
+   last_screening_mode?: string | null;
+   jurisdiction?: string | null;
++  /** The wallet CompliR grades; a counterparty without one is screened by name only. */
++  address?: string | null;
+   performance_score?: string | number | null;
+   performance_inputs?: CounterpartyHistoryInputs | null;
+ }
+@@ -283,7 +290,7 @@ export interface CounterpartyScreeningRow {
+ const toNum = (v: string | number | null) => (v == null ? null : Number(v));
+ 
+ const SCREENING_COLUMNS =
+-  "id, name, risk_level, payment_limit, baseline_payment_limit, last_screened_at, last_screening_mode, jurisdiction, performance_score, performance_inputs";
++  "id, name, risk_level, payment_limit, baseline_payment_limit, last_screened_at, last_screening_mode, jurisdiction, address, performance_score, performance_inputs";
+ 
+ /**
+  * Decides what a screen should write, without touching the database. The
+@@ -307,7 +314,9 @@ export function planScreening(cp: CounterpartyScreeningRow, result = screenBundl
+     toNum(cp.baseline_payment_limit) ?? (firstScreen ? toNum(cp.payment_limit) : null);
+ 
+   const previousLimit = toNum(cp.payment_limit);
+-  const newLimit = paymentLimitForRisk(result.riskLevel, baseline);
++  // The tier sets the limit as before; CompliR's recommended per-payment figure can only lower it further.
++  const tiered = paymentLimitForRisk(result.riskLevel, baseline);
++  const newLimit = tiered != null && result.recommendedLimit != null ? Math.min(tiered, result.recommendedLimit) : tiered;
+   const changed =
+     firstScreen || result.riskLevel !== cp.risk_level || newLimit !== previousLimit;
+ 
+@@ -368,6 +377,11 @@ async function applyScreening(cp: CounterpartyScreeningRow, dismissed?: Readonly
+   let result: ScreeningResult;
+   try {
+     result = await screenName(cp.name, cp.jurisdiction, dismissed);
++    // CompliR grades the address after the name: the stricter verdict wins, and its limit caps the tiered one.
++    if (complirEnabled() && cp.address) {
++      const amountUsdc = toNum(cp.baseline_payment_limit ?? cp.payment_limit) ?? undefined;
++      result = mergeCompliR(result, await screenAddressWithCompliR(cp.address, { name: cp.name, amountUsdc }));
++    }
+   } catch (error) {
+     throw new ScreeningLookupError(error instanceof Error ? error.message : "Unknown screening failure");
+   }
+@@ -440,6 +454,9 @@ async function applyScreening(cp: CounterpartyScreeningRow, dismissed?: Readonly
+         baselinePaymentLimit: plan.baseline,
+         previousPaymentLimit: plan.previousLimit,
+         newPaymentLimit: plan.newLimit,
++        recommendedLimit: plan.result.recommendedLimit ?? null,
++        // CompliR's signed verdict travels with this Ed25519-signed entry: verifiable offline, replayable by decisionId.
++        complir: plan.result.complir ?? null,
+       },
+     });
+   }
+diff --git a/src/lib/complir.ts b/src/lib/complir.ts
+new file mode 100644
+index 0000000..18c3ecc
+--- /dev/null
++++ b/src/lib/complir.ts
+@@ -0,0 +1,137 @@
++import { privateKeyToAccount } from "viem/accounts";
++import { toHex } from "viem";
++import { z } from "zod";
++import { currentConfig } from "./context";
++import type { ScreeningResult } from "./compliance";
++
++/**
++ * CompliR (https://github.com/mrnetwork0001/complir): a counterparty risk oracle on Arc. One call grades an
++ * *address* (2-hop funder trace on Arc, OpenSanctions, USDC blacklist, lookalike of a known payee) into a 0–100
++ * score, a tier, a recommended per-payment limit and an EIP-712 attestation signed by CompliR's attester key and
++ * mirrored to its registry on Arc. It sits beside the name screening in compliance.ts: that answers "who is this",
++ * CompliR answers "where did this wallet's money come from". Off unless COMPLIR_URL is set; then it runs in the
++ * same sweep, after the name screening, and the stricter verdict wins. The call is x402-paid (0.01 USDC), signed
++ * by COMPLIR_PAYER_PRIVATE_KEY, a small purse that is not the treasury.
++ */
++
++export const complirVerdictSchema = z.object({
++  address: z.string(),
++  score: z.number().min(0).max(100),
++  tier: z.enum(["LOW", "MEDIUM", "HIGH"]),
++  recommendedLimits: z.object({ maxPerTxUsdc: z.number().nonnegative(), maxPerDayUsdc: z.number().nonnegative() }),
++  reasons: z.array(z.object({ code: z.string(), weight: z.number() })).default([]),
++  rationale: z.string().default(""),
++  attestation: z.object({
++    typedData: z.unknown(),
++    signature: z.string(),
++    attester: z.string(),
++    validUntil: z.number(),
++    registryTx: z.string().nullable(),
++  }),
++  decisionId: z.string(),
++  nextRescreenAt: z.string().optional(),
++});
++export type CompliRVerdict = z.infer<typeof complirVerdictSchema>;
++
++/** What a screening keeps of a verdict: enough to verify the attestation offline and to replay the decision. */
++export type CompliRSummary = Pick<CompliRVerdict, "tier" | "score" | "decisionId" | "recommendedLimits" | "attestation" | "nextRescreenAt">;
++
++export function complirEnabled(): boolean {
++  return !!currentConfig().compliance.complirUrl;
++}
++
++const RISK_FOR_TIER = { LOW: "clear", MEDIUM: "medium", HIGH: "high" } as const;
++const RANK = { clear: 0, medium: 1, high: 2 } as const;
++
++export function riskLevelForTier(tier: CompliRVerdict["tier"]): "clear" | "medium" | "high" {
++  return RISK_FOR_TIER[tier];
++}
++
++/**
++ * The stricter of the name screening and CompliR's verdict, with CompliR's recommended limit and signed attestation
++ * carried along so `planScreening` can cap the limit and the ledger entry can keep the attestation.
++ */
++export function mergeCompliR(base: ScreeningResult, verdict: CompliRVerdict): ScreeningResult {
++  const level = riskLevelForTier(verdict.tier);
++  const stricter = RANK[level] > RANK[base.riskLevel];
++  const codes = verdict.reasons.map((reason) => reason.code).join(", ");
++  return {
++    ...base,
++    riskLevel: stricter ? level : base.riskLevel,
++    notes: `${base.notes}; CompliR ${verdict.tier} ${verdict.score}/100${codes ? ` (${codes})` : ""}`,
++    source: stricter ? "complir" : base.source,
++    recommendedLimit: verdict.recommendedLimits.maxPerTxUsdc,
++    complir: {
++      tier: verdict.tier,
++      score: verdict.score,
++      decisionId: verdict.decisionId,
++      recommendedLimits: verdict.recommendedLimits,
++      attestation: verdict.attestation,
++      nextRescreenAt: verdict.nextRescreenAt,
++    },
++  };
++}
++
++interface X402Offer {
++  scheme: string;
++  network: string;
++  amount: string;
++  asset: `0x${string}`;
++  payTo: `0x${string}`;
++  maxTimeoutSeconds?: number;
++  extra?: { name?: string; version?: string };
++}
++
++/** POST /api/v1/screen, paying the x402 `exact` (EIP-3009) price on a 402. Throws; the sweep records the failure. */
++export async function screenAddressWithCompliR(address: string, opts: { name?: string; amountUsdc?: number } = {}): Promise<CompliRVerdict> {
++  const { complirUrl, complirPayerKey } = currentConfig().compliance;
++  if (!complirUrl) throw new Error("COMPLIR_URL is not set");
++  const url = `${complirUrl.replace(/\/+$/, "")}/api/v1/screen`;
++  const body = JSON.stringify({ address, name: opts.name, amountUsdc: opts.amountUsdc, clientId: "vestiarion" });
++  const post = (headers: Record<string, string> = {}) =>
++    fetch(url, { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body, signal: AbortSignal.timeout(15_000), cache: "no-store" });
++
++  let response = await post();
++  if (response.status === 402) {
++    if (!complirPayerKey) throw new Error("CompliR asks 0.01 USDC per screen over x402; set COMPLIR_PAYER_PRIVATE_KEY");
++    response = await post({ "PAYMENT-SIGNATURE": await signX402(response, complirPayerKey) });
++  }
++  if (!response.ok) throw new Error(`CompliR screening failed with HTTP ${response.status}`);
++  const parsed = complirVerdictSchema.safeParse(await response.json());
++  if (!parsed.success) throw new Error("CompliR returned an invalid verdict");
++  return parsed.data;
++}
++
++/** x402 v2: sign a TransferWithAuthorization for the first `exact` offer on an EVM network, never above 1 USDC. */
++async function signX402(res: Response, privateKey: `0x${string}`): Promise<string> {
++  const header = res.headers.get("PAYMENT-REQUIRED");
++  const required = (header ? JSON.parse(Buffer.from(header, "base64").toString("utf8")) : await res.json()) as { resource?: unknown; accepts?: X402Offer[] };
++  const offer = required.accepts?.find((option) => option.scheme === "exact" && /^eip155:\d+$/.test(option.network));
++  if (!offer) throw new Error("CompliR offered no x402 `exact` payment on an EVM network");
++  if (BigInt(offer.amount) > 1_000_000n) throw new Error(`CompliR asks ${offer.amount} atomic USDC per screen, above the 1 USDC cap`);
++  const account = privateKeyToAccount(privateKey);
++  const authorization = {
++    from: account.address,
++    to: offer.payTo,
++    value: offer.amount,
++    validAfter: "0",
++    validBefore: String(Math.floor(Date.now() / 1000) + (offer.maxTimeoutSeconds ?? 60) + 540),
++    nonce: toHex(crypto.getRandomValues(new Uint8Array(32))),
++  };
++  const signature = await account.signTypedData({
++    domain: { name: offer.extra?.name ?? "USDC", version: offer.extra?.version ?? "2", chainId: Number(offer.network.split(":")[1]), verifyingContract: offer.asset },
++    types: {
++      TransferWithAuthorization: [
++        { name: "from", type: "address" },
++        { name: "to", type: "address" },
++        { name: "value", type: "uint256" },
++        { name: "validAfter", type: "uint256" },
++        { name: "validBefore", type: "uint256" },
++        { name: "nonce", type: "bytes32" },
++      ],
++    },
++    primaryType: "TransferWithAuthorization",
++    message: { ...authorization, value: BigInt(authorization.value), validAfter: 0n, validBefore: BigInt(authorization.validBefore) },
++  });
++  return Buffer.from(JSON.stringify({ x402Version: 2, resource: required.resource, accepted: offer, payload: { signature, authorization } })).toString("base64");
++}
+diff --git a/src/lib/config.ts b/src/lib/config.ts
+index 16cda68..6003672 100644
+--- a/src/lib/config.ts
++++ b/src/lib/config.ts
+@@ -118,6 +118,10 @@ export interface ComplianceConfig {
+   openSanctionsApiKey?: string;
+   /** Hours a screening stays fresh. 0 re-screens every cycle. */
+   rescreenIntervalHours: number;
++  /** CompliR base URL (src/lib/complir.ts); unset leaves screening exactly as above. */
++  complirUrl?: string;
++  /** Pays CompliR's 0.01 USDC per screen over x402: a small purse, never the treasury. */
++  complirPayerKey?: `0x${string}`;
+   /**
+    * A live workspace on a deployment with no screening service (payment safety K1): screening gives no verdict rather
+    * than the demo list's, which knows two names and would clear everyone else. Set only by `orgConfig`.
+@@ -315,6 +319,8 @@ export function configFromEnv(env: EnvLike = process.env): VestiarionConfig {
+     compliance: {
+       openSanctionsUrl: trimmed(env.OPENSANCTIONS_API_URL),
+       openSanctionsApiKey: trimmed(env.OPENSANCTIONS_API_KEY),
++      complirUrl: trimmed(env.COMPLIR_URL),
++      complirPayerKey: trimmed(env.COMPLIR_PAYER_PRIVATE_KEY) as `0x${string}` | undefined,
+       // Live screening is a network call per counterparty per cycle, so it
+       // defaults to a day. The bundled list costs nothing, so it re-screens
+       // every cycle — the behaviour RFB5 describes.
+diff --git a/src/lib/dal/org-config.ts b/src/lib/dal/org-config.ts
+index c59c549..26b714a 100644
+--- a/src/lib/dal/org-config.ts
++++ b/src/lib/dal/org-config.ts
+@@ -237,8 +237,8 @@ export function orgConfig(
+             ? base.compliance
+             : { ...base.compliance, serviceRequired: true }
+           : base.compliance.openSanctionsUrl
+-            ? { ...base.compliance, openSanctionsUrl: undefined, openSanctionsApiKey: undefined, rescreenIntervalHours: 0 }
+-            : base.compliance,
++            ? { ...base.compliance, openSanctionsUrl: undefined, openSanctionsApiKey: undefined, complirUrl: undefined, rescreenIntervalHours: 0 }
++            : { ...base.compliance, complirUrl: undefined },
+       ledgerSigningKey: open("ledger_signing_key_enc"),
+       ledgerPublicKey: undefined,
+       // Public material. Every workspace's own rotations live on its row; the
+diff --git a/tests/complir.test.ts b/tests/complir.test.ts
+new file mode 100644
+index 0000000..fb9c569
+--- /dev/null
++++ b/tests/complir.test.ts
+@@ -0,0 +1,67 @@
++import { describe, expect, it } from "vitest";
++import { planScreening, screenBundledName, type CounterpartyScreeningRow } from "@/lib/compliance";
++import { mergeCompliR, riskLevelForTier, type CompliRVerdict } from "@/lib/complir";
++
++function verdict(over: Partial<CompliRVerdict> = {}): CompliRVerdict {
++  return {
++    address: "0x840de234bfc3f66fa380888a0a8204d9487d60d4",
++    score: 37,
++    tier: "MEDIUM",
++    recommendedLimits: { maxPerTxUsdc: 250, maxPerDayUsdc: 1000 },
++    reasons: [{ code: "FUNDER_2HOP_SANCTIONED", weight: 25 }],
++    rationale: "A wallet two hops back is sanctioned.",
++    attestation: { typedData: {}, signature: "0xsig", attester: "0xattester", validUntil: 1_800_000_000, registryTx: null },
++    decisionId: "dec_01J",
++    ...over,
++  };
++}
++
++const row: CounterpartyScreeningRow = {
++  id: "cp-1",
++  name: "Vercel Inc",
++  risk_level: "unscreened",
++  payment_limit: 2000,
++  baseline_payment_limit: null,
++  last_screened_at: null,
++  address: "0x840de234bfc3f66fa380888a0a8204d9487d60d4",
++};
++
++describe("CompliR beside the name screening", () => {
++  it("maps its tiers onto this codebase's risk levels", () => {
++    expect(riskLevelForTier("LOW")).toBe("clear");
++    expect(riskLevelForTier("MEDIUM")).toBe("medium");
++    expect(riskLevelForTier("HIGH")).toBe("high");
++  });
++
++  it("takes the stricter verdict and keeps the limit, the decision id and the signed attestation", () => {
++    const merged = mergeCompliR(screenBundledName("Vercel Inc"), verdict());
++    expect(merged.riskLevel).toBe("medium");
++    expect(merged.source).toBe("complir");
++    expect(merged.notes).toContain("CompliR MEDIUM 37/100 (FUNDER_2HOP_SANCTIONED)");
++    expect(merged.recommendedLimit).toBe(250);
++    expect(merged.complir?.decisionId).toBe("dec_01J");
++    expect(merged.complir?.attestation.signature).toBe("0xsig");
++  });
++
++  it("never loosens a name-screening verdict", () => {
++    const merged = mergeCompliR(screenBundledName("Zenith Trading"), verdict({ tier: "LOW" }));
++    expect(merged.riskLevel).toBe("high");
++    expect(merged.source).toBe("simulated-sanctions-list");
++  });
++
++  it("caps the tiered limit with CompliR's recommended figure, and high still means zero", () => {
++    const medium = planScreening(row, mergeCompliR(screenBundledName("Vercel Inc"), verdict()));
++    expect(medium.newLimit).toBe(250); // min(25% of 2000, 250)
++    const generous = planScreening(row, mergeCompliR(screenBundledName("Vercel Inc"), verdict({ recommendedLimits: { maxPerTxUsdc: 900, maxPerDayUsdc: 5000 } })));
++    expect(generous.newLimit).toBe(500); // the tier's 25% is the lower of the two
++    const high = planScreening(row, mergeCompliR(screenBundledName("Vercel Inc"), verdict({ tier: "HIGH", score: 80 })));
++    expect(high.newLimit).toBe(0);
++  });
++
++  it("changes nothing without CompliR", () => {
++    const plan = planScreening(row);
++    expect(plan.result.riskLevel).toBe("clear");
++    expect(plan.newLimit).toBe(2000);
++    expect(plan.result.complir).toBeUndefined();
++  });
++});
