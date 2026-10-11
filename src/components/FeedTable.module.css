@@ -1,0 +1,16 @@
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 320px;
+  white-space: normal !important;
+}
+.reasons code {
+  font-size: 0.72rem;
+}

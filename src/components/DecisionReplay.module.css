@@ -1,0 +1,60 @@
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 14px;
+  font-size: 0.88rem;
+  margin-top: 8px;
+}
+.kv > div {
+  display: contents;
+}
+.kv dt {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding-top: 3px;
+}
+.kv dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.hash {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rationale {
+  white-space: pre-wrap;
+  margin-top: 6px;
+}
+.payloadHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.payload {
+  max-height: 70vh;
+  overflow: auto;
+  font-size: 0.78rem;
+}
+@media (max-width: 480px) {
+  .kv {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .kv dd {
+    margin-bottom: 6px;
+  }
+}
