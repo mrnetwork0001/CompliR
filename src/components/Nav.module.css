@@ -317,7 +317,11 @@
   right: 0;
   bottom: 0;
   width: min(360px, 88vw);
-  background: var(--panel-solid);
+  background:
+    linear-gradient(to bottom, var(--line-2) 1px, transparent 1px) 0 0 / 3px 8px repeat-y,
+    color-mix(in srgb, var(--panel-solid) 94%, transparent);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
   border-left: 1px solid var(--line-2);
   overflow-y: auto;
   padding: 12px 12px 24px;
@@ -373,9 +377,11 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
-.sheetLink:hover {
-  background: var(--code-bg);
-  text-decoration: none;
+@media (hover: hover) {
+  .sheetLink:hover {
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+    text-decoration: none;
+  }
 }
 .sheetLinkActive {
   color: var(--acc);
@@ -402,14 +408,26 @@
   cursor: pointer;
   text-align: left;
 }
-.accHead:hover {
-  background: var(--code-bg);
+@media (hover: hover) {
+  .accHead:hover {
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+  }
+}
+.accHead[aria-expanded="true"] {
+  color: var(--text);
+  box-shadow: inset 0 -1px 0 var(--acc); /* hairline underline marks the open group */
+}
+.accHead[aria-expanded="true"] span:first-child {
+  color: var(--acc);
 }
 .accHead[aria-expanded="true"] .chev {
   transform: rotate(180deg);
 }
 .accActive {
   color: var(--acc);
+}
+.accList[hidden] {
+  display: none;
 }
 .accList {
   list-style: none;
@@ -432,7 +450,8 @@
   text-decoration: none;
 }
 .accItem[aria-current="page"] {
-  background: var(--acc-dim);
+  box-shadow: inset 2px 0 0 var(--acc); /* accent left bar, no filled box */
+  background: color-mix(in srgb, var(--acc) 6%, transparent);
 }
 .sheetFoot {
   margin-top: auto;
