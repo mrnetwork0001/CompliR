@@ -191,3 +191,35 @@ with env only.
    payee reverts with `CompliR: payee tier too high` before any gas is spent), sends it, waits for
    the receipt and records the tx hash on `/payouts`. Remove `TREASURY_MODE=live` to go back to
    dry-run; pull funds back any time with `withdraw(to, amount)` from the owner key.
+
+## GuardedTreasuryV2 - proof-of-screening on every payment
+
+`src/examples/GuardedTreasuryV2.sol` keeps v1's `release(payee, amount)` and adds
+
+```solidity
+function releaseWithProof(address payee, uint256 amount, bytes32 decisionHash) external onlyOwner
+```
+
+which requires **both** `ICompliR.isAllowed(payee, maxTier)` **and**
+`registry.recordOf(payee).decisionHash == decisionHash` - the caller names the exact verdict it is paying
+against, and the contract only pays if that is the verdict currently stored on-chain for the payee. A
+re-screen or revoke between the agent's decision and the release makes the call revert with
+`CompliR: decisionHash mismatch` instead of paying under a verdict nobody looked at. It emits
+`ReleasedWithProof(payee, amount, decisionHash, tier)` (`decisionHash` indexed). Ownership is `Ownable2Step`;
+`withdraw` and `setMaxTier` are unchanged.
+
+Tests: `test/GuardedTreasuryV2.t.sol` (matching hash pays; mismatched / stale hash, HIGH, UNKNOWN, expired,
+revoked and non-owner all revert; v1 `release` still works). Deploy with the same env as v1:
+
+```sh
+forge script script/Deploy.s.sol:DeployGuardedTreasuryV2 --rpc-url $ARC_RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge verify-contract <ADDRESS> src/examples/GuardedTreasuryV2.sol:GuardedTreasuryV2 --chain-id 5042 --verifier sourcify \
+  --constructor-args $(cast abi-encode 'constructor(address,address,address)' $REGISTRY_ADDRESS $TOKEN_ADDRESS $OWNER_ADDRESS)
+```
+
+**Arc mainnet (chain 5042):** `GuardedTreasuryV2` at `0x3B13186a1E4b1108eA5CB2f8853D84A2aeD71Cc5`
+(deploy tx `0x39ee1cb39faa4dba9f010e45c8e3f5c89e9e5996660e6b259063a42cdb37af00`, Sourcify full match,
+owner = treasury agent `0xc742…960c`, registry `0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`, token USDC
+`0x3600…0000`). v1 at `0x5465f31a6155E3eCCcC35f4E5bDC0e287763B0ee` stays deployed (empty) for reference.
+The app's live executor (`src/lib/treasury/agent.ts`) now calls `releaseWithProof` with the verdict's
+attestation `decisionHash`; the ABI is exported to `src/lib/contracts/guardedTreasuryV2Abi.ts`.

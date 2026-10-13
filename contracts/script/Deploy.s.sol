@@ -5,6 +5,7 @@ import {Script, console} from "forge-std/Script.sol";
 
 import {AttestationRegistry} from "../src/AttestationRegistry.sol";
 import {GuardedTreasury} from "../src/examples/GuardedTreasury.sol";
+import {GuardedTreasuryV2} from "../src/examples/GuardedTreasuryV2.sol";
 
 /// @title Deploy — AttestationRegistry
 /// @notice Reads `OWNER_ADDRESS` (cold admin key) and `ATTESTER_ADDRESS` (hot CompliR service key)
@@ -55,5 +56,28 @@ contract DeployGuardedTreasury is Script {
         vm.stopBroadcast();
 
         console.log("GuardedTreasury:", address(treasury));
+    }
+}
+
+/// @title DeployGuardedTreasuryV2 — proof-of-screening treasury
+/// @notice Same env as `DeployGuardedTreasury`: `REGISTRY_ADDRESS`, `TOKEN_ADDRESS`, `OWNER_ADDRESS`.
+///
+///         forge script script/Deploy.s.sol:DeployGuardedTreasuryV2 --rpc-url $ARC_RPC_URL --private-key $PRIVATE_KEY --broadcast
+contract DeployGuardedTreasuryV2 is Script {
+    function run() external returns (GuardedTreasuryV2 treasury) {
+        address registry = vm.envAddress("REGISTRY_ADDRESS");
+        address token = vm.envAddress("TOKEN_ADDRESS");
+        address owner = vm.envAddress("OWNER_ADDRESS");
+        require(registry != address(0), "Deploy: REGISTRY_ADDRESS is zero");
+        require(token != address(0), "Deploy: TOKEN_ADDRESS is zero");
+        require(owner != address(0), "Deploy: OWNER_ADDRESS is zero");
+        require(registry.code.length != 0, "Deploy: REGISTRY_ADDRESS has no code on this chain");
+
+        console.log("chainId :", block.chainid);
+        vm.startBroadcast();
+        treasury = new GuardedTreasuryV2(registry, token, owner);
+        vm.stopBroadcast();
+
+        console.log("GuardedTreasuryV2:", address(treasury));
     }
 }

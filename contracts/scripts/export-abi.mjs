@@ -8,6 +8,7 @@
  * Writes:
  *   src/lib/contracts/registryAbi.ts         — `export const registryAbi = [...] as const`
  *   src/lib/contracts/guardedTreasuryAbi.ts  — `export const guardedTreasuryAbi = [...] as const`
+ *   src/lib/contracts/guardedTreasuryV2Abi.ts — `export const guardedTreasuryV2Abi = [...] as const`
  *
  * Only ABIs are exported (no bytecode) so the generated files stay small and diff-friendly.
  */
@@ -34,6 +35,12 @@ const TARGETS = [
     exportName: "guardedTreasuryAbi",
     file: "guardedTreasuryAbi.ts",
     doc: "ABI of contracts/src/examples/GuardedTreasury.sol (reference integrator).",
+  },
+  {
+    artifact: "GuardedTreasuryV2.sol/GuardedTreasuryV2.json",
+    exportName: "guardedTreasuryV2Abi",
+    file: "guardedTreasuryV2Abi.ts",
+    doc: "ABI of contracts/src/examples/GuardedTreasuryV2.sol (proof-of-screening: releaseWithProof).",
   },
 ];
 
