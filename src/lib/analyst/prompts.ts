@@ -62,6 +62,25 @@ export interface AnalystPromptInput {
   now: number;
 }
 
+/** Compact evidence for the prompt: what the analyst needs to cite, without raw log dumps (keeps relayed-provider latency low). */
+export function compactEvidence(b: EvidenceBundle) {
+  const facts = (f: EvidenceBundle["subject"]) => ({
+    address: f.address, firstSeen: f.firstSeen, txCount: f.txCount, usdcBlacklisted: f.usdcBlacklisted,
+    protocolBlocklisted: f.protocolBlocklisted,
+    sanctions: f.sanctions.slice(0, 3).map((h) => ({ entityId: h.entityId, caption: h.caption, datasets: h.datasets.slice(0, 3), score: h.score, matchedOn: h.matchedOn })),
+  });
+  const flagged = b.funders.filter((f) => f.facts.sanctions.length > 0 || f.facts.usdcBlacklisted || f.facts.protocolBlocklisted);
+  const shown = [...flagged, ...b.funders.filter((f) => !flagged.includes(f))].slice(0, 6);
+  return {
+    subject: facts(b.subject),
+    depth: b.depth,
+    funders: { total: b.funders.length, hop1: b.funders.filter((f) => f.hop === 1).length, hop2: b.funders.filter((f) => f.hop === 2).length, flagged: flagged.length,
+      sample: shown.map((f) => ({ hop: f.hop, path: f.path.map((h) => h.from), lastTx: f.path.at(-1)?.txHash ?? null, amountUsdc: f.path.at(-1)?.amountUsdc ?? null, facts: facts(f.facts) })) },
+    lookalikes: b.lookalikes.slice(0, 3), payeeChanged: b.payeeChanged, concentration: b.concentration, priorTier: b.priorTier,
+    network: b.network ?? null, communityTips: (b.communityTips ?? []).slice(0, 3), collectedAt: b.collectedAt,
+  };
+}
+
 /** Build the per-request user message. Deterministic for identical inputs. */
 export function buildAnalystUserMessage(input: AnalystPromptInput): string {
   const { req, bundle, score, tier, reasons, now } = input;
@@ -88,7 +107,7 @@ export function buildAnalystUserMessage(input: AnalystPromptInput): string {
     },
     nowUnixSeconds: now,
     reasons,
-    evidence: bundle,
+    evidence: compactEvidence(bundle),
   };
 
   return [

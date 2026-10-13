@@ -16,13 +16,13 @@ export const AnalystOutputSchema = z.object({
   /** plain-English, reviewer-facing, <= 120 words (enforced by guards) */
   rationale: z.string(),
   /** Enhanced Due Diligence questions; must be [] for LOW (enforced by guards) */
-  eddRequested: z.array(z.string()),
+  eddRequested: z.array(z.string()).default([]),
   /** seconds until next re-screen; clamped into the tier window by guards */
-  nextRescreenInSeconds: z.number(),
+  nextRescreenInSeconds: z.number().optional(), // filled with the tier default when omitted
   /** 2 to ask the pipeline for a second funder hop before the final verdict; null otherwise */
   requestDepth: z.literal(2).nullable().optional(), // relayed providers may omit it; undefined == null
   /** 0..1 self-assessed confidence in limits/cadence (not in the tier) */
-  confidence: z.number(),
+  confidence: z.number().default(0.5),
 });
 export type AnalystOutput = z.infer<typeof AnalystOutputSchema>;
 

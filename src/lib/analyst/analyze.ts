@@ -74,7 +74,8 @@ export async function analyze(input: AnalyzeInput, client?: AnalystModel | null)
       schema: TOOL.input_schema, toolName: TOOL.name, toolDescription: TOOL.description,
       maxTokens: 800, temperature: 0.2,
     });
-    const parsed = AnalystOutputSchema.parse(res.data);
+    const parsedRaw = AnalystOutputSchema.parse(res.data);
+    const parsed: AnalystOutput = { ...parsedRaw, nextRescreenInSeconds: parsedRaw.nextRescreenInSeconds ?? defaultRescreenSeconds(input.tier, tierChanged({ tier: input.tier, priorTier: input.priorTier, bundle: input.bundle })) };
     return { ...applyGuards(ctx, parsed), meta: { model, fallback: false, latencyMs: Date.now() - t0 } };
   } catch (e) {
     const err = e instanceof Error ? e.message : String(e);
