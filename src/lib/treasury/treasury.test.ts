@@ -9,7 +9,7 @@ delete process.env.GUARDED_TREASURY_ADDRESS;
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { decidePayout, DEFAULT_POLICY, type TreasuryPolicy, type VerdictLike } from "./policy";
-import { seedDemoInvoices, listInvoices, migrateTreasury, spentToday, createInvoice } from "./invoices";
+import { seedDemoInvoices, listInvoices, listTranches, migrateTreasury, spentToday, createInvoice } from "./invoices";
 import { runTreasuryOnce, treasuryMode, treasuryStatus } from "./agent";
 import { getDecision, verifyChain } from "../ledger";
 import type { Address, Tier } from "../types";
@@ -103,15 +103,18 @@ describe("invoices + dry-run tick", () => {
     expect(s.policy.requireAttestationOnChain).toBe(false);
   });
 
-  it("dry-run tick: PAID / LIMITED / HELD with ledger PAYOUT entries and null tx hashes", async () => {
+  it("dry-run tick: PAID / SCHEDULED / HELD with ledger PAYOUT entries and null tx hashes", async () => {
     const r = await runTreasuryOnce({ policy: { maxTier: "MEDIUM", perPayoutCapUsdc: 25, dailyCapUsdc: 50, requireAttestationOnChain: false } });
     expect(r.mode).toBe("dry-run");
     expect(r.processed).toBe(3);
     const by = Object.fromEntries(r.results.map((x) => [x.invoiceId, x]));
     expect(by.inv_demo_cafe).toMatchObject({ status: "PAID", tier: "LOW", paidUsdc: 10, heldUsdc: 0, txHash: null });
-    expect(by.inv_demo_beef).toMatchObject({ status: "LIMITED", tier: "MEDIUM", paidUsdc: 25, heldUsdc: 95, txHash: null });
+    // MEDIUM → risk-aware schedule: tranche 1 (≤ per-payout cap 25, ≤ 1/3 of 120) now, the rest in tranches
+    expect(by.inv_demo_beef).toMatchObject({ status: "SCHEDULED", tier: "MEDIUM", paidUsdc: 25, heldUsdc: 95, txHash: null, schedule: { released: 1, total: 3, cancelled: 0 } });
+    expect(by.inv_demo_beef.reason).toMatch(/^SCHEDULED: 25 USDC released now \(tranche 1 of 3\)/);
     expect(by.inv_demo_dead).toMatchObject({ status: "HELD", tier: "HIGH", paidUsdc: 0, heldUsdc: 50, txHash: null });
-    expect(r).toMatchObject({ paid: 1, limited: 1, held: 1, failed: 0 });
+    expect(r).toMatchObject({ paid: 1, limited: 0, scheduled: 1, held: 1, failed: 0 });
+    expect(by.inv_demo_cafe.decisionHash).toMatch(/^0x[0-9a-f]{64}$/);
 
     for (const x of r.results) {
       expect(x.decisionId).toMatch(/^dec_/);
@@ -130,12 +133,17 @@ describe("invoices + dry-run tick", () => {
 
     const rows = await listInvoices();
     expect(rows.every((i) => i.status !== "PENDING")).toBe(true);
-    expect(rows.find((i) => i.id === "inv_demo_beef")).toMatchObject({ status: "LIMITED", paidUsdc: 25, heldUsdc: 95, mode: "dry-run", txHash: null });
+    expect(rows.find((i) => i.id === "inv_demo_beef")).toMatchObject({ status: "SCHEDULED", paidUsdc: 25, heldUsdc: 95, mode: "dry-run", txHash: null });
+    const tranches = await listTranches("inv_demo_beef");
+    expect(tranches.map((t) => [t.n, t.amountUsdc, t.status])).toEqual([[1, 25, "RELEASED"], [2, 25, "PENDING"], [3, 25, "PENDING"]]);
+    expect(tranches[0].decisionHash).toBe(rows.find((i) => i.id === "inv_demo_beef")!.decisionHash);
     expect(await spentToday()).toBe(35);
 
-    // nothing pending → no-op
+    // nothing pending → no new invoice processed; the scheduled invoice's tranches are checked but not yet due
     const again = await runTreasuryOnce();
     expect(again.processed).toBe(0);
+    expect(again.tranches.filter((t) => t.invoiceId === "inv_demo_beef").every((t) => t.status === "PENDING")).toBe(true);
+    expect((await listInvoices()).find((i) => i.id === "inv_demo_beef")!.status).toBe("SCHEDULED");
   }, 60_000);
 
   it("a never-paid address that resembles a trusted payee is flagged as a lookalike (address poisoning)", async () => {

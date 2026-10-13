@@ -4,7 +4,7 @@
  *                        this is the demo's own queue, not a public write endpoint.
  */
 import { isSameOriginBrowser } from "@/lib/payments";
-import { NewInvoiceSchema, createInvoice, ensureTreasury, invoiceTotals, listInvoices, treasuryStatus, type Invoice, type InvoiceTotals, type TreasuryStatus } from "@/lib/treasury";
+import { NewInvoiceSchema, createInvoice, ensureTreasury, invoiceTotals, listInvoices, tranchesByInvoice, treasuryStatus, type Invoice, type InvoiceTotals, type TrancheRow, type TreasuryStatus } from "@/lib/treasury";
 import { handle, ok, error } from "../../_lib/respond";
 import { parseJson } from "../../_lib/parse";
 
@@ -13,14 +13,17 @@ export interface PayoutsResponse {
   status: TreasuryStatus;
   totals: InvoiceTotals;
   items: Invoice[];
+  /** tranche schedule per SCHEDULED (or formerly scheduled) invoice id - risk-aware routing for MEDIUM payees */
+  tranches: Record<string, TrancheRow[]>;
   time: string;
 }
 
 export const GET = handle(async () => {
   await ensureTreasury();
   const [items, totals] = await Promise.all([listInvoices(200), invoiceTotals()]);
+  const tranches = await tranchesByInvoice(items.map((i) => i.id));
   const status = treasuryStatus();
-  const body: PayoutsResponse = { mode: status.mode, status, totals, items, time: new Date().toISOString() };
+  const body: PayoutsResponse = { mode: status.mode, status, totals, items, tranches, time: new Date().toISOString() };
   return ok(body);
 });
 

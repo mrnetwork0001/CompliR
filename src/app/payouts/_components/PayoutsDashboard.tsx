@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useState, type FormEvent } from "react";
 import type { PayoutsResponse } from "@/app/api/v1/payouts/route";
-import type { Invoice, InvoiceStatus, TickResult } from "@/lib/treasury";
+import type { DueCondition, Invoice, InvoiceStatus, TickResult, TrancheRow } from "@/lib/treasury";
 import { HexLink } from "@/components/HexLink";
 import { TierBadge } from "@/components/TierBadge";
 import { HttpError, apiFetch, fmtRelative, fmtTime, fmtUsdc, postJson, short } from "@/components/api";
@@ -11,7 +11,19 @@ import styles from "./PayoutsDashboard.module.css";
 
 const REFRESH_MS = 15_000;
 
-const STATUS_CLASS: Record<InvoiceStatus, string> = { PAID: "badgeLOW", LIMITED: "badgeMEDIUM", HELD: "badgeHIGH", FAILED: "badgeHIGH", PENDING: "badgeNeutral" };
+const STATUS_CLASS: Record<InvoiceStatus, string> = { PAID: "badgeLOW", LIMITED: "badgeMEDIUM", SCHEDULED: "badgeMEDIUM", HELD: "badgeHIGH", FAILED: "badgeHIGH", PENDING: "badgeNeutral" };
+const TRANCHE_CLASS: Record<TrancheRow["status"], string> = { RELEASED: "badgeLOW", PENDING: "badgeNeutral", CANCELLED: "badgeHIGH" };
+
+function describeDue(c: unknown): string {
+  const d = c as DueCondition | null;
+  if (!d || typeof d !== "object") return "-";
+  switch (d.kind) {
+    case "now": return "now, with the invoice";
+    case "edd_answered": return `after the counterparty answers EDD and still re-screens ≤ ${d.maxTier}`;
+    case "quiet_period": return `after ${new Date(d.until * 1000).toISOString().slice(0, 10)} (7 quiet days, tier still ≤ ${d.maxTier})`;
+    default: return "-";
+  }
+}
 
 function errMsg(e: unknown): string {
   return e instanceof HttpError ? `${e.code}: ${e.message}` : e instanceof Error ? e.message : String(e);
@@ -79,16 +91,22 @@ export function PayoutsDashboard() {
           address has no valid attestation at or below that tier, so even a buggy, compromised or over-eager agent - or the treasury
           owner calling the contract by hand - cannot move the USDC. The decision is enforced by the contract, not by the agent&apos;s judgement.
         </p>
-        <pre><code>{`// contracts/src/examples/GuardedTreasury.sol
-function release(address payee, uint256 amount) external onlyOwner {
-    require(compliR.isAllowed(payee, maxTier), "CompliR: payee tier too high"); // ← the whole integration
-    (,, bytes32 decisionHash) = compliR.tierOf(payee);
+        <pre><code>{`// contracts/src/examples/GuardedTreasuryV2.sol
+function releaseWithProof(address payee, uint256 amount, bytes32 decisionHash) external onlyOwner {
+    require(compliR.isAllowed(payee, maxTier), "CompliR: payee tier too high");          // ← the tier gate
+    require(registry.recordOf(payee).decisionHash == decisionHash, "CompliR: decisionHash mismatch"); // ← the proof
     token.safeTransfer(payee, amount);
-    emit Released(payee, amount, decisionHash);
+    emit ReleasedWithProof(payee, amount, decisionHash, tier);
 }`}</code></pre>
+        <p style={{ marginTop: 8 }}>
+          <strong>Proof of screening:</strong> every payment names the exact verdict it was approved under - the <code>decisionHash</code> chip on a PAID row is the
+          keccak256 of that verdict&apos;s signed decision JSON, and the contract only pays if the registry on Arc holds that same hash for the payee, so the
+          <code>ReleasedWithProof</code> event binds the USDC transfer to one replayable screening.
+        </p>
         <p className="muted small" style={{ marginTop: 8 }}>
-          Off-chain, the agent additionally caps MEDIUM payees to the analyst&apos;s recommended per-transaction limit and holds the remainder; every
-          decision (including holds) is appended to the hash-chained <Link href="/ledger">decision ledger</Link> with the signed verdict.
+          Off-chain, a MEDIUM payee is not paid in one shot: the agent proposes a schedule - one third now, one third once the counterparty answers the
+          Enhanced Due Diligence request and still re-screens at most MEDIUM, the rest after seven quiet days; a HIGH re-grade cancels what is left. Every
+          decision (including holds and cancelled tranches) is appended to the hash-chained <Link href="/ledger">decision ledger</Link> with the signed verdict.
         </p>
       </section>
     </div>
@@ -108,6 +126,7 @@ function Totals({ data }: { data: PayoutsResponse | null }) {
     <div className={styles.totals}>
       {cell(styles.statPaid, "Paid", t ? String(t.paid) : "-", "in full")}
       {cell(styles.statLimited, "Limited", t ? String(t.limited) : "-", "capped, rest held")}
+      {cell(styles.statLimited, "Scheduled", t ? String(t.scheduled) : "-", "MEDIUM, paid in tranches")}
       {cell(styles.statHeld, "Held", t ? String(t.held) : "-", "nothing sent")}
       {cell("", "USDC released", t ? fmtUsdc(t.paidUsdc) : "-", t ? `${fmtUsdc(t.heldUsdc)} held` : undefined)}
       {cell("", "Invoices", t ? String(t.count) : "-", t ? `${t.pending} pending${t.failed ? `, ${t.failed} failed` : ""}` : undefined)}
@@ -126,7 +145,7 @@ function PolicyCard({ data, explorer }: { data: PayoutsResponse | null; explorer
         <dt>Max tier paid</dt><dd><TierBadge tier={p.maxTier} size="sm" /> <span className="muted small">(HIGH is always held)</span></dd>
         <dt>Per payout cap</dt><dd>{fmtUsdc(p.perPayoutCapUsdc)}</dd>
         <dt>Daily cap</dt><dd>{fmtUsdc(p.dailyCapUsdc)}</dd>
-        <dt>MEDIUM payees</dt><dd>capped to the analyst&apos;s recommended per-tx limit; remainder held</dd>
+        <dt>MEDIUM payees</dt><dd>scheduled: 1/3 now, 1/3 after EDD is answered, rest after 7 quiet days (each tranche ≤ the analyst&apos;s per-tx limit)</dd>
         <dt>Registry check</dt><dd>{p.requireAttestationOnChain ? "required - hold unless the Arc registry holds a valid attestation" : "off (dry-run); the contract still checks it in live mode"}</dd>
         <dt>Treasury</dt><dd>{s.treasuryAddress ? <HexLink value={s.treasuryAddress} explorerUrl={explorer} /> : <span className="muted">not deployed (GUARDED_TREASURY_ADDRESS)</span>}</dd>
         <dt>Agent key</dt><dd>{s.agentAddress ? <HexLink value={s.agentAddress} explorerUrl={explorer} /> : <span className="muted">unset (TREASURY_PRIVATE_KEY)</span>}</dd>
@@ -210,7 +229,7 @@ function RunAgent({ onDone }: { onDone: () => Promise<void> }) {
       {err && <div className={`alert alertError ${styles.result}`} role="alert">{err}</div>}
       {res && (
         <div className={`alert alertInfo ${styles.result}`} role="status">
-          <strong>{res.mode === "live" ? "LIVE" : "DRY-RUN"} tick:</strong> {res.processed} processed - {res.paid} paid, {res.limited} limited, {res.held} held{res.failed ? `, ${res.failed} failed` : ""}.
+          <strong>{res.mode === "live" ? "LIVE" : "DRY-RUN"} tick:</strong> {res.processed} processed - {res.paid} paid, {res.limited} limited, {res.scheduled} scheduled, {res.held} held{res.failed ? `, ${res.failed} failed` : ""}{res.tranches?.length ? `; ${res.tranches.filter((t) => t.status === "RELEASED").length} tranche(s) released, ${res.tranches.filter((t) => t.status === "CANCELLED").length} cancelled` : ""}.
           {res.results.length > 0 && (
             <ul>
               {res.results.map((x) => (
@@ -247,9 +266,16 @@ function InvoiceTable({ data, explorer }: { data: PayoutsResponse | null; explor
           <tbody>
             {!data && <tr><td colSpan={9}><span className="skeleton" /></td></tr>}
             {data && data.items.length === 0 && <tr><td colSpan={9} className="muted">No invoices yet.</td></tr>}
-            {data?.items.map((it) => (
-              <tr key={it.id}>
-                <td><span className={`badge ${STATUS_CLASS[it.status]}`}>{it.status}</span></td>
+            {data?.items.map((it) => {
+              const tr = data.tranches?.[it.id] ?? [];
+              const released = tr.filter((t) => t.status === "RELEASED").length;
+              return (
+              <Fragment key={it.id}>
+              <tr>
+                <td>
+                  <span className={`badge ${STATUS_CLASS[it.status]}`}>{it.status}</span>
+                  {tr.length > 0 && <div className="small muted">{released}/{tr.length} tranches</div>}
+                </td>
                 <td>
                   <div>{it.label}</div>
                   <div className="small"><HexLink value={it.payee} explorerUrl={explorer} /></div>
@@ -277,15 +303,38 @@ function InvoiceTable({ data, explorer }: { data: PayoutsResponse | null; explor
                     <>
                       <Link href={`/log/${encodeURIComponent(it.decisionId)}`} className="mono small" title="Screening verdict (SCREEN)">{short(it.decisionId, 10, 4)}</Link>
                       {it.payoutDecisionId && <div><Link href={`/log/${encodeURIComponent(it.payoutDecisionId)}`} className="small muted" title="Payout decision (PAYOUT)">payout entry</Link></div>}
+                      {it.decisionHash && it.paidUsdc > 0 && (
+                        <div><code className="small" title={`decisionHash ${it.decisionHash} - the verdict releaseWithProof was paid against (must equal the registry record)`}>proof {short(it.decisionHash, 8, 4)}</code></div>
+                      )}
                     </>
                   ) : <span className="muted">-</span>}
                 </td>
                 <td>
                   {it.txHash ? <HexLink value={it.txHash} explorerUrl={explorer} /> : it.status === "PENDING" ? <span className="muted">-</span> : it.paidUsdc > 0 && it.mode !== "live" ? <span className="muted" title="Dry-run: no transaction was sent">simulated</span> : <span className="muted">none</span>}
+                  {it.txHash && it.mode === "live" && <div className="small muted" title="GuardedTreasuryV2.ReleasedWithProof(payee, amount, decisionHash, tier)">ReleasedWithProof</div>}
                 </td>
                 <td title={fmtTime(it.decidedAt ?? it.createdAt)}>{fmtRelative(it.decidedAt ?? it.createdAt)}</td>
               </tr>
-            ))}
+              {tr.map((t) => (
+                <tr key={`${it.id}-${t.n}`} className={styles.trancheRow}>
+                  <td><span className={`badge ${TRANCHE_CLASS[t.status]}`}>{t.status}</span></td>
+                  <td className="small muted">tranche {t.n} of {tr.length}</td>
+                  <td className="mono">{fmtUsdc(t.amountUsdc)}</td>
+                  <td className="small" colSpan={3}>
+                    <div>{describeDue(t.dueCondition)}</div>
+                    {t.note && <div className="muted">{t.note}</div>}
+                  </td>
+                  <td>
+                    {t.decisionId ? <Link href={`/log/${encodeURIComponent(t.decisionId)}`} className="mono small" title="Verdict the tranche was released against">{short(t.decisionId, 10, 4)}</Link> : <span className="muted">-</span>}
+                    {t.decisionHash && <div><code className="small" title={`decisionHash ${t.decisionHash}`}>proof {short(t.decisionHash, 8, 4)}</code></div>}
+                  </td>
+                  <td>{t.txHash ? <HexLink value={t.txHash} explorerUrl={explorer} /> : t.status === "RELEASED" ? <span className="muted">simulated</span> : <span className="muted">-</span>}</td>
+                  <td title={t.releasedAt ? fmtTime(t.releasedAt) : undefined}>{t.releasedAt ? fmtRelative(t.releasedAt) : <span className="muted">-</span>}</td>
+                </tr>
+              ))}
+              </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>

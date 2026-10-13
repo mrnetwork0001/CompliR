@@ -243,3 +243,14 @@
 .explain {
   composes: fig from global;
 }
+
+/* tranche sub-rows under a scheduled invoice (risk-aware routing) */
+.trancheRow td {
+  background: color-mix(in srgb, var(--bg) 85%, var(--border) 15%);
+  border-top: 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+.trancheRow td:first-child {
+  padding-left: 22px;
+}
