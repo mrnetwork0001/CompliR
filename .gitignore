@@ -47,3 +47,6 @@ next-env.d.ts
 .env.local
 !.env.example
 scripts/erc8004/agent.built.json
+
+# extension zip build output
+packages/extension/dist/

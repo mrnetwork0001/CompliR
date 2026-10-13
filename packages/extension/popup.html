@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>CompliR</title>
+<style>
+  :root { color-scheme: dark; --bg:#0a0b0d; --panel:#0f1114; --text:#ecedee; --muted:#9ba1a9; --faint:#60656d; --line:#ecedee14; --line2:#ecedee26; --acc:#3fe0c8; --on-acc:#06211d; --low:#4ade80; --medium:#fbbf24; --high:#f87171; }
+  * { box-sizing: border-box; }
+  body { margin: 0; width: 360px; background: var(--bg); color: var(--text); font: 13px/1.45 -apple-system, "Segoe UI", Geist, sans-serif; }
+  .wrap { padding: 14px 16px 16px; }
+  .kicker { font: 500 10px/1 ui-monospace, "Geist Mono", Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+  .kicker b { color: var(--acc); font-weight: 500; }
+  h1 { font-size: 15px; font-weight: 500; letter-spacing: -.02em; margin: 0 0 12px; }
+  .bar { display: flex; align-items: center; gap: 10px; font: 500 10px/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 12px 0 8px; border-bottom: 1px solid var(--line2); }
+  .bar::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .bar .meta { text-transform: none; letter-spacing: .02em; color: var(--faint); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  li code { font: 11px ui-monospace, Menlo, monospace; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  li a { color: var(--muted); text-decoration: none; font-size: 11px; }
+  .badge { font: 500 9.5px/1 ui-monospace, Menlo, monospace; letter-spacing: .1em; text-transform: uppercase; padding: 2px 5px; border: 1px solid var(--faint); border-radius: 2px; color: var(--faint); }
+  .LOW { color: var(--low); border-color: var(--low); } .MEDIUM { color: var(--medium); border-color: var(--medium); } .HIGH { color: var(--high); border-color: var(--high); }
+  .empty { color: var(--muted); padding: 10px 0; }
+  form { display: flex; gap: 6px; margin-top: 8px; }
+  input { flex: 1; min-width: 0; background: #121418; color: var(--text); border: 1px solid var(--line2); border-radius: 2px; padding: 7px 9px; font: 12px ui-monospace, Menlo, monospace; }
+  input:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px #3fe0c81f; }
+  button { background: var(--acc); color: var(--on-acc); border: 0; border-radius: 2px; padding: 7px 11px; font: 500 11px/1 ui-monospace, Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line2); }
+  .hint { color: var(--faint); font-size: 11px; margin: 6px 0 0; }
+  .hint code { font-family: ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker"><b>CompliR</b> · counterparty risk oracle</p>
+  <h1>Addresses on this page</h1>
+  <ul id="list"></ul>
+  <p class="empty" id="empty">No EVM addresses found yet.</p>
+
+  <div class="bar"><span>Check an address</span></div>
+  <form id="check"><input id="addr" placeholder="0x…" spellcheck="false" autocomplete="off" /><button type="submit">Open</button></form>
+  <p class="hint">Opens the public report at <code id="hostA"></code>/a/&lt;address&gt;.</p>
+
+  <div class="bar"><span>Settings</span><span class="meta">stored locally</span></div>
+  <form id="settings"><input id="url" placeholder="https://complir.example" spellcheck="false" autocomplete="off" /><button type="submit" class="ghost">Save</button></form>
+  <p class="hint">CompliR host. <code>http://localhost:3000</code> works for a local dev server.</p>
+</div>
+<script src="lib/parser.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>
