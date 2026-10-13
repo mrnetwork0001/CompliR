@@ -1,0 +1,15 @@
+# Production side-services for CompliR on a small VM (the Next.js app itself goes to Vercel; see docs/DEPLOY.md).
+#   docker compose -f docker-compose.prod.yml --env-file .env.local up -d
+services:
+  index:
+    extends: { file: docker/yente/docker-compose.yml, service: index }
+  yente:
+    extends: { file: docker/yente/docker-compose.yml, service: app }
+  workers:
+    build: { context: ., dockerfile: Dockerfile.workers }
+    env_file: .env.local
+    environment:
+      - YENTE_URL=http://yente:8000
+      - DATABASE_URL=${DATABASE_URL}   # use Turso/libsql URL so the app on Vercel and the workers share one DB
+    depends_on: [yente]
+    restart: unless-stopped
