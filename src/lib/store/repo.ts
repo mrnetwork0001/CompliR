@@ -94,6 +94,15 @@ export async function insertAttestation(v: Verdict): Promise<void> {
     args: [v.address, v.tier, v.score, v.decisionId, a.validUntil, a.signature, JSON.stringify(a.typedData), a.attester, a.registryTx, a.typedData.message.issuedAt],
   });
 }
+/** registry tx hashes keyed by decision id (the ledger payload is immutable; the mirror lands later). */
+export async function registryTxForDecisions(ids: string[]): Promise<Record<string, string>> {
+  await migrate();
+  if (ids.length === 0) return {};
+  const r = await db().execute({ sql: `SELECT decision_id, registry_tx FROM attestations WHERE registry_tx IS NOT NULL AND decision_id IN (${ids.map(() => "?").join(",")})`, args: ids });
+  const out: Record<string, string> = {};
+  for (const x of r.rows as unknown as Record<string, unknown>[]) out[String(x.decision_id)] = String(x.registry_tx);
+  return out;
+}
 export async function setRegistryTx(decisionId: string, tx: string): Promise<void> {
   await db().execute({ sql: `UPDATE attestations SET registry_tx = ? WHERE decision_id = ?`, args: [tx, decisionId] });
 }

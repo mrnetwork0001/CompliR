@@ -10,6 +10,7 @@ import { FunderGraph } from "./FunderGraph";
 import { EvidenceTable } from "./Evidence";
 import { HexLink } from "./HexLink";
 import { CopyButton } from "./CopyButton";
+import { useRegistryTx } from "./useRegistryTx";
 import { TIER_ACTION, TIER_LABEL, fmtRelative, fmtTime, fmtUsdc, short } from "./api";
 import styles from "./VerdictView.module.css";
 
@@ -58,8 +59,10 @@ function ReasonRow({ reason, explorerUrl }: { reason: Reason; explorerUrl: strin
 export function VerdictView({ verdict, explorerUrl, onSelectAddress }: { verdict: Verdict; explorerUrl: string; onSelectAddress?: (a: Address) => void }) {
   const v = verdict;
   const att = v.attestation;
+  const liveRegistryTx = useRegistryTx(verdict.address, verdict.attestation.registryTx);
+  const attLive = { ...att, registryTx: liveRegistryTx };
   const limits = v.recommendedLimits;
-  const pending = !att.registryTx;
+  const pending = !attLive.registryTx;
 
   return (
     <div className={styles.wrap}>
@@ -175,7 +178,7 @@ export function VerdictView({ verdict, explorerUrl, onSelectAddress }: { verdict
                 {pending ? (
                   <span className="badge badgeNeutral">pending</span>
                 ) : (
-                  <HexLink value={att.registryTx!} explorerUrl={explorerUrl} />
+                  <HexLink value={attLive.registryTx!} explorerUrl={explorerUrl} />
                 )}
               </dd>
             </div>

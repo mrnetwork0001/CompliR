@@ -72,7 +72,7 @@ export interface AttestationResponse {
 }
 
 export interface LedgerListResponse {
-  entries: DecisionLogEntry[];
+  entries: (DecisionLogEntry & { registryTx?: string | null })[];
   limit: number;
   page: number;
   total: number;
