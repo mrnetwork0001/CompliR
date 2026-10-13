@@ -1,0 +1,257 @@
+diff --git a/.env.example b/.env.example
+index 567b6cc..dd58303 100644
+--- a/.env.example
++++ b/.env.example
+@@ -24,3 +24,7 @@ OPENAI_API_KEY=
+ # Google sign-in configuration
+ GOOGLE_CLIENT_ID=
+ GOOGLE_CLIENT_SECRET=
++
++# Optional: CompliR counterparty screening (https://github.com/mrnetwork0001/complir). Leave unset to disable.
++# COMPLIR_URL=https://complir.example
++# COMPLIR_REGISTRY=0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d
+diff --git a/README.md b/README.md
+index caa77c7..9b0fe2f 100644
+--- a/README.md
++++ b/README.md
+@@ -151,6 +151,10 @@ OPENAI_API_KEY=
+ | `CIRCLE_BLOCKCHAIN` | Server-side | Blockchain network identifier (e.g., `ARC-TESTNET`). Auto-generated. |
+ | `OPENAI_API_KEY` | Server-side | OpenAI API key for AI-powered work validation. |
+ 
++## Optional: CompliR counterparty screening
++
++Set `COMPLIR_URL` to a [CompliR](https://github.com/mrnetwork0001/complir) host and `/api/contracts/validate-work` looks up the beneficiary's risk tier (`GET /api/v1/attestation/<address>`, free) before calling `withdraw`. A `HIGH` tier returns `403` and the funds stay in escrow; `LOW`/`MEDIUM` release as before, and an unreachable CompliR fails open with a warning. The same gate exists on-chain: `RefundProtocol.setComplir(registry)` makes `withdraw` and `earlyWithdrawByArbiter` revert with `CompliRTierTooHigh` for a `HIGH` recipient (`ICompliR.sol`, registry `0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d` on [Arc mainnet](https://explorer.arc.network/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d)); recompile the contract and refresh `REFUND_PROTOCOL_BYTECODE` in `lib/constants.ts` to use it. For a fresh verdict with reasons and recommended limits, the paid `POST /api/v1/screen` (x402, 0.01 USDC on Arc) is the upgrade path.
++
+ ## User Accounts
+ 
+ ### Default Account
+diff --git a/app/api/contracts/validate-work/route.ts b/app/api/contracts/validate-work/route.ts
+index bd3f7eb..d60a268 100644
+--- a/app/api/contracts/validate-work/route.ts
++++ b/app/api/contracts/validate-work/route.ts
+@@ -24,6 +24,7 @@ import { circleContractSdk } from "@/lib/utils/smart-contract-platform-client";
+ import { createAgreementService } from "@/app/services/agreement.service";
+ import { parseAmount } from "@/lib/utils/amount";
+ import { circleDeveloperSdk } from "@/lib/utils/developer-controlled-wallets-client";
++import { complirCheck } from "@/lib/complir";
+ 
+ interface ImageValidationResult {
+   valid: boolean;
+@@ -75,7 +76,8 @@ export async function POST(request: Request) {
+         *,
+         beneficiary_wallet:wallets!escrow_agreements_beneficiary_wallet_id_fkey!inner(
+           profiles!inner(id,auth_user_id),
+-          circle_wallet_id
++          circle_wallet_id,
++          wallet_address
+         )
+       `,
+       )
+@@ -253,6 +255,16 @@ export async function POST(request: Request) {
+       );
+     }
+ 
++    // Optional CompliR screening of the beneficiary before funds are released (no-op unless COMPLIR_URL is set)
++    const screening = await complirCheck(agreement.beneficiary_wallet.wallet_address);
++    if (!screening.allowed) {
++      console.error("CompliR blocked release:", screening);
++      return NextResponse.json(
++        { error: "Beneficiary blocked by CompliR screening", tier: screening.tier, decisionId: screening.decisionId },
++        { status: 403 },
++      );
++    }
++
+     const circleReleaseResponse =
+       await circleDeveloperSdk.createContractExecutionTransaction({
+         walletId: beneficiaryWalletId,
+diff --git a/contracts/escrow_smart_contract/ICompliR.sol b/contracts/escrow_smart_contract/ICompliR.sol
+new file mode 100644
+index 0000000..93c41ea
+--- /dev/null
++++ b/contracts/escrow_smart_contract/ICompliR.sol
+@@ -0,0 +1,33 @@
++// SPDX-License-Identifier: MIT
++pragma solidity ^0.8.20;
++
++/// @title ICompliR — on-chain counterparty-risk tier lookup
++/// @notice Read interface of the CompliR registry (https://github.com/mrnetwork0001/complir).
++///         Tiers are written by the CompliR attester after an off-chain screening; each carries
++///         a `decisionHash` linking back to the replayable decision log.
++interface ICompliR {
++    /// @dev Numeric values are part of the public ABI: UNKNOWN=0, LOW=1, MEDIUM=2, HIGH=3.
++    enum Tier {
++        UNKNOWN,
++        LOW,
++        MEDIUM,
++        HIGH
++    }
++
++    /// @notice A new attestation was stored for `subject`.
++    event Attested(address indexed subject, Tier tier, uint64 validUntil, bytes32 decisionHash);
++
++    /// @notice `subject`'s tier differs from the previously stored one (also emitted on revoke).
++    event TierChanged(address indexed subject, Tier from, Tier to);
++
++    /// @notice A Merkle root of decision-log entries `[fromSeq, toSeq]` was anchored on-chain.
++    event Anchored(bytes32 indexed root, uint256 fromSeq, uint256 toSeq);
++
++    /// @notice Raw stored tier for `subject`. Callers MUST check `validUntil > block.timestamp`
++    ///         themselves, or use `isAllowed`.
++    function tierOf(address subject) external view returns (Tier tier, uint64 validUntil, bytes32 decisionHash);
++
++    /// @notice One-line integration helper.
++    /// @return true iff `tier != UNKNOWN && tier <= maxTier && validUntil > block.timestamp`.
++    function isAllowed(address subject, Tier maxTier) external view returns (bool);
++}
+diff --git a/contracts/escrow_smart_contract/RefundProtocol.sol b/contracts/escrow_smart_contract/RefundProtocol.sol
+index 7f8a577..0690104 100644
+--- a/contracts/escrow_smart_contract/RefundProtocol.sol
++++ b/contracts/escrow_smart_contract/RefundProtocol.sol
+@@ -16,6 +16,7 @@ pragma solidity ^0.8.24;
+ 
+ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
++import "./ICompliR.sol";
+ 
+ contract RefundProtocol is EIP712 {
+     struct Payment {
+@@ -34,6 +35,8 @@ contract RefundProtocol is EIP712 {
+     IERC20 public fiatToken;
+     uint256 public nonce;
+     address public arbiter;
++    /// Optional CompliR registry; address(0) disables the recipient tier check.
++    address public complir;
+     mapping(uint256 => Payment) public payments;
+     mapping(address => uint256) public balances;
+     mapping(address => uint256) public debts;
+@@ -62,6 +65,7 @@ contract RefundProtocol is EIP712 {
+     error WithdrawalHashExpired();
+     error PaymentRefunded(uint256 paymentID);
+     error MismatchedEarlyWithdrawalArrays();
++    error CompliRTierTooHigh(address recipient);
+ 
+     constructor(address _arbiter, address _usdc, string memory eip712Name, string memory eip712version)
+         EIP712(eip712Name, eip712version)
+@@ -156,6 +160,14 @@ contract RefundProtocol is EIP712 {
+         _executeRefund(paymentID, payment);
+     }
+ 
++    /**
++     * Sets (or clears with address(0)) the CompliR registry consulted before funds are released.
++     * @param _complir the ICompliR registry address
++     */
++    function setComplir(address _complir) external onlyArbiter {
++        complir = _complir;
++    }
++
+     /**
+      * A function to settle recipient debts.
+      * @param recipient the recipient address
+@@ -197,6 +209,7 @@ contract RefundProtocol is EIP712 {
+      * @param paymentIDs an array of payments to release
+      */
+     function withdraw(uint256[] calldata paymentIDs) external {
++        _requireComplirAllowed(msg.sender);
+         _settleDebt(msg.sender);
+ 
+         uint256 totalAmount = 0;
+@@ -247,6 +260,7 @@ contract RefundProtocol is EIP712 {
+         bytes32 r,
+         bytes32 s
+     ) external onlyArbiter {
++        _requireComplirAllowed(recipient);
+         bytes32 withdrawalInfoHash = _hashEarlyWithdrawalInfo(paymentIDs, withdrawalAmounts, feeAmount, expiry, salt);
+ 
+         // prevent replay attacks
+@@ -352,6 +366,16 @@ contract RefundProtocol is EIP712 {
+         emit Refund(paymentID, payment.refundTo, payment.amount);
+     }
+ 
++    /**
++     * Reverts when a CompliR registry is set and the recipient's tier is not LOW or MEDIUM.
++     * @param recipient the address about to receive funds
++     */
++    function _requireComplirAllowed(address recipient) internal view {
++        if (complir != address(0) && !ICompliR(complir).isAllowed(recipient, ICompliR.Tier.MEDIUM)) {
++            revert CompliRTierTooHigh(recipient);
++        }
++    }
++
+     /**
+      * Internal function to settle recipient debts
+      * @param recipient the recipient address
+diff --git a/lib/complir.ts b/lib/complir.ts
+new file mode 100644
+index 0000000..35b83da
+--- /dev/null
++++ b/lib/complir.ts
+@@ -0,0 +1,69 @@
++/**
++ * Copyright 2026 Circle Internet Group, Inc.  All rights reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++/**
++ * Optional counterparty screening via CompliR (https://github.com/mrnetwork0001/complir).
++ * Enabled by setting COMPLIR_URL; with it unset every check passes ("disabled").
++ *
++ * This is the free tier lookup: GET <COMPLIR_URL>/api/v1/attestation/<address>.
++ * HIGH blocks, LOW and MEDIUM pass. A network error or timeout fails open with a
++ * warning so a CompliR outage never stops payments, and this check never loosens
++ * any other check the app already runs.
++ */
++
++export interface ComplirCheck {
++  allowed: boolean;
++  tier?: string;
++  score?: number;
++  decisionId?: string;
++  reason?: string;
++}
++
++const TIMEOUT_MS = 8_000;
++
++export async function complirCheck(address: string): Promise<ComplirCheck> {
++  const baseUrl = process.env.COMPLIR_URL;
++  if (!baseUrl) return { allowed: true, reason: "disabled" };
++
++  try {
++    const res = await fetch(
++      `${baseUrl.replace(/\/$/, "")}/api/v1/attestation/${encodeURIComponent(address)}`,
++      { signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" },
++    );
++    if (!res.ok) {
++      console.warn(`CompliR: HTTP ${res.status} for ${address}, failing open`);
++      return { allowed: true, reason: `http_${res.status}` };
++    }
++    const data = (await res.json()) as {
++      tier?: string;
++      score?: number;
++      decisionId?: string;
++    };
++    const tier = data.tier ?? "UNKNOWN";
++    return {
++      allowed: tier !== "HIGH",
++      tier,
++      score: data.score,
++      decisionId: data.decisionId,
++      reason: tier === "HIGH" ? "tier_high" : undefined,
++    };
++  } catch (error) {
++    console.warn("CompliR: screening unavailable, failing open", error);
++    return { allowed: true, reason: "unavailable" };
++  }
++}

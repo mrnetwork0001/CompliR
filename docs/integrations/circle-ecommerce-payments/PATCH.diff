@@ -1,0 +1,162 @@
+diff --git a/.env.example b/.env.example
+index ae0d51d..8b6ac5e 100644
+--- a/.env.example
++++ b/.env.example
+@@ -52,3 +52,8 @@ MERCHANT_ADDRESS=
+ # event-monitoring subscription via the Circle API. The webhook handler at
+ # POST /api/webhooks/payments will verify the HMAC-SHA256 signature once set.
+ WEBHOOK_SECRET=
++
++# Optional: CompliR counterparty screening (https://github.com/mrnetwork0001/complir).
++# When set, admin capture and refund refuse HIGH-risk counterparties with a 403.
++# Leave unset to disable.
++# COMPLIR_URL=https://complir.example
+diff --git a/README.md b/README.md
+index a4f0b85..479223d 100644
+--- a/README.md
++++ b/README.md
+@@ -204,6 +204,11 @@ All variables live in `.env.local`. The setup script writes the wallet IDs/addre
+ | `MERCHANT_WALLET_ID` / `MERCHANT_ADDRESS`                            | Merchant (funds receiver)                    | Written automatically by `npm run setup`                                     |
+ | `NEXT_PUBLIC_ESCROW_ADDRESS` / `NEXT_PUBLIC_TOKEN_COLLECTOR_ADDRESS` | On-chain settlement                          | Written automatically by `npm run setup`                                     |
+ | `WEBHOOK_SECRET`                                                     | HMAC-SHA256 verification for SCP push events | Any strong random string; register it with the Circle SCP webhook API        |
++| `COMPLIR_URL`                                                        | Optional counterparty screening              | A [CompliR](https://github.com/mrnetwork0001/complir) host; unset disables it. See below |
++
++### Optional: CompliR counterparty screening
++
++With `COMPLIR_URL` set, `POST /api/admin/orders/[id]/capture` screens the merchant receiver and `POST /api/admin/orders/[id]/refund` screens the payer before the operator submits the on-chain operation, reading the risk tier from `GET /api/v1/attestation/<address>` (free; tiers are mirrored to the CompliR registry on [Arc mainnet](https://explorer.arc.network/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d)). `HIGH` returns `403` and nothing is submitted; `LOW`/`MEDIUM` proceed; a CompliR timeout or outage fails open with a warning. The paid `POST /api/v1/screen` (x402, 0.01 USDC on Arc) returns a fresh verdict with reasons and recommended limits and is the upgrade path.
+ 
+ 
+ 
+diff --git a/app/api/admin/orders/[id]/capture/route.ts b/app/api/admin/orders/[id]/capture/route.ts
+index f71cab0..d7322a7 100644
+--- a/app/api/admin/orders/[id]/capture/route.ts
++++ b/app/api/admin/orders/[id]/capture/route.ts
+@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/server";
+ import { createServiceClient } from "@/lib/supabase/service";
+ import { deserializePaymentInfo } from "@/lib/payments/payment-info";
+ import { capture } from "@/lib/operator/operations";
++import { complirCheck } from "@/lib/complir";
+ import { insertLifecycleEvent } from "@/lib/orders/lifecycle";
+ import type { SerializedPaymentInfo } from "@/lib/payments/payment-info";
+ 
+@@ -85,6 +86,15 @@ export async function POST(
+   );
+   const amountUnits = BigInt(Math.round(body.amount * 1_000_000));
+ 
++  // Optional CompliR screening of the receiver (no-op unless COMPLIR_URL is set)
++  const screening = await complirCheck(paymentInfo.receiver);
++  if (!screening.allowed) {
++    return NextResponse.json(
++      { error: `Receiver blocked by CompliR screening (tier ${screening.tier})` },
++      { status: 403 },
++    );
++  }
++
+   let txHash: string;
+   try {
+     ({ txHash } = await capture(paymentInfo, amountUnits));
+diff --git a/app/api/admin/orders/[id]/refund/route.ts b/app/api/admin/orders/[id]/refund/route.ts
+index b597463..ac3dd17 100644
+--- a/app/api/admin/orders/[id]/refund/route.ts
++++ b/app/api/admin/orders/[id]/refund/route.ts
+@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/server";
+ import { createServiceClient } from "@/lib/supabase/service";
+ import { deserializePaymentInfo } from "@/lib/payments/payment-info";
+ import { refund } from "@/lib/operator/operations";
++import { complirCheck } from "@/lib/complir";
+ import { insertLifecycleEvent } from "@/lib/orders/lifecycle";
+ import type { SerializedPaymentInfo } from "@/lib/payments/payment-info";
+ 
+@@ -94,6 +95,15 @@ export async function POST(
+   );
+   const amountUnits = BigInt(Math.round(body.amount * 1_000_000));
+ 
++  // Optional CompliR screening of the payer being refunded (no-op unless COMPLIR_URL is set)
++  const screening = await complirCheck(paymentInfo.payer);
++  if (!screening.allowed) {
++    return NextResponse.json(
++      { error: `Payer blocked by CompliR screening (tier ${screening.tier})` },
++      { status: 403 },
++    );
++  }
++
+   let txHash: string;
+   try {
+     ({ txHash } = await refund(paymentInfo, amountUnits));
+diff --git a/lib/complir.ts b/lib/complir.ts
+new file mode 100644
+index 0000000..86824c6
+--- /dev/null
++++ b/lib/complir.ts
+@@ -0,0 +1,71 @@
++/**
++ * Copyright 2026 Circle Internet Group, Inc.  All rights reserved.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++import "server-only";
++
++/**
++ * Optional counterparty screening via CompliR (https://github.com/mrnetwork0001/complir).
++ * Enabled by setting COMPLIR_URL; with it unset every check passes ("disabled").
++ *
++ * This is the free tier lookup: GET <COMPLIR_URL>/api/v1/attestation/<address>.
++ * HIGH blocks, LOW and MEDIUM pass. A network error or timeout fails open with a
++ * warning so a CompliR outage never stops payments, and this check never loosens
++ * any other check the app already runs.
++ */
++
++export interface ComplirCheck {
++  allowed: boolean;
++  tier?: string;
++  score?: number;
++  decisionId?: string;
++  reason?: string;
++}
++
++const TIMEOUT_MS = 8_000;
++
++export async function complirCheck(address: string): Promise<ComplirCheck> {
++  const baseUrl = process.env.COMPLIR_URL;
++  if (!baseUrl) return { allowed: true, reason: "disabled" };
++
++  try {
++    const res = await fetch(
++      `${baseUrl.replace(/\/$/, "")}/api/v1/attestation/${encodeURIComponent(address)}`,
++      { signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" },
++    );
++    if (!res.ok) {
++      console.warn(`CompliR: HTTP ${res.status} for ${address}, failing open`);
++      return { allowed: true, reason: `http_${res.status}` };
++    }
++    const data = (await res.json()) as {
++      tier?: string;
++      score?: number;
++      decisionId?: string;
++    };
++    const tier = data.tier ?? "UNKNOWN";
++    return {
++      allowed: tier !== "HIGH",
++      tier,
++      score: data.score,
++      decisionId: data.decisionId,
++      reason: tier === "HIGH" ? "tier_high" : undefined,
++    };
++  } catch (error) {
++    console.warn("CompliR: screening unavailable, failing open", error);
++    return { allowed: true, reason: "unavailable" };
++  }
++}
