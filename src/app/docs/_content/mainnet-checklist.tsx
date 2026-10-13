@@ -1,0 +1,198 @@
+import Link from "next/link";
+import { Code, Status, Table } from "../_components/Doc";
+import type { DocPage } from "./types";
+
+const REGISTRY = `# contracts/README.md — Arc mainnet, chain id 5042, gas is USDC; use a keystore account, not a raw key
+export ARC_RPC_URL=https://rpc.mainnet.arc.io
+export OWNER_ADDRESS=0x…        # cold admin: rotates the attester, pauses, revokes
+export ATTESTER_ADDRESS=0x…     # address of ATTESTER_PRIVATE_KEY
+forge script script/Deploy.s.sol:Deploy --rpc-url $ARC_RPC_URL --account <keystore> --sender <addr>              # simulate, check block.chainid
+forge script script/Deploy.s.sol:Deploy --rpc-url $ARC_RPC_URL --account <keystore> --sender <addr> --broadcast
+# then in the app:
+REGISTRY_ADDRESS=0x…
+ATTESTER_PRIVATE_KEY=0x…`;
+
+const TREASURY = `export REGISTRY_ADDRESS=<AttestationRegistry>
+export TOKEN_ADDRESS=0x3600000000000000000000000000000000000000
+export OWNER_ADDRESS=<address of TREASURY_PRIVATE_KEY>
+forge script script/Deploy.s.sol:DeployGuardedTreasury --rpc-url $ARC_RPC_URL --private-key $PRIVATE_KEY --broadcast
+cast send 0x3600…0000 "transfer(address,uint256)" <GuardedTreasury> 50000000 --rpc-url $ARC_RPC_URL --private-key $PRIVATE_KEY   # ≤ 50 USDC
+# app: GUARDED_TREASURY_ADDRESS, TREASURY_PRIVATE_KEY, TREASURY_MODE=live (+ REGISTRY_ADDRESS, ATTESTER_PRIVATE_KEY)`;
+
+const CIRCLE = `CIRCLE_API_KEY=…                                   # console.circle.com → API Keys (Mainnet toggle)
+node scripts/circle/setup.ts --generate-secret      # → CIRCLE_ENTITY_SECRET
+node --env-file=.env.local scripts/circle/setup.ts --register     # once; keep the recovery file, it cannot be downloaded again
+node --env-file=.env.local scripts/circle/setup.ts --balances     # provisions "revenue" + "ops" SCA wallets; prints X402_PAY_TO, OWN_WALLETS, CIRCLE_WALLET_SET_ID
+# console → Gas Station → Mainnet → policy on ARC (max/day, per-tx) → Activate · fund ops with a few USDC
+SIGNER_MODE=circle
+curl -s https://…/api/internal/circle -H "Authorization: Bearer $CRON_SECRET"   # effectiveSigner: "circle", balances, hints`;
+
+const X402 = `X402_DISABLED=0
+X402_PAY_TO=<Circle revenue wallet>
+X402_FACILITATOR_URL=https://api.circle.com/v1/facilitator/x402
+X402_FACILITATOR_API_KEY=<Circle Console key>       # or X402_SELLER_PRIVATE_KEY for the keyless trial
+X402_NETWORK=eip155:5042                            # optional, defaults from ARC_CHAIN_ID`;
+
+const ERC8004 = `PUBLIC_BASE_URL=https://<prod host>
+npx tsx --env-file=.env.local scripts/erc8004/register.ts --print            # dry run: metadata + calldata
+# host scripts/erc8004/agent.built.json at $PUBLIC_BASE_URL/.well-known/agent-registration.json, or use --data-uri
+ERC8004_OWNER_PRIVATE_KEY=0x… npx tsx --env-file=.env.local scripts/erc8004/register.ts [--data-uri]   # prints agentId
+ERC8004_AGENT_ID=<id>   # then re-run to setAgentURI with the registrations[] back-reference`;
+
+export const mainnetChecklist: DocPage = {
+  slug: "mainnet-checklist",
+  title: "Mainnet checklist",
+  description: "What is live on Arc mainnet today, what is pending, and the exact keys and steps that flip each loop from dry-run to live.",
+  lead: (
+    <>
+      <strong>Everything already points at Arc mainnet 5042; what is missing is keys, deploys and one onboarding.</strong> Each row below is one switch, in the order they
+      depend on each other. Keep at most 100 USDC on-chain at any time and keep <code>COMPLIR_PAUSED=1</code> as the kill switch.
+    </>
+  ),
+  sections: [
+    {
+      id: "status",
+      title: "Status board",
+      body: (
+        <Table
+          head={["Capability", "Today", "Flip"]}
+          wide={[2]}
+          rows={[
+            ["Screening, verdicts, EIP-712 signatures", <Status key="s" kind="live">live</Status>, "ATTESTER_PRIVATE_KEY (else an ephemeral key per process)"],
+            ["Watches, webhooks, blocklist reactor, Trust Map, ledger", <Status key="s" kind="live">live</Status>, "CRON_SECRET + crons or workers running"],
+            ["Analyst and operator model steps", <Status key="s" kind="live">live / fallback</Status>, "ANTHROPIC_API_KEY (deterministic fallback without)"],
+            ["AttestationRegistry on Arc", <Status key="s" kind="pending">pending deploy</Status>, "step 1"],
+            ["Merkle anchoring", <Status key="s" kind="pending">pending</Status>, "needs the registry (anchorRoot) + ATTESTER_PRIVATE_KEY"],
+            ["GuardedTreasury / Guarded Payouts", <Status key="s" kind="dry-run">dry-run</Status>, "step 2"],
+            ["Circle wallets + Gas Station relay", <Status key="s" kind="dry-run">dry-run</Status>, "step 3"],
+            ["x402 charging", <Status key="s" kind="off">disabled</Status>, "step 4"],
+            ["Auto-refunds, tip bounties", <Status key="s" kind="dry-run">dry-run</Status>, "a signer: Circle revenue wallet (step 3) or REFUND_PRIVATE_KEY / TIPS_PAYOUT_PRIVATE_KEY"],
+            ["USYC revenue sweep", <Status key="s" kind="dry-run">dry-run</Status>, "step 5 (needs Circle USYC onboarding)"],
+            ["ERC-8004 identity", <Status key="s" kind="pending">pending</Status>, "step 6"],
+            ["Hosted URL, yente in production", <Status key="s" kind="pending">pending</Status>, "a host + libSQL URL; a yente container the host can reach"],
+          ]}
+        />
+      ),
+    },
+    {
+      id: "registry",
+      title: "1 · Registry",
+      body: (
+        <>
+          <Code lang="sh" code={REGISTRY} />
+          <p>
+            Verdicts are mirrored on-chain from the next screen; <code>registryTx</code> stops being <code>null</code>, <code>isAllowed</code> starts answering, and the watcher anchors
+            Merkle roots every 50 entries. Verify the contract on the explorer with the commands in <code>contracts/README.md</code>.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "treasury",
+      title: "2 · GuardedTreasury",
+      body: (
+        <>
+          <Code lang="sh" code={TREASURY} />
+          <p>
+            Live mode requires all four env values; <code>GET /api/v1/payouts</code> → <code>missingForLive</code> tells you which are absent. Details on{" "}
+            <Link href="/docs/guarded-payouts#go-live">Guarded payouts</Link>.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "circle",
+      title: "3 · Circle wallets and Gas Station",
+      body: (
+        <>
+          <Code lang="sh" code={CIRCLE} />
+          <ul>
+            <li>
+              <strong>Why SCA:</strong> Gas Station sponsorship on EVM is ERC-4337, so the relaying ops wallet must be an SCA. The attester key stays local because the registry verifies
+              with <code>ECDSA.recover</code>, which an SCA signature cannot satisfy.
+            </li>
+            <li>
+              <strong>Policies:</strong> spending caps are enforced app-side (<code>CIRCLE_*_POLICY_*</code>) because developer-controlled wallets have no policy API; Gas Station adds a
+              Circle-side cap on sponsored gas. Transactions above the policy pay from the SCA&apos;s own USDC, so keep a small float in ops.
+            </li>
+            <li>
+              <strong>Unverified:</strong> Gas Station on Arc mainnet is documented but was not exercised without an account; the first live relay should be one cheap write.
+            </li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      id: "x402",
+      title: "4 · x402",
+      body: (
+        <>
+          <Code lang="env" code={X402} />
+          <p>
+            Set <code>OWN_WALLETS</code> to the Circle wallets and any test payers so they are excluded from <Link href="/numbers">/numbers</Link> and listed in every report. Then
+            run one paid call through the SDK and confirm <code>PAYMENT-RESPONSE</code> carries a transaction on Arc.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "usyc",
+      title: "5 · USYC whitelisting",
+      body: (
+        <>
+          <p>
+            USYC is permissioned: the token and the Teller consult the Entitlements contract on every deposit, redeem and transfer, and revert for wallets that are not
+            allow-listed. Entitlement comes only from investor onboarding with Circle (questionnaire, KYC/AML, wallet screening, address whitelisting) and is not offered to U.S.
+            persons. Until the revenue wallet is entitled, <code>USYC_MODE=live</code> would only produce reverted <code>deposit</code> calls, logged and not retried blindly.
+          </p>
+          <ol>
+            <li>Complete Circle&apos;s USYC investor onboarding for the revenue wallet (<code>docs/USYC.md</code>); check with the public entitlement endpoint.</li>
+            <li>
+              <code>REVENUE_PRIVATE_KEY</code> for the <code>X402_PAY_TO</code> wallet with a little USDC for gas (or a Circle-backed sweep once wired).
+            </li>
+            <li>
+              <code>USYC_MODE=live</code>; tune <code>USYC_FLOAT_USDC</code> to cover an hour of refunds and gas.
+            </li>
+          </ol>
+          <p>
+            Contracts on Arc mainnet: USYC <code>0x8a5D…F490</code>, Teller <code>0x51A8…0f9b</code>, Entitlements <code>0xb69e…ca72</code>. Keep dry-run for the demo and show the
+            logged plans on <Link href="/ledger">/ledger</Link> (<code>NOOP · USYC_SWEEP</code>).
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "erc8004",
+      title: "6 · ERC-8004 identity",
+      body: (
+        <>
+          <Code lang="sh" code={ERC8004} />
+          <p>
+            Registering mints an ERC-721 identity in the Arc <code>IdentityRegistry</code> (<code>0x8004A169FB4a3325136EB29fA0ceB6D2e539a432</code>, the same CREATE2 singleton as on
+            Ethereum and Base) whose URI lists CompliR&apos;s services, including the x402 screen endpoint with its price and network. Without a key the script prints the raw
+            transaction so a multisig can send it. Coinbase&apos;s x402 Bazaar indexes only CDP-settled payments on its own networks, so the ERC-8004 entry and APEX&apos;s Arc x402
+            explorer are the discoverability paths that work on Arc today.
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "last",
+      title: "After the flips",
+      body: (
+        <ul>
+          <li>
+            <strong>Health:</strong> <code>/api/v1/health</code> should show the registry address, <code>x402.disabled: false</code> and <code>signer.mode: circle</code>.
+          </li>
+          <li>
+            <strong>Integrations:</strong> replace <code>https://complir.example</code> in <code>docs/integrations/*/PR.md</code> with the hosted URL, add the registry address to the
+            CeedeBooks PR, then open the three prepared PRs (STEWARD, Vestiarion, CeedeBooks).
+          </li>
+          <li>
+            <strong>Report:</strong> the first signed daily report publishes at 00:05 UTC; add notes and mistakes to <code>.data/report-notes.json</code>.
+          </li>
+        </ul>
+      ),
+    },
+  ],
+};
