@@ -144,10 +144,13 @@
 /* Submit | Leaderboard + Verifier: hairline-separated panels, no boxes */
 .grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr); /* minmax(0,…) so a wide table cannot stretch the column past the viewport */
   gap: 0;
   margin-bottom: 20px;
   border-top: 1px solid var(--line-2);
+}
+.grid > * {
+  min-width: 0;
 }
 .grid :global(.card) {
   background: transparent;
@@ -161,7 +164,7 @@
 }
 @media (min-width: 900px) {
   .grid {
-    grid-template-columns: 1.3fr 1fr;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
     border-bottom: 1px solid var(--line);
   }
   .grid > :global(.card) {
