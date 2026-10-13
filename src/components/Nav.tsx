@@ -52,6 +52,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/shadow", label: "Shadow report", hint: "What we would have held in your payee book" },
       { href: "/badge", label: "Badge", hint: "Screened-by-CompliR SVG and embed" },
       { href: "/tips", label: "Tips", hint: "Staked community intelligence" },
+      { href: "/tools", label: "Tools", hint: "Browser extension, Telegram bot, payment links" },
     ],
   },
   {
@@ -62,6 +63,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/ledger", label: "Ledger", hint: "Hash-chained decision log", match: (p) => p.startsWith("/ledger") || p.startsWith("/log") },
       { href: "/feed", label: "Feed", hint: "Recent screenings, addresses masked" },
       { href: "/numbers", label: "Numbers", hint: "Honest public counters" },
+      { href: "/stats", label: "Risk dataset", hint: "Signed daily Arc risk statistics" },
     ],
   },
 ];
