@@ -8,6 +8,7 @@ import { TIER_ONCHAIN } from "../types";
 
 export { registryAbi } from "./registryAbi";
 export { guardedTreasuryAbi } from "./guardedTreasuryAbi";
+export { guardedTreasuryV2Abi } from "./guardedTreasuryV2Abi";
 
 /**
  * Mirror of `ICompliR.Tier` (contracts/src/ICompliR.sol). The numeric values are part of the
