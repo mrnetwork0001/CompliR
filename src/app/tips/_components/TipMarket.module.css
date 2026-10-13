@@ -258,10 +258,15 @@
   flex: 1 1 180px;
 }
 
-.claim {
-  max-width: 320px;
+/* doubled selector outranks the global `.table td { white-space: nowrap }` */
+.claim.claim {
+  width: 34%;
+  min-width: 220px;
+  max-width: 420px;
   white-space: normal;
   overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.4;
 }
 .rank {
   color: var(--fg-muted);
