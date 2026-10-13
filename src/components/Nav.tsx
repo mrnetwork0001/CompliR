@@ -47,7 +47,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Oracle",
     blurb: "The product: counterparty risk on Arc, graded and signed.",
     items: [
-      { href: "/explorer", label: "Explorer", hint: "Screen one address, see every reason" },
+      { href: "/check", label: "Check", hint: "Check before you pay: address, link or invoice", match: (p) => p === "/check" || p.startsWith("/check/") || p.startsWith("/a/") },
       { href: "/map", label: "Trust Map", hint: "Arc mainnet, graded as it moves" },
       { href: "/shadow", label: "Shadow report", hint: "What we would have held in your payee book" },
       { href: "/badge", label: "Badge", hint: "Screened-by-CompliR SVG and embed" },
@@ -400,6 +400,7 @@ export function Nav() {
         <div className={styles.inner}>
           <Brand href="/" />
           <nav className={styles.landingNav} aria-label="Primary">
+            <Link href="/check" className={styles.link}>Check an address</Link>
             <Link href="/docs" className={styles.link}>Docs</Link>
             <ThemeToggle className={styles.theme} />
           </nav>

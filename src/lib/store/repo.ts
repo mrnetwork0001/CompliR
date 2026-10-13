@@ -17,7 +17,7 @@ export function ownWallets(): Set<string> {
 }
 export type PayerKind = "own" | "outside" | "unknown";
 /** Internal callers (our own UI, workers, demos) are never counted as outside usage. */
-export const INTERNAL_CLIENT_IDS = new Set(["web-explorer", "trustmap", "treasury-agent", "edd", "watcher", "smoke", "shadow", "events", "tips", "operator", "report"]);
+export const INTERNAL_CLIENT_IDS = new Set(["web-explorer", "trustmap", "treasury-agent", "edd", "watcher", "smoke", "shadow", "events", "tips", "operator", "report", "cctp", "erc8004", "check", "pay", "web-landing", "telegram-bot"]);
 export function classifyPayer(payer: string | null | undefined): PayerKind {
   if (!payer) return "unknown";
   const p = payer.toLowerCase();

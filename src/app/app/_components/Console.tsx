@@ -523,7 +523,7 @@ export function Console() {
   ];
 
   const oracle: CardSpec[] = [
-    { href: "/explorer", icon: "explorer", title: "Explorer", body: "Screen one address: dial, reason codes, two-hop funder graph, signed attestation.", stat: price },
+    { href: "/check", icon: "explorer", title: "Check", body: "Check before you pay: address, payment link or invoice PDF. Plain-language verdict on a shareable page.", stat: price },
     {
       href: "/map",
       icon: "map",

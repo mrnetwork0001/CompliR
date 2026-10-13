@@ -186,6 +186,7 @@ export default function Landing() {
         <div className={styles.ctas}>
           <Link href="/app" className="btn btnPrimary btnLg">Launch App</Link>
           <Link href="/company" className="btn btnLg">Meet the operator</Link>
+          <Link href="/check" className={styles.ctaText}>Check an address →</Link>
           <Link href="/map" className={styles.ctaText}>Arc, live →</Link>
           <Link href="/payouts" className={styles.ctaText}>Watch an agent pay safely →</Link>
         </div>
@@ -475,7 +476,7 @@ export default function Landing() {
             <Link href="/tips">Tips</Link>
             <Link href="/report">Report</Link>
             <Link href="/payouts">Payouts</Link>
-            <Link href="/explorer">Explorer</Link>
+            <Link href="/check">Check</Link>
             <Link href="/shadow">Shadow</Link>
             <Link href="/badge">Badge</Link>
             <Link href="/ledger">Ledger</Link>
