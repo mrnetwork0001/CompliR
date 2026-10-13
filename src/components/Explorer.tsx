@@ -8,9 +8,8 @@ import { VerdictView } from "./VerdictView";
 import styles from "./Explorer.module.css";
 
 const FALLBACK_EXAMPLES: ExampleAddress[] = [
-  { label: "demo HIGH", address: "0x000000000000000000000000000000000000dead", expectedTier: "HIGH" },
-  { label: "demo MEDIUM", address: "0x000000000000000000000000000000000000beef", expectedTier: "MEDIUM" },
-  { label: "demo LOW", address: "0x000000000000000000000000000000000000cafe", expectedTier: "LOW" },
+  { label: "Lazarus Group · Ronin exploiter (sanctioned)", address: "0x098b716b8aaf21512996dc57eb0615e2383e2f96", expectedTier: "HIGH" },
+  { label: "CompliR treasury wallet (ours)", address: "0xc742ada2872a042dd36d2e706907b4036968960c", expectedTier: "LOW" },
 ];
 
 type State = { status: "idle" } | { status: "loading"; address: string } | { status: "done"; verdict: Verdict } | { status: "error"; message: string; details?: unknown };

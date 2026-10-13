@@ -185,11 +185,8 @@ export async function invoiceTotals(): Promise<InvoiceTotals> {
 }
 
 // ── demo seed (idempotent: fixed ids, INSERT OR IGNORE) ──────────────────────
-export const DEMO_INVOICES: (NewInvoice & { id: string })[] = [
-  { id: "inv_demo_cafe", payee: "0x000000000000000000000000000000000000cafe", label: "Lela - logo design", amountUsdc: 10, memo: "Invoice #1041, brand refresh" },
-  { id: "inv_demo_beef", payee: "0x000000000000000000000000000000000000beef", label: "Nova Labs - API work", amountUsdc: 120, memo: "Sprint 7, milestone 2" },
-  { id: "inv_demo_dead", payee: "0x000000000000000000000000000000000000dead", label: "Unknown vendor", amountUsdc: 50, memo: "Unsolicited invoice received by email" },
-];
+/** No synthetic invoices: every invoice is created by a real request (UI or API). Kept as an empty list so seeding is a no-op. */
+export const DEMO_INVOICES: (NewInvoice & { id: string })[] = [];
 export async function seedDemoInvoices(): Promise<{ inserted: number }> {
   await migrateTreasury();
   let inserted = 0;

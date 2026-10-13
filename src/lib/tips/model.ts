@@ -35,7 +35,7 @@ export const TIPS_CLIENT_ID = "tips"; // already in store INTERNAL_CLIENT_IDS
 export const DEMO_SUBMITTER = "demo";
 export const ANON_SUBMITTER = "anonymous";
 /** Demo subject (synthetic HIGH in .data/overrides.json). */
-export const DEMO_SUBJECT = "0x000000000000000000000000000000000000dead" as Address;
+export const DEMO_SUBJECT = "0x098b716b8aaf21512996dc57eb0615e2383e2f96" as Address; // Ronin Bridge exploiter (Lazarus Group), OFAC SDN
 
 // ─── Env ─────────────────────────────────────────────────────────────────────
 const num = (v: string | undefined, d: number) => {

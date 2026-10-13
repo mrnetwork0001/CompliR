@@ -7,7 +7,7 @@ import { ADDR_RE, HttpError, getHealth, postJson } from "./api";
 import { CopyButton } from "./CopyButton";
 import styles from "./BadgeBuilder.module.css";
 
-const DEMO = "0x000000000000000000000000000000000000beef";
+const DEMO = "0xc742ada2872a042dd36d2e706907b4036968960c"; // our own live wallet
 
 export function BadgeBuilder() {
   const [input, setInput] = useState(DEMO);

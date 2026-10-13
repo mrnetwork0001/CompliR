@@ -1,15 +1,14 @@
 /**
- * Demo addresses offered by the Explorer. The lead's `.data/overrides.json` pins these exact addresses
- * to HIGH / MEDIUM / LOW; if that file lists other addresses with a `tier`, they are surfaced too.
+ * Example addresses offered by the Explorer. Real addresses only; `.data/overrides.json` entries with a `tier` are surfaced when present.
  */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { ExampleAddress } from "./public-types";
 
+/** Real addresses only: a sanctioned wallet (OFAC SDN / JP MOF: Ronin Bridge exploiter, Lazarus Group) and CompliR's own live wallet. */
 const DEFAULTS: ExampleAddress[] = [
-  { label: "demo HIGH", address: "0x000000000000000000000000000000000000dead", expectedTier: "HIGH" },
-  { label: "demo MEDIUM", address: "0x000000000000000000000000000000000000beef", expectedTier: "MEDIUM" },
-  { label: "demo LOW", address: "0x000000000000000000000000000000000000cafe", expectedTier: "LOW" },
+  { label: "Lazarus Group · Ronin exploiter (sanctioned)", address: "0x098b716b8aaf21512996dc57eb0615e2383e2f96", expectedTier: "HIGH" },
+  { label: "CompliR treasury wallet (ours)", address: "0xc742ada2872a042dd36d2e706907b4036968960c", expectedTier: "LOW" },
 ];
 
 const TIERS = new Set(["LOW", "MEDIUM", "HIGH"]);
@@ -38,13 +37,7 @@ export async function exampleAddresses(): Promise<ExampleAddress[]> {
       for (const [k, v] of Object.entries(json as Record<string, unknown>)) visit(k, v);
     }
     if (found.size === 0) return DEFAULTS;
-    // Keep one per tier, HIGH → MEDIUM → LOW, so the UI always has three buttons.
-    const byTier: ExampleAddress[] = [];
-    for (const tier of ["HIGH", "MEDIUM", "LOW"] as const) {
-      const hit = [...found.values()].find((e) => e.expectedTier === tier) ?? DEFAULTS.find((e) => e.expectedTier === tier)!;
-      byTier.push(hit);
-    }
-    return byTier;
+    return [...found.values()];
   } catch {
     return DEFAULTS;
   }

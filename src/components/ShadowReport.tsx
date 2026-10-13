@@ -10,18 +10,16 @@ import { CopyButton } from "./CopyButton";
 import styles from "./ShadowReport.module.css";
 
 /**
- * Demo payee book: the three demo addresses, one lookalike of …cafe (same first-4 + last-4 hex, different middle -
- * exactly the address-poisoning pattern wallets hide behind "0x0000…cafe"), and one ordinary payee.
+ * Example payee book (real addresses): a sanctioned wallet, our own wallets, and one lookalike of our wallet
+ * (same first-4 + last-4 hex, different middle - the address-poisoning pattern).
  */
-export const DEMO_BOOK = `Acme Supplies Ltd,0x000000000000000000000000000000000000dead
-Northwind Logistics,0x000000000000000000000000000000000000beef
-Lela Design,0x000000000000000000000000000000000000cafe
-Lela Design (new invoice),0x0000a1b2c3d4e5f60718293a4b5c6d7e8f90cafe
-Ferrous Owl Hosting,0x12ab000000000000000000000000000000009f3c`;
+export const DEMO_BOOK = `Ronin Bridge exploiter (Lazarus Group - sanctioned),0x098b716b8aaf21512996dc57eb0615e2383e2f96
+CompliR treasury wallet,0xc742ada2872a042dd36d2e706907b4036968960c
+GuardedTreasury contract,0x5465f31a6155e3ecccc35f4e5bdc0e287763b0ee
+CompliR treasury wallet (new invoice - lookalike),0xc7420000000000000000000000000000000a960c`;
 
-export const DEMO_PAYMENTS = `0x000000000000000000000000000000000000beef,150
-0x0000a1b2c3d4e5f60718293a4b5c6d7e8f90cafe,80
-0x12ab000000000000000000000000000000009f3c,1200`;
+export const DEMO_PAYMENTS = `0x098b716b8aaf21512996dc57eb0615e2383e2f96,150
+0xc742ada2872a042dd36d2e706907b4036968960c,10`;
 
 type Payee = { label: string; address: string };
 type Payment = { to: string; amountUsdc: number; txHash?: string };

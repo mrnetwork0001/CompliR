@@ -7,7 +7,7 @@ import { HttpError, getHealth, postJson } from "./api";
 import { VerdictView } from "./VerdictView";
 import styles from "./LiveDemo.module.css";
 
-const FALLBACK_MEDIUM = "0x000000000000000000000000000000000000beef";
+const FALLBACK_HIGH = "0x098b716b8aaf21512996dc57eb0615e2383e2f96"; // Ronin Bridge exploiter (Lazarus Group), on OFAC SDN - a real sanctions hit
 
 type S = { status: "loading"; address: string | null } | { status: "done"; verdict: Verdict; explorerUrl: string } | { status: "error"; message: string };
 
@@ -22,8 +22,8 @@ export function LiveDemo() {
     let alive = true;
     (async () => {
       const health = await getHealth();
-      const ex = health.examples?.find((e) => e.expectedTier === "MEDIUM") ?? health.examples?.[0];
-      const address = ex?.address ?? FALLBACK_MEDIUM;
+      const ex = health.examples?.find((e) => e.expectedTier === "HIGH") ?? health.examples?.[0];
+      const address = ex?.address ?? FALLBACK_HIGH;
       if (!alive) return;
       setS({ status: "loading", address });
       try {

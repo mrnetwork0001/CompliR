@@ -160,7 +160,7 @@ function SubmitForm({ data, onDone }: { data: TipsResponse | null; onDone: () =>
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<SubmitResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const demoSubject = data?.config.demoSubject ?? "0x000000000000000000000000000000000000dead";
+  const demoSubject = data?.config.demoSubject ?? "0x098b716b8aaf21512996dc57eb0615e2383e2f96";
 
   const submit = async (payload: { subject: string; category: TipCategory; claim: string; evidenceUrls: string[]; evidenceTxs: string[] }) => {
     setBusy(true); setErr(null); setRes(null);
@@ -177,16 +177,16 @@ function SubmitForm({ data, onDone }: { data: TipsResponse | null; onDone: () =>
   };
   const demo = () => {
     setSubject(demoSubject); setCategory("sanctions"); setUrls("https://sanctionssearch.ofac.treas.gov/"); setTxs("");
-    const text = "Demo tip: this wallet appears on a sanctions list and is USDC-blocklisted (synthetic demo entry in .data/overrides.json).";
+    const text = "Ronin Bridge exploiter attributed to the Lazarus Group (DPRK). OFAC added this address to the SDN list on 14 April 2022 and it is on the Japanese MOF list; Circle has blacklisted it on USDC. Any USDC it funds should be treated as tainted.";
     setClaim(text);
-    void submit({ subject: demoSubject, category: "sanctions", claim: text, evidenceUrls: ["https://sanctionssearch.ofac.treas.gov/"], evidenceTxs: [] });
+    void submit({ subject: demoSubject, category: "sanctions", claim: text, evidenceUrls: ["https://ofac.treasury.gov/recent-actions/20220414"], evidenceTxs: [] });
   };
 
   return (
     <div>
       <h2>Submit a tip</h2>
       <p className="muted small">
-        From this page tips are <strong>unstaked demo tips</strong> (no wallet, no payout address): they are verified like any other, but a verified bounty is only
+        From this page tips are <strong>unstaked</strong> (no wallet, no payout address): they are verified like any other, but a verified bounty is only
         recorded. API clients stake {data ? usdc(data.config.stakeUsdc) : "0.05 USDC"} via x402 and get paid to the staking wallet.
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
@@ -219,8 +219,8 @@ function SubmitForm({ data, onDone }: { data: TipsResponse | null; onDone: () =>
           </div>
         </div>
         <div className={styles.actions}>
-          <button type="submit" className="btn btnPrimary" disabled={busy}>{busy ? "Submitting…" : "Submit demo tip (stake 0)"}</button>
-          <button type="button" className="btn" onClick={demo} disabled={busy} title={`Submits a sanctions tip about ${demoSubject} (synthetic HIGH)`}>Demo: tip about {demoSubject.slice(0, 6)}…{demoSubject.slice(-4)}</button>
+          <button type="submit" className="btn btnPrimary" disabled={busy}>{busy ? "Submitting…" : "Submit tip (unstaked)"}</button>
+          <button type="button" className="btn" onClick={demo} disabled={busy} title={`Submits a sanctions tip about ${demoSubject} (Ronin Bridge exploiter, OFAC SDN)`}>Example: tip about {demoSubject.slice(0, 6)}…{demoSubject.slice(-4)}</button>
         </div>
       </form>
       {err && <div className={`alert alertError ${styles.result}`} role="alert">{err}</div>}
