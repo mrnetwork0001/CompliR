@@ -476,6 +476,9 @@
   }
 }
 @media (max-width: 760px) {
+  .right {
+    margin-left: auto; /* nav is hidden on phones: push the toggle + burger to the right edge */
+  }
   .nav {
     display: none;
   }
