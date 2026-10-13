@@ -113,9 +113,12 @@ async function settlePayout(tip: Tip, opts: TickOptions): Promise<Pick<TipOutcom
   }
   if (!out.paid) return { status: "VERIFIED", payoutUsdc: tip.payoutUsdc, payoutTx: null, payoutMode: null, note: out.note };
   const ledger = { ...tip.ledger, pay: await ledgerTip("PAY", tip, { amountUsdc: out.amountUsdc, mode: out.mode, txHash: out.txHash, simulated: out.txHash == null, note: out.note }) };
-  await bumpStats(tip.submitter, { earnedUsdc: out.amountUsdc });
-  await updateTip(tip.id, { status: "PAID", payoutUsdc: out.amountUsdc, payoutTx: out.txHash, payoutMode: out.mode, ledger, paidAt: now });
-  return { status: "PAID", payoutUsdc: out.amountUsdc, payoutTx: out.txHash, payoutMode: out.mode, note: out.note };
+  // a bounty counts as "earned" only when USDC actually left the wallet; unstaked/dry-run bounties are RECORDED, not PAID
+  const sent = out.mode !== "dry-run" && !!out.txHash;
+  const status = sent ? "PAID" : "RECORDED";
+  if (sent) await bumpStats(tip.submitter, { earnedUsdc: out.amountUsdc });
+  await updateTip(tip.id, { status, payoutUsdc: out.amountUsdc, payoutTx: out.txHash, payoutMode: out.mode, ledger, paidAt: now });
+  return { status, payoutUsdc: out.amountUsdc, payoutTx: out.txHash, payoutMode: out.mode, note: out.note };
 }
 
 // ─── The tick ────────────────────────────────────────────────────────────────
@@ -125,6 +128,8 @@ export interface TipsTickResult {
   rejected: number;
   needsReview: number;
   paid: number;
+  /** VERIFIED but bounty only recorded (unstaked / dry-run): nothing was sent */
+  recorded: number;
   deferred: number;
   dropped: number;
   failed: number;
@@ -141,7 +146,7 @@ export function runTipsOnce(opts: TickOptions = {}): Promise<TipsTickResult> {
 async function tick(opts: TickOptions): Promise<TipsTickResult> {
   const now = opts.now ?? nowS();
   const limit = opts.limit ?? 10;
-  const r: TipsTickResult = { payoutMode: payoutStatus().mode, verified: 0, rejected: 0, needsReview: 0, paid: 0, deferred: 0, dropped: 0, failed: 0, results: [] };
+  const r: TipsTickResult = { payoutMode: payoutStatus().mode, verified: 0, rejected: 0, needsReview: 0, paid: 0, recorded: 0, deferred: 0, dropped: 0, failed: 0, results: [] };
   if (config().COMPLIR_PAUSED) return r;
   const grace = tipsEnv().stakeGraceSeconds;
 
@@ -165,7 +170,7 @@ async function tick(opts: TickOptions): Promise<TipsTickResult> {
       const v = await verifyTip(fresh, { screenFn: opts.screenFn, client: opts.client, now });
       const out = await settleVerification(fresh, v, opts);
       if (out.decision === "VERIFIED") r.verified++; else if (out.decision === "REJECTED") r.rejected++; else r.needsReview++;
-      if (out.status === "PAID") r.paid++; else if (out.status === "VERIFIED") r.deferred++;
+      if (out.status === "PAID") r.paid++; else if (out.status === "RECORDED") r.recorded++; else if (out.status === "VERIFIED") r.deferred++;
       r.results.push(out);
     } catch (e) {
       r.failed++;
@@ -179,7 +184,7 @@ async function tick(opts: TickOptions): Promise<TipsTickResult> {
   for (const tip of await listTips({ status: "VERIFIED", order: "ASC", limit })) {
     if (r.results.some((x) => x.tipId === tip.id)) continue; // handled above this tick
     const paid = await settlePayout(tip, opts);
-    if (paid.status === "PAID") r.paid++; else r.deferred++;
+    if (paid.status === "PAID") r.paid++; else if (paid.status === "RECORDED") r.recorded++; else r.deferred++;
     r.results.push({ tipId: tip.id, subject: tip.subject, status: paid.status, decision: "VERIFIED", tier: tip.verification?.tier ?? null, bountyUsdc: tip.payoutUsdc, payoutUsdc: paid.payoutUsdc, payoutTx: paid.payoutTx, payoutMode: paid.payoutMode, note: paid.note });
   }
   return r;
@@ -189,7 +194,7 @@ async function tick(opts: TickOptions): Promise<TipsTickResult> {
 export async function reviewTip(id: string, decision: "VERIFIED" | "REJECTED", note?: string, opts: TickOptions = {}): Promise<TipOutcome | null> {
   const tip = await getTip(id);
   if (!tip) return null;
-  if (tip.status === "PAID") return { tipId: tip.id, subject: tip.subject, status: tip.status, decision: "VERIFIED", tier: tip.verification?.tier ?? null, bountyUsdc: tip.payoutUsdc, payoutUsdc: tip.payoutUsdc, payoutTx: tip.payoutTx, payoutMode: tip.payoutMode, note: "already paid; nothing to review" };
+  if (tip.status === "PAID" || tip.status === "RECORDED") return { tipId: tip.id, subject: tip.subject, status: tip.status, decision: "VERIFIED", tier: tip.verification?.tier ?? null, bountyUsdc: tip.payoutUsdc, payoutUsdc: tip.payoutUsdc, payoutTx: tip.payoutTx, payoutMode: tip.payoutMode, note: "already paid; nothing to review" };
   const now = opts.now ?? nowS();
   const prev = tip.verification;
   const v: TipVerification = {

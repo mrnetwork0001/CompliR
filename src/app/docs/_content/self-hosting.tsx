@@ -55,7 +55,7 @@ export const selfHosting: DocPage = {
           <Code lang="sh" code={RUN} />
           <p>
             Without <code>ATTESTER_PRIVATE_KEY</code> the process generates an ephemeral attester key at start (signatures still verify, but change on restart). Without{" "}
-            <code>ANTHROPIC_API_KEY</code> the analyst and operator run their deterministic fallbacks. Without yente, sanctions lookups contribute their neutral value.
+            an LLM provider (<code>LLM_PROVIDER=0g</code> + <code>ZEROG_API_KEY</code>, or <code>ANTHROPIC_API_KEY</code>) the analyst and operator run their deterministic fallbacks. Without yente, sanctions lookups contribute their neutral value.
           </p>
         </>
       ),
@@ -95,7 +95,7 @@ export const selfHosting: DocPage = {
             mono
             rows={[
               { k: "ATTESTER_PRIVATE_KEY", v: "signs EIP-712 attestations and daily reports; sends registry writes in local signer mode" },
-              { k: "ANTHROPIC_API_KEY / ANALYST_MODEL", v: "Risk Analyst + operator; default model claude-sonnet-5-5" },
+              { k: "LLM_PROVIDER / ZEROG_API_KEY / LLM_MODEL (or ANTHROPIC_API_KEY)", v: "Risk Analyst + operator; default model claude-sonnet-5-5" },
               { k: "DATABASE_URL / DATABASE_AUTH_TOKEN", v: "file:./.data/complir.db (libSQL; a Turso URL + token for hosted)" },
             ]}
           />

@@ -232,7 +232,7 @@ export function ShadowReport() {
           >
             Reset demo book
           </button>
-          <span className="muted small">The demo book includes a lookalike of …cafe: same first and last four hex characters, different middle.</span>
+          <span className="muted small">The example book includes a lookalike of our own wallet (…960c): same first and last four hex characters, different middle.</span>
         </div>
       </div>
 

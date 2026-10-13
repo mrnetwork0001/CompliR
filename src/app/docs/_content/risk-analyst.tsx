@@ -70,7 +70,7 @@ export const riskAnalyst: DocPage = {
       body: (
         <>
           <p>
-            Without <code>ANTHROPIC_API_KEY</code>, on a model error, a timeout or a malformed tool call, <code>fallbackOutput()</code> produces the same shape and goes through the
+            Without an LLM provider (<code>LLM_PROVIDER=0g</code> + <code>ZEROG_API_KEY</code>, or <code>ANTHROPIC_API_KEY</code>), on a model error, a timeout or a malformed tool call, <code>fallbackOutput()</code> produces the same shape and goes through the
             same guards. The verdict&apos;s <code>analyst.fallback</code> flag is true and the error is recorded.
           </p>
           <Code lang="text" code={FALLBACK} />

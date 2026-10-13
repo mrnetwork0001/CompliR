@@ -151,10 +151,10 @@ describe("market tick: submit → verify → pay / slash, ledger TIP entries, or
     expect((await getStats(PAYER))?.submitted).toBe(2);
 
     const r = await runTipsOnce(opts);
-    expect(r).toMatchObject({ payoutMode: "dry-run", verified: 1, rejected: 1, needsReview: 1, paid: 1, failed: 0, dropped: 0 });
+    expect(r).toMatchObject({ payoutMode: "dry-run", verified: 1, rejected: 1, needsReview: 1, paid: 0, recorded: 1, failed: 0, dropped: 0 });
     const by = Object.fromEntries(r.results.map((x) => [x.tipId, x]));
     // bounty: 0.25 × sanctions 2 × (0.5 + 0.5·0.5) = 0.375 for a new submitter
-    expect(by[good.id]).toMatchObject({ status: "PAID", decision: "VERIFIED", tier: "HIGH", bountyUsdc: 0.375, payoutUsdc: 0.375, payoutMode: "dry-run", payoutTx: null });
+    expect(by[good.id]).toMatchObject({ status: "RECORDED", decision: "VERIFIED", tier: "HIGH", bountyUsdc: 0.375, payoutUsdc: 0.375, payoutMode: "dry-run", payoutTx: null }); // dry-run: recorded, not paid
     expect(by[bad.id]).toMatchObject({ status: "SLASHED", decision: "REJECTED", tier: "LOW" });
     expect(by[maybe.id]).toMatchObject({ status: "NEEDS_REVIEW", decision: "NEEDS_REVIEW", tier: "MEDIUM" });
     expect(transferLog).toEqual([{ to: PAYER, amount: 0.375, refId: `complir:tip:${good.id}` }]);
@@ -176,7 +176,7 @@ describe("market tick: submit → verify → pay / slash, ledger TIP entries, or
 
     // stats + reputation
     const s = (await getStats(PAYER))!;
-    expect(s).toMatchObject({ submitted: 2, verified: 1, rejected: 1, earnedUsdc: 0.375, reputation: 0.5 });
+    expect(s).toMatchObject({ submitted: 2, verified: 1, rejected: 1, earnedUsdc: 0 /* dry-run: nothing sent, nothing earned */, reputation: 0.5 });
 
     // oracle feedback: only the VERIFIED tip is evidence
     const ev = await tipEvidenceFor(DEAD, { now: NOW2 });
@@ -192,7 +192,7 @@ describe("market tick: submit → verify → pay / slash, ledger TIP entries, or
 
     // human review of the NEEDS_REVIEW demo tip → VERIFIED → paid as dry-run (no payout address), reputation unchanged for demo
     const rv = await reviewTip(maybe.id, "VERIFIED", "checked the mixer trace", opts);
-    expect(rv).toMatchObject({ status: "PAID", decision: "VERIFIED", payoutMode: "dry-run" });
+    expect(rv).toMatchObject({ status: "RECORDED", decision: "VERIFIED", payoutMode: "dry-run" });
     const m = (await getTip(maybe.id))!;
     expect(m.verification?.by).toBe("human");
     expect(m.ledger.review).toMatch(/^dec_/);
@@ -214,8 +214,8 @@ describe("market tick: submit → verify → pay / slash, ledger TIP entries, or
     expect(r.deferred).toBe(1);
     // next day: paid
     const r2 = await runTipsOnce({ ...opts, now: NOW2 + 86_400 });
-    expect(r2.results.find((y) => y.tipId === t.id)).toMatchObject({ status: "PAID", payoutUsdc: 0.375 });
-    expect((await getTip(t.id))?.status).toBe("PAID");
+    expect(r2.results.find((y) => y.tipId === t.id)).toMatchObject({ status: "RECORDED", payoutUsdc: 0.375 });
+    expect((await getTip(t.id))?.status).toBe("RECORDED");
   }, 30_000);
 
   it("an API tip whose stake never settles is dropped after the grace period, without a slash", async () => {

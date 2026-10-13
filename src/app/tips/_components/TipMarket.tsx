@@ -10,7 +10,7 @@ import { HttpError, apiFetch, fmtRelative, fmtTime, postJson } from "@/component
 import styles from "./TipMarket.module.css";
 
 const REFRESH_MS = 15_000;
-const STATUS_CLASS: Record<TipStatus, string> = { PAID: "badgeLOW", VERIFIED: "badgeLOW", NEEDS_REVIEW: "badgeMEDIUM", SUBMITTED: "badgeNeutral", VERIFYING: "badgeNeutral", REJECTED: "badgeHIGH", SLASHED: "badgeHIGH" };
+const STATUS_CLASS: Record<TipStatus, string> = { PAID: "badgeLOW", RECORDED: "badgeNeutral", VERIFIED: "badgeLOW", NEEDS_REVIEW: "badgeMEDIUM", SUBMITTED: "badgeNeutral", VERIFYING: "badgeNeutral", REJECTED: "badgeHIGH", SLASHED: "badgeHIGH" };
 const CATEGORY_LABEL: Record<TipCategory, string> = { sanctions: "Sanctions link", mixer: "Mixer / tumbler", scam: "Scam / fraud", poisoning: "Address poisoning", stolen_funds: "Stolen funds", other: "Other" };
 
 function errMsg(e: unknown): string {

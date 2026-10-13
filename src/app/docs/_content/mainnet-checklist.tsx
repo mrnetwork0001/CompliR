@@ -60,7 +60,7 @@ export const mainnetChecklist: DocPage = {
           rows={[
             ["Screening, verdicts, EIP-712 signatures", <Status key="s" kind="live">live</Status>, "ATTESTER_PRIVATE_KEY (else an ephemeral key per process)"],
             ["Watches, webhooks, blocklist reactor, Trust Map, ledger", <Status key="s" kind="live">live</Status>, "CRON_SECRET + crons or workers running"],
-            ["Analyst and operator model steps", <Status key="s" kind="live">live / fallback</Status>, "ANTHROPIC_API_KEY (deterministic fallback without)"],
+            ["Analyst and operator model steps", <Status key="s" kind="live">live / fallback</Status>, "LLM_PROVIDER=0g + ZEROG_API_KEY (Claude via 0G Compute Router; ANTHROPIC_API_KEY also works); deterministic fallback on timeout"],
             ["AttestationRegistry on Arc", <Status key="s" kind="live">live · 0xA82EDb5e…</Status>, "deployed + verified (Sourcify)"],
             ["Merkle anchoring", <Status key="s" kind="live">live</Status>, "anchorRoot() on every watcher tick when ≥ ANCHOR_EVERY_N decisions are pending"],
             ["GuardedTreasury / Guarded Payouts", <Status key="s" kind="live">live · 0x5465f31a…</Status>, "TREASURY_MODE=live; caps 10 USDC / payout, 20 / day"],

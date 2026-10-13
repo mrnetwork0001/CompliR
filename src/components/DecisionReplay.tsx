@@ -60,7 +60,7 @@ export function DecisionReplay({ id }: { id: string }) {
       <div className="container">
         <h1>Decision not found</h1>
         <p className="muted" style={{ marginTop: 8 }}>
-          No ledger entry with id <code>{id}</code>. Mock verdicts (<code>dec_mock</code>) are not persisted. Browse the <Link href="/ledger">ledger</Link> or run a new screening in the <Link href="/">Explorer</Link>.
+          No ledger entry with id <code>{id}</code>.  Browse the <Link href="/ledger">ledger</Link> or run a new screening in the <Link href="/">Explorer</Link>.
         </p>
       </div>
     );

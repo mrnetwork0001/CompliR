@@ -4,6 +4,7 @@
 import { circleStatus } from "@/lib/circle/client";
 import { signerMode } from "@/lib/chain/registryWriter";
 import { config } from "@/lib/config";
+import { currentPrice } from "@/lib/operator/pricing";
 import { ok } from "../../_lib/respond";
 import type { HealthResponse } from "../../_lib/public-types";
 import { exampleAddresses } from "../../_lib/examples";
@@ -24,7 +25,7 @@ export async function GET(): Promise<Response> {
         protocolBlocklistAddress: c.PROTOCOL_BLOCKLIST_ADDRESS ?? null,
       },
       paused: c.COMPLIR_PAUSED,
-      x402: { disabled: c.X402_DISABLED, priceScreenUsdc: c.PRICE_SCREEN_USDC, priceWatchUsdc: c.PRICE_WATCH_USDC },
+      x402: { disabled: c.X402_DISABLED, priceScreenUsdc: await currentPrice("screen"), priceWatchUsdc: await currentPrice("watch") },
       signer: { mode: signerMode(), circle: circleStatus() },
       examples,
       time,

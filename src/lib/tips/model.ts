@@ -21,7 +21,7 @@ import { AddressSchema, type Address, type ReasonCode, type Tier } from "../type
 // ─── Enums / constants ───────────────────────────────────────────────────────
 export const TIP_CATEGORIES = ["sanctions", "mixer", "scam", "poisoning", "stolen_funds", "other"] as const;
 export type TipCategory = (typeof TIP_CATEGORIES)[number];
-export const TIP_STATUSES = ["SUBMITTED", "VERIFYING", "VERIFIED", "REJECTED", "PAID", "SLASHED", "NEEDS_REVIEW"] as const;
+export const TIP_STATUSES = ["SUBMITTED", "VERIFYING", "VERIFIED", "REJECTED", "PAID", "RECORDED", "SLASHED", "NEEDS_REVIEW"] as const;
 export type TipStatus = (typeof TIP_STATUSES)[number];
 export type TipDecision = "VERIFIED" | "REJECTED" | "NEEDS_REVIEW";
 
@@ -35,7 +35,7 @@ export const TIPS_CLIENT_ID = "tips"; // already in store INTERNAL_CLIENT_IDS
 export const DEMO_SUBMITTER = "demo";
 export const ANON_SUBMITTER = "anonymous";
 /** Demo subject (synthetic HIGH in .data/overrides.json). */
-export const DEMO_SUBJECT = "0x098b716b8aaf21512996dc57eb0615e2383e2f96" as Address; // Ronin Bridge exploiter (Lazarus Group), OFAC SDN
+export const DEMO_SUBJECT = "0x098b716b8aaf21512996dc57eb0615e2383e2f96" as Address; // Ronin Bridge exploiter (Lazarus Group): real OFAC SDN + JP MOF listing
 
 // ─── Env ─────────────────────────────────────────────────────────────────────
 const num = (v: string | undefined, d: number) => {
@@ -330,7 +330,7 @@ export interface TipTotals { total: number; byStatus: Record<TipStatus, number>;
 export async function tipTotals(): Promise<TipTotals> {
   await migrateTips();
   const r = await db().execute(`SELECT status, COUNT(*) AS n, COALESCE(SUM(payout_usdc),0) AS paid, COALESCE(SUM(stake_usdc),0) AS staked FROM tips GROUP BY status`);
-  const t: TipTotals = { total: 0, byStatus: { SUBMITTED: 0, VERIFYING: 0, VERIFIED: 0, REJECTED: 0, PAID: 0, SLASHED: 0, NEEDS_REVIEW: 0 }, paidUsdc: 0, stakedUsdc: 0, slashedUsdc: 0 };
+  const t: TipTotals = { total: 0, byStatus: { SUBMITTED: 0, VERIFYING: 0, VERIFIED: 0, REJECTED: 0, PAID: 0, RECORDED: 0, SLASHED: 0, NEEDS_REVIEW: 0 }, paidUsdc: 0, stakedUsdc: 0, slashedUsdc: 0 };
   for (const row of r.rows as unknown as Record<string, unknown>[]) {
     const s = String(row.status) as TipStatus;
     const n = numv(row.n);

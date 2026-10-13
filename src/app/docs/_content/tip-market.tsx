@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Code, Kv, Table } from "../_components/Doc";
 import type { DocPage } from "./types";
 
-const API = `POST /api/v1/tips                 # x402 stake 0.05 USDC, settled FIRST · same-origin browser → demo tip (no stake)
+const API = `POST /api/v1/tips                 # x402 stake 0.05 USDC, settled FIRST · same-origin browser → unstaked tip (no stake)
 { "subject": "0x…", "category": "sanctions|mixer|scam|poisoning|stolen_funds|other",
   "claim": "10–2000 chars", "evidenceUrls": ["https://…"] /* ≤ 5 */, "evidenceTxs": ["0x…64hex"] /* ≤ 10 */ }
 → 201 { tip, demo, note, next }   X-CompliR-Tip-Id: tip_…
@@ -45,7 +45,7 @@ export const tipMarket: DocPage = {
               ledger <code>DROP</code>, nothing slashed.
             </li>
             <li>
-              <strong>Demo tips.</strong> The <Link href="/tips">/tips</Link> page (same-origin) and deployments with <code>X402_DISABLED=1</code> accept unstaked tips marked{" "}
+              <strong>Unstaked tips.</strong> The <Link href="/tips">/tips</Link> page (same-origin) and deployments with <code>X402_DISABLED=1</code> accept unstaked tips marked{" "}
               <code>demo: true</code> / submitter <code>anonymous</code>; a verified bounty is recorded against the daily cap but nothing is sent.
             </li>
           </ul>

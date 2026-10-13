@@ -11,7 +11,7 @@ const ENTRY = `// kind: "OPERATOR" - one per tick, hash-chained like every other
   "chosen":     [{ "id": "c1", "type": "RUN_PAYOUTS", "ok": true, "result": { "mode": "dry-run", "paid": 1, "limited": 1, "held": 0, … } }],
   "rationale":  "…plain English, ≤ 160 words, cites the numbers in the snapshot…",
   "nextCheckInSeconds": 1800, "nextCheckAt": 1760001800,
-  "meta": { "model": "claude-sonnet-5-5", "fallback": false, "latencyMs": 2140, "guardNotes": [], "paused": false, "chainId": 5042 }
+  "meta": { "model": "0g:claude-opus-4-8", "fallback": false, "latencyMs": 2140, "guardNotes": [], "paused": false, "chainId": 5042 }
 }`;
 
 export const operator: DocPage = {
@@ -44,7 +44,7 @@ export const operator: DocPage = {
             <li>
               <strong>Choice.</strong> The model (same client as the analyst) must call <code>submit_plan</code> with candidate ids, a rationale and the next check interval.
               Unknown ids are dropped, <code>HOLD</code> is never mixed with actions, an empty choice falls back to the deterministic plan, the interval is clamped to 15 min–6 h,
-              the rationale is cut at 160 words. Without <code>ANTHROPIC_API_KEY</code> the deterministic plan runs with <code>meta.fallback = true</code>.
+              the rationale is cut at 160 words. Without an LLM provider (<code>LLM_PROVIDER=0g</code> + <code>ZEROG_API_KEY</code>, or <code>ANTHROPIC_API_KEY</code>) the deterministic plan runs with <code>meta.fallback = true</code>.
             </li>
             <li>
               <strong>Execution.</strong> In the order payouts → prices → liquidity, <code>validateAction()</code> re-derives the candidates and rejects anything no longer allowed,
@@ -112,7 +112,7 @@ export const operator: DocPage = {
             { k: "Cron", v: <>hourly at :30 (<code>/api/internal/operator</code>, bearer <code>CRON_SECRET</code>) or <code>worker/operator.ts</code></> },
             { k: "Next check", v: "the agent's own interval (900–21,600 s) is recorded; the worker honours it, the Vercel cron is the floor" },
             { k: "Read", v: <><code>GET /api/v1/company</code> - snapshot + last ten decisions, cached 30 s · <Link href="/company">/company</Link> · <Link href="/ledger">/ledger</Link> kind OPERATOR</> },
-            { k: "Model", v: <>ANALYST_MODEL (default <code>claude-sonnet-5-5</code>), temperature 0.2, tool-forced structured output</> },
+            { k: "Model", v: <>LLM_MODEL (today <code>claude-opus-4-8</code> on the 0G Compute Router; <code>ANALYST_MODEL</code> for Anthropic), temperature 0.2, tool-forced structured output</> },
           ]}
         />
       ),
