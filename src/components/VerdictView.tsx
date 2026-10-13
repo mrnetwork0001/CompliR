@@ -31,6 +31,10 @@ const REASON_TEXT: Record<Reason["code"], string> = {
   NETWORK_HELD_ELSEWHERE: "Other CompliR integrators rated this address HIGH in the last 7 days (anonymised count)",
   NETWORK_SHARED_FUNDER: "Shares a funder with several of your own payees",
   COMMUNITY_TIP_VERIFIED: "A staked community tip about this address was verified",
+  AGENT_REGISTERED: "Owns a registered ERC-8004 agent on Arc (positive signal)",
+  AGENT_VALIDATED: "That agent has validations from independent validators (positive signal)",
+  AGENT_DISPUTED: "That agent has negative feedback or a failed validation in the ERC-8004 registries",
+  INBOUND_FLAGGED: "Received bridged USDC via CCTP from a sanctioned or blacklisted source-chain wallet (30 days)",
   CLEAN: "No risk signals found",
 };
 

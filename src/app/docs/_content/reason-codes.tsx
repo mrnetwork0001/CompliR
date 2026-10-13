@@ -32,6 +32,10 @@ const DESCRIPTIONS: Record<ReasonCode, { what: string; source: string }> = {
   NETWORK_HELD_ELSEWHERE: { what: "Other integrators rated this address HIGH in the last 7 days. Evidence is a count only; no other client is identifiable.", source: "shared screenings store (internal client ids excluded)" },
   NETWORK_SHARED_FUNDER: { what: "The subject shares a hop-1 funder with 3 or more of your own payees.", source: "your payee funders (client-scoped)" },
   COMMUNITY_TIP_VERIFIED: { what: "A staked tip about this address was verified by the agent in the last 180 days. Evidence carries tip ids, categories and strength only.", source: "tip market" },
+  AGENT_REGISTERED: { what: "Positive signal: the subject owns (or is the agentWallet of) an ERC-8004 agent in Arc's IdentityRegistry. Evidence carries the agentId, agentURI and registry addresses.", source: "ERC-8004 IdentityRegistry 0x8004A169… (src/lib/erc8004)" },
+  AGENT_VALIDATED: { what: "Positive signal: that agent has at least one answered validation from a validator other than itself.", source: "ERC-8004 ValidationRegistry 0x8004Cc84…" },
+  AGENT_DISPUTED: { what: "That agent carries negative feedback (value < 0 or a dispute/fraud/scam tag) or a failed validation (response < 50).", source: "ERC-8004 Reputation + Validation registries" },
+  INBOUND_FLAGGED: { what: "The subject received bridged USDC through CCTP from a source-chain wallet that is sanctioned or USDC-blacklisted on its own chain, within 30 days. Evidence carries counts and source chains only.", source: "CCTP MessageTransmitterV2 tail + yente + source-chain FiatToken.isBlacklisted (src/lib/cctp)" },
   CLEAN: { what: "Explicit positive: no signal from any source. Score 0.", source: "-" },
 };
 
@@ -39,7 +43,8 @@ const ORDER: ReasonCode[] = [
   "SANCTIONS_DIRECT", "USDC_BLACKLISTED", "PROTOCOL_BLOCKLISTED",
   "FUNDER_1HOP_SANCTIONED", "FUNDER_1HOP_BLACKLISTED", "FUNDER_2HOP_SANCTIONED", "FUNDER_2HOP_BLACKLISTED",
   "LOOKALIKE_OF_KNOWN_PAYEE", "PRIOR_HIGH_TIER", "NETWORK_HELD_ELSEWHERE", "PAYEE_ADDRESS_CHANGED", "COMMUNITY_TIP_VERIFIED",
-  "NO_HISTORY", "HIGH_CONCENTRATION", "FRESH_WALLET", "NETWORK_SHARED_FUNDER", "CLEAN",
+  "INBOUND_FLAGGED", "AGENT_DISPUTED",
+  "NO_HISTORY", "HIGH_CONCENTRATION", "FRESH_WALLET", "NETWORK_SHARED_FUNDER", "AGENT_REGISTERED", "AGENT_VALIDATED", "CLEAN",
 ];
 
 const STACK = `// Repeated hits at the same hop and signal stack with diminishing returns.
@@ -56,7 +61,7 @@ export const reasonCodes: DocPage = {
   description: "Every reason code the rules can emit, its weight, its source, and how weights combine into the score.",
   lead: (
     <>
-      <strong>The rulebook is seventeen codes with fixed weights, and the weights below are read from the code that scores.</strong> Every verdict lists the codes that fired with
+      <strong>The rulebook is twenty-one codes with fixed weights (two of them negative: ERC-8004 agent signals subtract, the total is clamped at 0), and the weights below are read from the code that scores.</strong> Every verdict lists the codes that fired with
       the evidence behind each one; nothing else can move the score.
     </>
   ),
