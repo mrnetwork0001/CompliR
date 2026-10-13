@@ -1,0 +1,116 @@
+.wrap {
+  max-width: 880px;
+}
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 24px;
+  margin: 18px 0 8px;
+}
+.form .full {
+  grid-column: 1 / -1;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.field input,
+.field textarea {
+  width: 100%;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-top: 6px;
+}
+.section {
+  margin-top: 34px;
+}
+.result {
+  margin-top: 18px;
+}
+.linkRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.linkRow code {
+  overflow-wrap: anywhere;
+}
+.tierRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.amount {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.amount .unit {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-left: 8px;
+}
+.instr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 208px;
+  gap: 20px 32px;
+  align-items: start;
+  margin-top: 18px;
+}
+.qr {
+  width: 208px;
+  height: 208px;
+  background: #ffffff;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  display: block;
+}
+.qr path {
+  fill: #0a0b0d;
+}
+.verdictLine {
+  font-size: 1.1rem;
+  margin: 14px 0 6px;
+  letter-spacing: -0.01em;
+}
+.foot {
+  margin-top: 20px;
+  overflow-wrap: anywhere;
+}
+.status {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.s_OPEN { color: var(--muted); }
+.s_SCREENED { color: var(--warn); }
+.s_ACCEPTED { color: var(--acc); }
+.s_DECLINED { color: var(--red); }
+.s_EXPIRED { color: var(--faint); }
+@media (max-width: 640px) {
+  .form {
+    grid-template-columns: 1fr;
+  }
+  .instr {
+    grid-template-columns: 1fr;
+  }
+}
