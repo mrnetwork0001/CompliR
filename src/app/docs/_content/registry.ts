@@ -10,6 +10,7 @@ import { reasonCodes } from "./reason-codes";
 import { attestations } from "./attestations";
 import { rescreening } from "./rescreening";
 import { shadowBadge } from "./shadow-badge";
+import { checkPages } from "./check-pages";
 import { operator } from "./operator";
 import { guardedPayouts } from "./guarded-payouts";
 import { riskAnalyst } from "./risk-analyst";
@@ -27,7 +28,7 @@ import { ledgerReports } from "./ledger-reports";
 
 export const DOC_GROUPS: DocGroup[] = [
   { id: "getting-started", label: "Getting started", pages: [welcome, howItWorks] },
-  { id: "oracle", label: "Oracle", pages: [screening, reasonCodes, attestations, rescreening, shadowBadge] },
+  { id: "oracle", label: "Oracle", pages: [screening, checkPages, reasonCodes, attestations, rescreening, shadowBadge] },
   { id: "agent", label: "The agent", pages: [operator, guardedPayouts, riskAnalyst, tipMarket, refundsReport] },
   { id: "integrate", label: "Integrate", pages: [httpApi, sdk, mcp, solidity, x402] },
   { id: "operate", label: "Operate", pages: [selfHosting, mainnetChecklist] },
