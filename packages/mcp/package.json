@@ -1,0 +1,32 @@
+{
+  "name": "@complir/mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing CompliR (counterparty risk oracle on Arc) as tools: screen, watch, shadow report, attestations, decisions.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "complir-mcp": "./bin/complir-mcp.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node ./bin/complir-mcp.mjs",
+    "start:http": "node ./bin/complir-mcp.mjs --http 3333",
+    "smoke": "node ./scripts/smoke.mjs",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run packages/mcp"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1"
+  },
+  "peerDependencies": {
+    "viem": "^2.57.4",
+    "zod": "^4.0.0"
+  }
+}
