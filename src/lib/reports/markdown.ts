@@ -16,7 +16,7 @@ const table = (head: string[], rows: (string | number)[][]) => [row(head), `|${h
 export function renderReportMarkdown(r: DailyReport, sig?: SignatureBlock): string {
   const chainName = r.chain.chainId === 5042 ? "Arc mainnet" : r.chain.chainId === 5042002 ? "Arc testnet" : `chain ${r.chain.chainId}`;
   const out: string[] = [];
-  out.push(`# CompliR traction report — ${r.date}`);
+  out.push(`# CompliR traction report - ${r.date}`);
   out.push(`_Written and signed by the CompliR agent at ${r.generatedAt}. Period ${r.period.from} → ${r.period.to} (UTC)${r.period.final ? "" : ", **not final yet**"}. ${chainName}, USDC ${code(r.chain.usdc)}._`);
   out.push("");
   out.push("## Summary");
@@ -37,7 +37,7 @@ export function renderReportMarkdown(r: DailyReport, sig?: SignatureBlock): stri
   out.push("## Outside payers");
   out.push(r.outsidePayers.length
     ? table(["Payer", "Calls", "USDC", "Refunded", "First tx", "Endpoints"], r.outsidePayers.map((p) => [
-        link(code(p.address), p.addressUrl), p.calls, fmt(p.usdcPaid), fmt(p.usdcRefunded), p.firstTx ? link(short(p.firstTx), p.firstTxUrl) : "—", p.endpoints.join(", "),
+        link(code(p.address), p.addressUrl), p.calls, fmt(p.usdcPaid), fmt(p.usdcRefunded), p.firstTx ? link(short(p.firstTx), p.firstTxUrl) : "-", p.endpoints.join(", "),
       ]))
     : "_No outside payers in this period._");
   out.push("");
@@ -48,22 +48,22 @@ export function renderReportMarkdown(r: DailyReport, sig?: SignatureBlock): stri
   if (r.refunds.items.length) {
     out.push(table(["Queued", "Payer", "USDC", "Reason", "Original tx", "Refund tx", "Status"], r.refunds.items.map((x) => [
       x.queuedAt.slice(0, 16).replace("T", " "), code(short(x.payer, 6, 4)), fmt(x.amountUsdc), x.reason,
-      x.originalTx ? link(short(x.originalTx), x.originalTxUrl) : "—", x.refundTx ? link(short(x.refundTx), x.refundTxUrl) : "—", x.status,
+      x.originalTx ? link(short(x.originalTx), x.originalTxUrl) : "-", x.refundTx ? link(short(x.refundTx), x.refundTxUrl) : "-", x.status,
     ])));
   } else out.push("_No refunds in this period._");
   if (r.mistakes.length) {
     out.push("");
-    for (const m of r.mistakes) out.push(`- ${m.what}${m.refundTx ? ` — refund ${link(short(m.refundTx), m.refundTxUrl ?? null)}` : ""}`);
+    for (const m of r.mistakes) out.push(`- ${m.what}${m.refundTx ? ` - refund ${link(short(m.refundTx), m.refundTxUrl ?? null)}` : ""}`);
   }
   out.push("");
   out.push("## Integration PRs");
   out.push(r.integrations.length
-    ? table(["Integration", "Repo", "Status", "PR"], r.integrations.map((i) => [i.name, i.repo ?? "—", i.status, i.pr ? link("PR", i.pr) : "—"]))
+    ? table(["Integration", "Repo", "Status", "PR"], r.integrations.map((i) => [i.name, i.repo ?? "-", i.status, i.pr ? link("PR", i.pr) : "-"]))
     : "_None._");
   if (r.tierChanges.items.length) {
     out.push("");
     out.push("## Tier changes");
-    out.push(table(["Address", "From", "To", "Decision"], r.tierChanges.items.map((t) => [code(t.address), t.from ?? "—", t.to, t.decisionId ? link(t.decisionId, `/log/${t.decisionId}`) : "—"])));
+    out.push(table(["Address", "From", "To", "Decision"], r.tierChanges.items.map((t) => [code(t.address), t.from ?? "-", t.to, t.decisionId ? link(t.decisionId, `/log/${t.decisionId}`) : "-"])));
   }
   if (r.notes.length) {
     out.push("");

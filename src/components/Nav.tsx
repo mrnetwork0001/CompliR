@@ -109,8 +109,8 @@ export function StatusChip({ compact = false }: { compact?: boolean }) {
   const state = !h ? "unknown" : h.paused ? "paused" : h.ok ? "ok" : "degraded";
   const label = !h ? "Checking…" : h.paused ? "Paused" : h.ok ? "Operational" : "Degraded";
   const chain = h?.chainId ? `Arc ${h.chainId}` : "Arc";
-  const signer = h?.signer?.mode ?? "—";
-  const x402 = h ? (h.x402.disabled ? "x402 off" : "x402 on") : "x402 —";
+  const signer = h?.signer?.mode ?? "-";
+  const x402 = h ? (h.x402.disabled ? "x402 off" : "x402 on") : "x402 -";
   return (
     <a
       href="/api/v1/health"

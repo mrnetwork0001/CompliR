@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/network/events?limit=50 — the last blocklist events the reactor saw (on-chain Blacklisted /
+ * GET /api/v1/network/events?limit=50 - the last blocklist events the reactor saw (on-chain Blacklisted /
  * UnBlacklisted on USDC, plus drills marked `simulated: true`) and what happened: whether we re-screened,
  * tierFrom → tierTo, webhooks delivered / watches on the address, latency. Free; the on-chain facts are public anyway.
  */

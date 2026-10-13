@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/attestation/:address — latest public attestation for an address. Free. Spec §2.1.
+ * GET /api/v1/attestation/:address - latest public attestation for an address. Free. Spec §2.1.
  * Served from the store; if the address was never screened we run the pipeline once (source: "fresh").
  */
 import { latestAttestation } from "@/lib/store";

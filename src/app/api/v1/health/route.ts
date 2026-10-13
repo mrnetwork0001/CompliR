@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/health — liveness + public network config. Free. Never throws: bad env → 503 with `ok: false`.
+ * GET /api/v1/health - liveness + public network config. Free. Never throws: bad env → 503 with `ok: false`.
  */
 import { circleStatus } from "@/lib/circle/client";
 import { signerMode } from "@/lib/chain/registryWriter";

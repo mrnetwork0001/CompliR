@@ -2,14 +2,14 @@ import Link from "next/link";
 import { Code, Kv, Table } from "../_components/Doc";
 import type { DocPage } from "./types";
 
-const CLAUDE_CODE = `# Claude Code — free local deployment (X402_DISABLED=1)
+const CLAUDE_CODE = `# Claude Code - free local deployment (X402_DISABLED=1)
 claude mcp add complir -e COMPLIR_URL=http://localhost:3000 -- node /abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs
 
 # with payments on an x402-enabled deployment
 claude mcp add complir -e COMPLIR_URL=https://complir.example -e COMPLIR_PAYER_PRIVATE_KEY=0x… \\
   -- node /abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs`;
 
-const DESKTOP = `// Claude Desktop (claude_desktop_config.json) · Cursor (.cursor/mcp.json) — same shape
+const DESKTOP = `// Claude Desktop (claude_desktop_config.json) · Cursor (.cursor/mcp.json) - same shape
 {
   "mcpServers": {
     "complir": {
@@ -81,7 +81,7 @@ export const mcp: DocPage = {
           />
           <Kv
             rows={[
-              { k: "Prompt", v: <><code>pay_safely(address, amountUsdc?, name?)</code> — screen first, hold HIGH, cap MEDIUM at recommendedLimits, forward edd.url, verify and store the attestation, then watch or re-screen.</> },
+              { k: "Prompt", v: <><code>pay_safely(address, amountUsdc?, name?)</code> - screen first, hold HIGH, cap MEDIUM at recommendedLimits, forward edd.url, verify and store the attestation, then watch or re-screen.</> },
               { k: "Resources", v: <><code>complir://docs</code> (integration notes, markdown) · <code>complir://attestation/{"{address}"}</code> (JSON)</> },
               { k: "Errors", v: <>MCP tool errors (<code>isError: true</code>) as <code>CODE: message</code>: PAYMENT_REQUIRED (no payer key), UNREACHABLE (check COMPLIR_URL), or the API&apos;s own VALIDATION_ERROR / NOT_FOUND.</> },
               { k: "Stdout", v: "JSON-RPC only; diagnostics go to stderr" },

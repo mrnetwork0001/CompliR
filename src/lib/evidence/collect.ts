@@ -2,9 +2,9 @@
  * collectEvidence: ScreenRequest → EvidenceBundle. Spec §2.4.
  *
  * Sources run concurrently, each behind a per-source timeout (default 4 s, EVIDENCE_SOURCE_TIMEOUT_MS); a source
- * that fails or times out contributes its neutral value (false / [] / null) — the bundle is always produced.
+ * that fails or times out contributes its neutral value (false / [] / null) - the bundle is always produced.
  * Phase 1: subject facts (activity, USDC blocklist, protocol blocklist, yente by address+name) ‖ funder trace.
- * Phase 2: enrich funders (USDC blocklist, protocol blocklist, yente by address — one batched call) ‖ network signal
+ * Phase 2: enrich funders (USDC blocklist, protocol blocklist, yente by address - one batched call) ‖ network signal
  *          (src/lib/network: held-elsewhere / shared-funder / concentration counts from the shared store).
  * Overrides (.data/overrides.json / OVERRIDES_JSON) are merged over live facts for the subject and every funder;
  * a subject override with `funders` replaces the chain trace entirely.
@@ -126,7 +126,7 @@ export async function collectEvidenceDetailed(req: ScreenRequest, opts: CollectO
   let depth: 0 | 1 | 2 = overrideFunders ? maxHop(overrideFunders) : (traceRes?.depth ?? 0);
   let enrichment: SourceStatus = "skipped";
 
-  // Cross-client network signal (counts only) — needs the hop-1 funders, so it starts here and runs alongside enrichment.
+  // Cross-client network signal (counts only) - needs the hop-1 funders, so it starts here and runs alongside enrichment.
   const networkFn = opts.network === null ? null : (opts.network ?? networkSignals);
   const hop1 = [...new Set(funders.filter((f) => f.hop === 1).map((f) => f.facts.address))];
   const networkP = guard<NetworkSignal>("network", networkFn ? networkFn(subject, req.clientId ?? null, { funders: hop1, now }) : null);
@@ -169,7 +169,7 @@ export async function collectEvidenceDetailed(req: ScreenRequest, opts: CollectO
     funders,
     lookalikes: findLookalikes(subject, req.payeeBook),
     payeeChanged: detectPayeeChange(subject, req.payeeBook, opts.previousBook),
-    // Tamias signal, from the shared store (payee_funders across clients + Trust Map edges) — counts only.
+    // Tamias signal, from the shared store (payee_funders across clients + Trust Map edges) - counts only.
     concentration: network?.concentrationHint ? { sharedFunder: network.concentrationHint.funder, otherPayees: network.concentrationHint.otherPayees } : null,
     priorTier: opts.priorTier ?? null,
     communityTips: communityTips === SENTINEL ? [] : communityTips.map((t) => ({ tipId: t.tipId, category: t.category, strength: t.strength, verifiedAt: t.verifiedAt })),

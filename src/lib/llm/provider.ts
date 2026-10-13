@@ -1,13 +1,13 @@
 /**
  * LLM provider seam. The Risk Analyst (src/lib/analyst) and the Operator (src/lib/operator) ask a provider for ONE
- * structured object (a forced tool call against a JSON schema); everything else — prompts, zod parsing, guards,
- * deterministic fallback — stays in the caller and is identical whichever provider answers.
+ * structured object (a forced tool call against a JSON schema); everything else - prompts, zod parsing, guards,
+ * deterministic fallback - stays in the caller and is identical whichever provider answers.
  *
- *   anthropic  — api.anthropic.com through @anthropic-ai/sdk (the original path; ANTHROPIC_API_KEY)
- *   0g         — 0G Compute Router, https://router-api.0g.ai (ZEROG_API_KEY, `sk-…` from pc.0g.ai). Claude models
+ *   anthropic  - api.anthropic.com through @anthropic-ai/sdk (the original path; ANTHROPIC_API_KEY)
+ *   0g         - 0G Compute Router, https://router-api.0g.ai (ZEROG_API_KEY, `sk-…` from pc.0g.ai). Claude models
  *                are served there over the Anthropic Messages format (/v1/messages); open-weight models over
  *                OpenAI chat completions (/v1/chat/completions). See docs/LLM_PROVIDERS.md.
- *   none       — no model; callers use their deterministic fallback (meta.fallback = true), exactly as before.
+ *   none       - no model; callers use their deterministic fallback (meta.fallback = true), exactly as before.
  */
 import { anthropicProvider } from "./anthropic";
 import { zeroGProvider, ZEROG_DEFAULT_BASE_URL, ZEROG_DEFAULT_MODEL, type ZeroGFormat } from "./zerog";
@@ -35,7 +35,7 @@ export interface StructuredArgs {
 }
 
 export interface StructuredResult {
-  /** the tool input as the model produced it — NOT validated; callers zod-parse and guard it */
+  /** the tool input as the model produced it - NOT validated; callers zod-parse and guard it */
   data: unknown;
   /** provider response for the decision log / debugging */
   raw?: unknown;
@@ -43,7 +43,7 @@ export interface StructuredResult {
 }
 
 export interface LlmProvider {
-  /** "anthropic" | "0g" | … — prefixed onto meta.model as `${name}:${model}` */
+  /** "anthropic" | "0g" | … - prefixed onto meta.model as `${name}:${model}` */
   readonly name: string;
   readonly model: string;
   structured(args: StructuredArgs): Promise<StructuredResult>;
@@ -69,7 +69,7 @@ export function isLlmProvider(x: unknown): x is LlmProvider {
   return !!x && typeof x === "object" && typeof (x as LlmProvider).structured === "function" && typeof (x as LlmProvider).name === "string";
 }
 
-/** `${provider}:${model}` — what goes into meta.model so the decision log says who answered. */
+/** `${provider}:${model}` - what goes into meta.model so the decision log says who answered. */
 export function modelLabel(p: LlmProvider): string {
   return `${p.name}:${p.model}`;
 }
@@ -95,7 +95,7 @@ export function resolveModel(name: Exclude<ProviderName, "none">, env: Env = pro
  * Pick the provider from the environment.
  *   LLM_PROVIDER=anthropic | 0g | none   (explicit)
  *   unset → anthropic if ANTHROPIC_API_KEY, else 0g if ZEROG_API_KEY, else none.
- * An explicit choice whose key is missing resolves to "none" (deterministic fallback) and says why — never throws.
+ * An explicit choice whose key is missing resolves to "none" (deterministic fallback) and says why - never throws.
  */
 export function selectProvider(env: Env = process.env): ProviderSelection {
   const want = (val(env, "LLM_PROVIDER") ?? "").toLowerCase();

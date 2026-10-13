@@ -1,5 +1,5 @@
 /**
- * GET|POST /api/internal/circle — Circle Developer-Controlled Wallets status for ops dashboards.
+ * GET|POST /api/internal/circle - Circle Developer-Controlled Wallets status for ops dashboards.
  * Protected by `Authorization: Bearer $CRON_SECRET`. Dry-run (no Circle credentials) still answers with mode/reason.
  *
  *   { mode: "local"|"circle", effectiveSigner, circle: {enabled, reason, blockchain, accountType, feeLevel},

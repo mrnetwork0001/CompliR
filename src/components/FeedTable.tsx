@@ -125,7 +125,7 @@ export function FeedTable({ limit = 20 }: { limit?: number }) {
       </div>
       {data && <Pager page={data.page} pages={data.pages} total={data.total} limit={data.limit} onPage={setPage} label="screenings" />}
       <p className="muted small" style={{ marginTop: 8 }}>
-        Source: {data?.source ?? "—"}. &quot;own&quot; = our own test wallets (excluded from <Link href="/numbers">Numbers</Link>); &quot;outside&quot; = paid by a wallet we do not control.
+        Source: {data?.source ?? "-"}. &quot;own&quot; = our own test wallets (excluded from <Link href="/numbers">Numbers</Link>); &quot;outside&quot; = paid by a wallet we do not control.
       </p>
     </div>
   );

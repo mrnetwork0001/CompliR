@@ -81,7 +81,7 @@ describe("corroboration + decision matrix", () => {
     expect(v.decision).toBe("VERIFIED");
     expect(v.corroboration).toMatchObject({ strong: 1, weak: 0 });
   });
-  it("verifyTip: tx receipts — involving the subject is strong, unrelated is weak, unknown counts nothing", async () => {
+  it("verifyTip: tx receipts - involving the subject is strong, unrelated is weak, unknown counts nothing", async () => {
     const v = await verifyTip(tipOf({ subject: DEAD, evidenceTxs: [TX1, TX2, `0x${"33".repeat(32)}`] }), { screenFn, client, now: NOW });
     expect(v.corroboration.txs.map((t) => [t.found, t.involvesSubject])).toEqual([[true, true], [true, false], [false, false]]);
     expect(v.corroboration).toMatchObject({ strong: 1, weak: 1 });

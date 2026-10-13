@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/edd/:id — public view of an EDD request: questions + status (+ re-screen outcome once answered).
+ * GET /api/v1/edd/:id - public view of an EDD request: questions + status (+ re-screen outcome once answered).
  * Never returns the answers or the contact.
  */
 import { getEddRequest, toPublicView } from "@/lib/edd";

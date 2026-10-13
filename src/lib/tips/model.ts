@@ -1,12 +1,12 @@
 /**
- * Tip Market — storage. A paid, two-sided market for risk intelligence:
+ * Tip Market - storage. A paid, two-sided market for risk intelligence:
  * anyone submits evidence that an address is risky, stakes a little USDC (the x402 payment IS the stake),
  * and gets paid per VERIFIED tip; bad tips lose the stake (it was already settled to X402_PAY_TO).
  *
  * Own tables on the shared libsql client (src/lib/store/db.ts); the core schema stays untouched.
  *   tips          one row per submission (status machine below)
  *   tip_stats     per-submitter counters + reputation (0–1, Laplace-smoothed verified/(verified+rejected))
- *   tip_overrides VERIFIED tips as oracle evidence — read by `tipEvidenceFor(address)` (hook for evidence/collect.ts)
+ *   tip_overrides VERIFIED tips as oracle evidence - read by `tipEvidenceFor(address)` (hook for evidence/collect.ts)
  *   tip_spend     daily payout accounting for TIPS_DAILY_CAP_USDC
  *
  * Status machine: SUBMITTED → VERIFYING → VERIFIED → PAID
@@ -77,7 +77,7 @@ export type ReviewInput = z.infer<typeof ReviewSchema>;
 // ─── Types ───────────────────────────────────────────────────────────────────
 export interface TxCorroboration { hash: `0x${string}`; found: boolean; involvesSubject: boolean; blockNumber: number | null }
 export interface UrlCorroboration { url: string; domain: string | null; strong: boolean }
-/** What the verifier recorded. Deliberately contains NO client data and NO evidence bundle — it is shown to the submitter. */
+/** What the verifier recorded. Deliberately contains NO client data and NO evidence bundle - it is shown to the submitter. */
 export interface TipVerification {
   tier: Tier | null;
   score: number | null;
@@ -359,7 +359,7 @@ export async function removeTipOverride(tipId: string): Promise<void> {
 }
 
 /**
- * VERIFIED community tips about an address, newest first — the one-call hook for the Evidence Collector.
+ * VERIFIED community tips about an address, newest first - the one-call hook for the Evidence Collector.
  * Never throws (an unreachable DB yields []), so it is safe to call from collect.ts behind the usual per-source guard.
  */
 export async function tipEvidenceFor(address: Address, opts: { withinSeconds?: number; now?: number } = {}): Promise<TipEvidence[]> {

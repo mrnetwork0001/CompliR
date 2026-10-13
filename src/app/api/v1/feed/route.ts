@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/feed?limit=25 — anonymised recent screenings for the live feed (traction proof). Free.
+ * GET /api/v1/feed?limit=25 - anonymised recent screenings for the live feed (traction proof). Free.
  */
 import { recentScreenings, countScreenings } from "@/lib/store";
 import { handle, ok } from "../../_lib/respond";

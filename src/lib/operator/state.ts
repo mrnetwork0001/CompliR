@@ -1,5 +1,5 @@
 /**
- * Company snapshot — everything the operator agent (and the /company page) needs to see in one object.
+ * Company snapshot - everything the operator agent (and the /company page) needs to see in one object.
  *
  * Reads only: revenue from the `payments` table, reserves from the revenue wallet on Arc (+ USYC) and the Circle
  * wallets, obligations from the treasury invoices, screening volume from `screenings`, prices from operator_pricing.
@@ -72,7 +72,7 @@ export interface ScreeningSnapshot {
   low24h: number;
   screeningsTotal: number;
   watchesActive: number;
-  /** p95 end-to-end latency, ms — null when not measured (no latency source yet) */
+  /** p95 end-to-end latency, ms - null when not measured (no latency source yet) */
   p95LatencyMs: number | null;
 }
 export interface PricingSnapshot {

@@ -1,5 +1,5 @@
 /**
- * Evidence Collector — public surface. Spec §2.4.
+ * Evidence Collector - public surface. Spec §2.4.
  *
  *   collectEvidence(req, { depth, previousBook?, priorTier? }) → EvidenceBundle   (what the pipeline calls)
  *   collectEvidenceDetailed(...)                                 → { bundle, sources, trace }

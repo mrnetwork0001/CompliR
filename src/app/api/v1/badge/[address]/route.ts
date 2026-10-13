@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/badge/:address.svg — "Screened by CompliR · TIER · valid until <date>" badge. Free.
+ * GET /api/v1/badge/:address.svg - "Screened by CompliR · TIER · valid until <date>" badge. Free.
  * Read-only against the store (`latestAttestation`); never runs the pipeline. Grey "unknown" when unseen.
  * Cache-Control: max-age=60 so receipts/READMEs can hot-link it.
  */

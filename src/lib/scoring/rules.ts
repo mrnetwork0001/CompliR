@@ -287,7 +287,7 @@ export function scoreEvidence(bundle: EvidenceBundle): ScoreResult {
     });
   }
 
-  // 5b. Network signals (shared-oracle; src/lib/network). Evidence carries counts only — never another client's id.
+  // 5b. Network signals (shared-oracle; src/lib/network). Evidence carries counts only - never another client's id.
   const net = bundle.network;
   if (net && net.heldElsewhere.clients > 0) {
     const many = net.heldElsewhere.clients >= 2;

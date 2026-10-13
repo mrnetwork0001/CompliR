@@ -2,14 +2,14 @@ import Link from "next/link";
 import { Code, Kv, Status, Table } from "../_components/Doc";
 import type { DocPage } from "./types";
 
-const DECIDE = `// src/lib/treasury/policy.ts — pure; the agent proposes, the policy decides, the contract re-checks on-chain.
+const DECIDE = `// src/lib/treasury/policy.ts - pure; the agent proposes, the policy decides, the contract re-checks on-chain.
 HIGH, or any tier above policy.maxTier          → HOLD everything                          (bound: tier)
 signed attestation expired                       → HOLD, re-screen required                 (bound: attestation_expired)
 live mode: registry has no valid entry           → HOLD, release would revert               (bound: attestation_missing)
 else pay = min(amount, analyst maxPerTx, per-payout cap 25, daily headroom 50 − spent today)
      pay == amount → PAY · 0 < pay < amount → LIMIT (rest held) · pay == 0 → HOLD`;
 
-const RELEASE = `// contracts/src/examples/GuardedTreasury.sol — the integration is the require.
+const RELEASE = `// contracts/src/examples/GuardedTreasury.sol - the integration is the require.
 function release(address payee, uint256 amount) external onlyOwner {
     require(compliR.isAllowed(payee, maxTier), "CompliR: payee tier too high");
     (,, bytes32 decisionHash) = compliR.tierOf(payee);
@@ -40,7 +40,7 @@ export const guardedPayouts: DocPage = {
   ),
   intro: (
     <p>
-      Status today: <Status kind="dry-run">dry-run</Status> — verdicts, decisions and ledger entries are real; transfers are simulated (<code>txHash: null</code>). The page is{" "}
+      Status today: <Status kind="dry-run">dry-run</Status> - verdicts, decisions and ledger entries are real; transfers are simulated (<code>txHash: null</code>). The page is{" "}
       <Link href="/payouts">/payouts</Link>; the contract is pending deploy on Arc mainnet.
     </p>
   ),
@@ -52,7 +52,7 @@ export const guardedPayouts: DocPage = {
         <>
           <Kv
             rows={[
-              { k: "maxTier", v: "MEDIUM — mirrors GuardedTreasury.maxTier; HIGH is never paid, LOW-only is one setMaxTier away" },
+              { k: "maxTier", v: "MEDIUM - mirrors GuardedTreasury.maxTier; HIGH is never paid, LOW-only is one setMaxTier away" },
               { k: "Per payout", v: "25 USDC (TREASURY_PER_PAYOUT_CAP_USDC)" },
               { k: "Per day", v: "50 USDC (TREASURY_DAILY_CAP_USDC), rolling from the payouts recorded today" },
               { k: "requireAttestationOnChain", v: "true in live mode by default: the registry must hold a valid, non-expired entry at or below maxTier, which is exactly what release reads" },

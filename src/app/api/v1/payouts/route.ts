@@ -1,6 +1,6 @@
 /**
- * GET  /api/v1/payouts — invoices + totals + mode/policy for the Guarded Payouts page. Free.
- * POST /api/v1/payouts — add an invoice { payee, label, amountUsdc, memo? }. Same-origin browsers only (403 otherwise):
+ * GET  /api/v1/payouts - invoices + totals + mode/policy for the Guarded Payouts page. Free.
+ * POST /api/v1/payouts - add an invoice { payee, label, amountUsdc, memo? }. Same-origin browsers only (403 otherwise):
  *                        this is the demo's own queue, not a public write endpoint.
  */
 import { isSameOriginBrowser } from "@/lib/payments";

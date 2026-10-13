@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/tips/:id — one tip, public projection (anonymised submitter, verdict tier/score/decision, payout). Free.
+ * GET /api/v1/tips/:id - one tip, public projection (anonymised submitter, verdict tier/score/decision, payout). Free.
  */
 import { getTip, toPublicTip } from "@/lib/tips";
 import { ApiError, handle, ok } from "../../../_lib/respond";

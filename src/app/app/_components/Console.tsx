@@ -39,10 +39,10 @@ const ACTION_LABEL: Record<OperatorAction["type"], string> = {
 const ms = (t: number) => (t < 1e12 ? t * 1000 : t);
 
 function usdc(n: number | null | undefined, dp = 2): string {
-  if (n == null || !Number.isFinite(n)) return "—";
+  if (n == null || !Number.isFinite(n)) return "-";
   return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: dp });
 }
-const int = (n: number | null | undefined) => (n == null ? "—" : n.toLocaleString());
+const int = (n: number | null | undefined) => (n == null ? "-" : n.toLocaleString());
 
 function tierOf(e: DecisionLogEntry): Tier | null {
   const p = e.payload as { tier?: unknown; verdict?: { tier?: unknown }; to?: unknown } | null;
@@ -178,7 +178,7 @@ function StatusBar({ d, now }: { d: ConsoleData; now: number }) {
           {signer ? `signer ${signer}` : <Sk w={80} />}
         </Pill>
         <Pill state={x402on == null ? "unknown" : x402on ? "ok" : "off"} title={h ? `${h.x402.priceScreenUsdc} USDC / screen · ${h.x402.priceWatchUsdc} USDC / watch` : undefined}>
-          {x402on == null ? <Sk w={70} /> : x402on ? `x402 on · ${h?.x402.priceScreenUsdc ?? "—"} USDC/screen` : "x402 off · free calls"}
+          {x402on == null ? <Sk w={70} /> : x402on ? `x402 on · ${h?.x402.priceScreenUsdc ?? "-"} USDC/screen` : "x402 off · free calls"}
         </Pill>
         <Pill state={paused == null ? "unknown" : paused ? "warn" : "ok"}>{paused == null ? <Sk w={60} /> : paused ? "paused" : "running"}</Pill>
       </div>
@@ -222,7 +222,7 @@ function Kpis({ d }: { d: ConsoleData }) {
   const s24Sub = scr ? `${scr.medium24h} medium · ${scr.low24h} low · ${int(scr.screeningsTotal)} all time · ${scr.watchesActive} watch${scr.watchesActive === 1 ? "" : "es"}` : ready ? "all time (24 h breakdown unavailable)" : null;
 
   const v = d.verify;
-  const ledgerValue = v ? int(v.length) : ready ? "—" : null;
+  const ledgerValue = v ? int(v.length) : ready ? "-" : null;
   const ledgerAside = v ? (
     v.ok ? (
       <span className={styles.kpiOk} title={`Chain re-walked ${fmtRelative(v.checkedAt)}`}>
@@ -261,10 +261,10 @@ function Ticker({ entries, at, now }: { entries: DecisionLogEntry[] | null; at: 
               <Sk w={150} />
             </li>
           ))}
-        {entries?.length === 0 && <li className={`${styles.tick} muted`}>ledger is empty — first screening will appear here</li>}
+        {entries?.length === 0 && <li className={`${styles.tick} muted`}>ledger is empty - first screening will appear here</li>}
         {entries?.map((e) => {
           const tier = tierOf(e);
-          const who = e.subject ? maskAddress(e.subject) : e.clientId ? e.clientId : "—";
+          const who = e.subject ? maskAddress(e.subject) : e.clientId ? e.clientId : "-";
           return (
             <li key={e.id} className={styles.tick}>
               <Link href={`/log/${encodeURIComponent(e.id)}`} className={styles.tickLink} title={`#${e.seq} ${e.kind} · ${fmtTime(e.createdAt)} · ${e.hash}`}>

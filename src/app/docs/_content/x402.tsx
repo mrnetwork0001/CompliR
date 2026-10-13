@@ -101,7 +101,7 @@ export const x402: DocPage = {
             { k: "X402_FACILITATOR_URL", v: "https://api.circle.com/v1/facilitator/x402 (Circle Facilitator Service, Arc native)" },
             { k: "X402_FACILITATOR_API_KEY", v: "Circle Console key → Authorization: Bearer; required for production settle" },
             { k: "X402_SELLER_PRIVATE_KEY", v: "alternative keyless trial: Facilitator-Seller-Proof signed by the X402_PAY_TO key" },
-            { k: "X402_PAY_TO", v: "where USDC lands — the Circle revenue wallet once provisioned" },
+            { k: "X402_PAY_TO", v: "where USDC lands - the Circle revenue wallet once provisioned" },
             { k: "X402_NETWORK", v: "CAIP-2; defaults to eip155:$ARC_CHAIN_ID" },
             { k: "X402_ASSET_NAME / _VERSION", v: "EIP-712 domain of the token, default USDC / 2" },
             { k: "PRICE_SCREEN_USDC / PRICE_WATCH_USDC", v: "config defaults 0.01 / 0.05; the operator may move them inside its bounds" },

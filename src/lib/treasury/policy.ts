@@ -72,7 +72,7 @@ export function policyFromEnv(env: NodeJS.ProcessEnv = process.env, live = false
     maxTier: tier === "LOW" || tier === "MEDIUM" ? tier : DEFAULT_POLICY.maxTier,
     perPayoutCapUsdc: num("TREASURY_PER_PAYOUT_CAP_USDC", DEFAULT_POLICY.perPayoutCapUsdc),
     dailyCapUsdc: num("TREASURY_DAILY_CAP_USDC", DEFAULT_POLICY.dailyCapUsdc),
-    // live mode defaults to requiring the registry entry — that is what GuardedTreasury will check anyway
+    // live mode defaults to requiring the registry entry - that is what GuardedTreasury will check anyway
     requireAttestationOnChain: requireRaw === undefined || requireRaw === "" ? live : /^(1|true|yes|on)$/i.test(requireRaw),
   };
 }
@@ -95,7 +95,7 @@ export function decidePayout(
   const why = `${verdict.tier} (score ${verdict.score}). ${verdict.rationale}`.trim();
   const hold = (bound: PayoutDecision["bound"], reason: string): PayoutDecision => ({ action: "HOLD", amount: 0, held: amount, reason, bound, verdictRef });
 
-  // 1. tier gate — the same test GuardedTreasury runs on-chain
+  // 1. tier gate - the same test GuardedTreasury runs on-chain
   if (TIER_ONCHAIN[verdict.tier] > TIER_ONCHAIN[policy.maxTier]) {
     return hold("tier", `HELD: payee is ${verdict.tier}, policy pays up to ${policy.maxTier}. ${why}`);
   }
@@ -113,7 +113,7 @@ export function decidePayout(
     if (oc.tier > TIER_ONCHAIN[policy.maxTier]) return hold("tier", `HELD: registry tier ${oc.tier} exceeds policy max ${policy.maxTier}. ${why}`);
   }
 
-  // 4. caps — the smallest wins and names itself
+  // 4. caps - the smallest wins and names itself
   const dailyHeadroom = round6(policy.dailyCapUsdc - spentToday);
   const candidates: { bound: PayoutDecision["bound"]; cap: number; label: string }[] = [
     { bound: "analyst_max_per_tx", cap: round6(verdict.recommendedLimits.maxPerTxUsdc), label: `analyst per-tx limit ${verdict.recommendedLimits.maxPerTxUsdc} USDC` },
@@ -127,7 +127,7 @@ export function decidePayout(
     if (c.cap < pay) { pay = c.cap; bound = c.bound; label = c.label; }
   }
   pay = round6(pay);
-  if (pay <= 0) return hold(bound === "none" ? "daily_cap" : bound, `HELD: nothing releasable — ${label || "amount is zero"}. ${why}`);
+  if (pay <= 0) return hold(bound === "none" ? "daily_cap" : bound, `HELD: nothing releasable - ${label || "amount is zero"}. ${why}`);
 
   const held = round6(amount - pay);
   if (held > 0) {

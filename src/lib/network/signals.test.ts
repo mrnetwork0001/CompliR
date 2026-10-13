@@ -67,7 +67,7 @@ describe("networkSignals / sharedFunder + concentration", () => {
     const sig = await networkSignals(S, "self", { now: NOW, funders: [G, F] });
     expect(sig.sharedFunder).toEqual({ count: 3, funder: F });
   });
-  it("another client sees its own (smaller) count — never the first client's payees", async () => {
+  it("another client sees its own (smaller) count - never the first client's payees", async () => {
     const sig = await networkSignals(S, "other", { now: NOW, funders: [F] });
     expect(sig.sharedFunder).toEqual({ count: 1, funder: F });
   });
@@ -82,7 +82,7 @@ describe("networkSignals / sharedFunder + concentration", () => {
   it("a payee never counts itself; recordFunders upserts", async () => {
     expect(await recordFunders("self", addr(0xa1), [F, F, addr(0xa1)], NOW + 1)).toBe(1);
     const sig = await networkSignals(addr(0xa1), "self", { now: NOW, funders: [F] });
-    expect(sig.sharedFunder).toEqual({ count: 2, funder: F }); // p2, p3 — not p1 itself
+    expect(sig.sharedFunder).toEqual({ count: 2, funder: F }); // p2, p3 - not p1 itself
   });
   it("falls back to remembered funders when none are supplied (public route)", async () => {
     const sig = await networkSignals(addr(0xa1), null, { now: NOW });

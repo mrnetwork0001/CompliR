@@ -5,7 +5,7 @@ import styles from "./Evidence.module.css";
 const TIME_KEY = /(at|time|timestamp|seen|until|issued)$/i;
 
 function Value({ k, v, explorerUrl }: { k: string; v: unknown; explorerUrl: string }) {
-  if (v === null || v === undefined) return <span className="muted">—</span>;
+  if (v === null || v === undefined) return <span className="muted">-</span>;
   if (typeof v === "string") {
     if (TX_RE.test(v) || ADDR_RE.test(v)) return <HexLink value={v} explorerUrl={explorerUrl} />;
     if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return <span title={v}>{fmtTime(v)}</span>;

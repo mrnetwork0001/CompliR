@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Code, Kv, Table } from "../_components/Doc";
 import type { DocPage } from "./types";
 
-const ENTRY = `// kind: "OPERATOR" — one per tick, hash-chained like every other decision
+const ENTRY = `// kind: "OPERATOR" - one per tick, hash-chained like every other decision
 {
   "type": "OPERATOR",
   "snapshot":   { "revenue": { … }, "reserves": { … }, "obligations": { … }, "screening": { … }, "pricing": { … }, "mode": { … }, "errors": { … } },
@@ -111,7 +111,7 @@ export const operator: DocPage = {
           rows={[
             { k: "Cron", v: <>hourly at :30 (<code>/api/internal/operator</code>, bearer <code>CRON_SECRET</code>) or <code>worker/operator.ts</code></> },
             { k: "Next check", v: "the agent's own interval (900–21,600 s) is recorded; the worker honours it, the Vercel cron is the floor" },
-            { k: "Read", v: <><code>GET /api/v1/company</code> — snapshot + last ten decisions, cached 30 s · <Link href="/company">/company</Link> · <Link href="/ledger">/ledger</Link> kind OPERATOR</> },
+            { k: "Read", v: <><code>GET /api/v1/company</code> - snapshot + last ten decisions, cached 30 s · <Link href="/company">/company</Link> · <Link href="/ledger">/ledger</Link> kind OPERATOR</> },
             { k: "Model", v: <>ANALYST_MODEL (default <code>claude-sonnet-5-5</code>), temperature 0.2, tool-forced structured output</> },
           ]}
         />

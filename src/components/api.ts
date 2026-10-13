@@ -1,6 +1,6 @@
 /**
  * Browser-side helpers shared by the pages: typed fetch against our own /api/v1, explorer link builders,
- * and small formatters. All relative URLs — works behind any host.
+ * and small formatters. All relative URLs - works behind any host.
  */
 import type { Tier } from "@/lib/types";
 import type { HealthResponse } from "@/app/api/_lib/public-types";
@@ -74,7 +74,7 @@ export function short(hex: string, head = 6, tail = 4): string {
 }
 
 export function fmtTime(iso: string | number | null | undefined): string {
-  if (iso === null || iso === undefined) return "—";
+  if (iso === null || iso === undefined) return "-";
   const d = typeof iso === "number" ? new Date(iso * (iso < 1e12 ? 1000 : 1)) : new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso);
   return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });

@@ -167,7 +167,7 @@ export async function listRefunds(opts: { limit?: number; status?: RefundStatus 
     : await db().execute({ sql: `SELECT * FROM refunds ORDER BY created_at DESC LIMIT ?`, args: [limit] });
   return r.rows.map((x) => rowToRefund(x as Record<string, unknown>));
 }
-/** Refunds created or sent inside [from, to) unix seconds — the daily report's "mistakes & refunds". */
+/** Refunds created or sent inside [from, to) unix seconds - the daily report's "mistakes & refunds". */
 export async function refundsBetween(from: number, to: number): Promise<Refund[]> {
   await migrateRefunds();
   const r = await db().execute({
@@ -283,14 +283,14 @@ async function processOnce(opts: { send?: RefundSender; now?: number }): Promise
       const entry = await ledger({ ...r, status: "DRY_RUN", note: outcome.reason });
       await db().execute({ sql: `UPDATE refunds SET ledger_id = ? WHERE id = ?`, args: [entry, r.id] });
       result.dryRun++;
-      console.warn(`[complir/refunds] ${r.id} DRY_RUN (${outcome.reason}) — ${r.amountUsdc} USDC still owed to ${r.payer}`);
+      console.warn(`[complir/refunds] ${r.id} DRY_RUN (${outcome.reason}) - ${r.amountUsdc} USDC still owed to ${r.payer}`);
       result.results.push({ id: r.id, status: "DRY_RUN", txHash: null, note: outcome.reason });
     }
   }
   return result;
 }
 
-/** Ledger "REFUND" entry — every outcome (SENT, DRY_RUN, FAILED) is on the hash chain, nothing is hidden. */
+/** Ledger "REFUND" entry - every outcome (SENT, DRY_RUN, FAILED) is on the hash chain, nothing is hidden. */
 async function ledger(r: Refund): Promise<string> {
   const entry = await appendDecision({
     kind: "REFUND", subject: r.payer, clientId: REFUND_CLIENT_ID,

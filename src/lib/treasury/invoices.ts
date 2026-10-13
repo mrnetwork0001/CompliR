@@ -17,7 +17,7 @@ export interface Invoice {
   amountUsdc: number;
   memo: string | null;
   status: InvoiceStatus;
-  /** verdict (SCREEN) decision id — replay at /log/{decisionId} */
+  /** verdict (SCREEN) decision id - replay at /log/{decisionId} */
   decisionId: string | null;
   /** PAYOUT ledger entry id (the signed payout decision) */
   payoutDecisionId: string | null;
@@ -107,7 +107,7 @@ export async function pendingInvoices(): Promise<Invoice[]> {
 
 /**
  * The agent's payee book: every payee we have actually paid (PAID / LIMITED), label + address.
- * Used for lookalike (address-poisoning) detection on *new* addresses — a never-paid address that resembles
+ * Used for lookalike (address-poisoning) detection on *new* addresses - a never-paid address that resembles
  * a trusted payee is suspicious; a payee that is itself in the book is screened on its own merits.
  */
 export async function payeeBook(opts: { all?: boolean } = {}): Promise<{ label: string; address: Address }[]> {
@@ -186,8 +186,8 @@ export async function invoiceTotals(): Promise<InvoiceTotals> {
 
 // ── demo seed (idempotent: fixed ids, INSERT OR IGNORE) ──────────────────────
 export const DEMO_INVOICES: (NewInvoice & { id: string })[] = [
-  { id: "inv_demo_cafe", payee: "0x000000000000000000000000000000000000cafe", label: "Lela — logo design", amountUsdc: 10, memo: "Invoice #1041, brand refresh" },
-  { id: "inv_demo_beef", payee: "0x000000000000000000000000000000000000beef", label: "Nova Labs — API work", amountUsdc: 120, memo: "Sprint 7, milestone 2" },
+  { id: "inv_demo_cafe", payee: "0x000000000000000000000000000000000000cafe", label: "Lela - logo design", amountUsdc: 10, memo: "Invoice #1041, brand refresh" },
+  { id: "inv_demo_beef", payee: "0x000000000000000000000000000000000000beef", label: "Nova Labs - API work", amountUsdc: 120, memo: "Sprint 7, milestone 2" },
   { id: "inv_demo_dead", payee: "0x000000000000000000000000000000000000dead", label: "Unknown vendor", amountUsdc: 50, memo: "Unsolicited invoice received by email" },
 ];
 export async function seedDemoInvoices(): Promise<{ inserted: number }> {

@@ -11,7 +11,7 @@ export type AnthropicLikeClient = Pick<Anthropic, "messages">;
 export interface AnthropicProviderOptions {
   model: string;
   apiKey?: string;
-  /** injected client (tests) — wins over apiKey */
+  /** injected client (tests) - wins over apiKey */
   client?: AnthropicLikeClient;
   timeoutMs?: number;
   maxRetries?: number;

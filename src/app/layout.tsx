@@ -13,7 +13,7 @@ const instrumentSerif = Instrument_Serif({ variable: "--font-instrument-serif", 
 
 export const metadata: Metadata = {
   title: {
-    default: "CompliR — Counterparty risk oracle on Arc. Compiled to signed verdicts.",
+    default: "CompliR - Counterparty risk oracle on Arc. Compiled to signed verdicts.",
     template: "%s · CompliR",
   },
   description:

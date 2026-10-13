@@ -1,5 +1,5 @@
 /**
- * @complir/sdk — minimal client for CompliR (counterparty risk oracle on Arc).
+ * @complir/sdk - minimal client for CompliR (counterparty risk oracle on Arc).
  *
  *   import { CompliR } from "@complir/sdk";
  *   import { privateKeyToAccount } from "viem/accounts";

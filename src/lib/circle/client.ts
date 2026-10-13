@@ -55,7 +55,7 @@ export function circleStatus(): CircleStatus {
   if (!c.CIRCLE_ENTITY_SECRET) missing.push("CIRCLE_ENTITY_SECRET");
   if (missing.length) return { ...base, enabled: false, reason: `${missing.join(" + ")} unset → dry-run` };
   if (!ENTITY_SECRET_RE.test(c.CIRCLE_ENTITY_SECRET!)) {
-    return { ...base, enabled: false, reason: "CIRCLE_ENTITY_SECRET must be 32 bytes hex (64 chars) — see docs/CIRCLE_WALLETS.md" };
+    return { ...base, enabled: false, reason: "CIRCLE_ENTITY_SECRET must be 32 bytes hex (64 chars) - see docs/CIRCLE_WALLETS.md" };
   }
   if (!base.blockchain) return { ...base, enabled: false, reason: `ARC_CHAIN_ID=${c.ARC_CHAIN_ID} has no Circle blockchain id (5042→ARC, 5042002→ARC-TESTNET)` };
   return { ...base, enabled: true };
@@ -67,7 +67,7 @@ export function circleEnabled(): boolean {
 
 let cached: CircleDeveloperControlledWalletsClient | null = null;
 
-/** SDK client. Throws when Circle is not configured — check `circleEnabled()` first. */
+/** SDK client. Throws when Circle is not configured - check `circleEnabled()` first. */
 export function circleClient(): CircleDeveloperControlledWalletsClient {
   if (cached) return cached;
   const s = circleStatus();

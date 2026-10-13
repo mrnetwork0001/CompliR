@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/ledger?limit=50 — most recent decision-log entries. Free.
+ * GET /api/v1/ledger?limit=50 - most recent decision-log entries. Free.
  */
 import { listDecisions } from "@/lib/ledger";
 import { countDecisions } from "@/lib/store";

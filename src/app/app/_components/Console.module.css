@@ -1,4 +1,4 @@
-/* /app — operations console. Hairline datasheet: kickers, mono data, accent only on the primary action and live dots. */
+/* /app - operations console. Hairline datasheet: kickers, mono data, accent only on the primary action and live dots. */
 
 .page {
   display: flex;
@@ -542,7 +542,7 @@
   letter-spacing: 0.02em;
 }
 .groupBlurb::before {
-  content: "— ";
+  content: "- ";
   color: var(--line-2);
 }
 /* groups are hairline rows: icon · title · body · stat · arrow */

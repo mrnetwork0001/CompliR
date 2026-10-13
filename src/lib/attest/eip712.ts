@@ -26,7 +26,7 @@ export const ATTESTATION_TYPES = {
 
 export const ATTESTATION_TYPE_STRING =
   "Attestation(address subject,uint8 tier,uint8 score,bytes32 decisionHash,uint64 issuedAt,uint64 validUntil)";
-/** keccak256(ATTESTATION_TYPE_STRING) — must equal the contract's ATTESTATION_TYPEHASH. */
+/** keccak256(ATTESTATION_TYPE_STRING) - must equal the contract's ATTESTATION_TYPEHASH. */
 export const ATTESTATION_TYPEHASH: Hex = keccak256(stringToHex(ATTESTATION_TYPE_STRING));
 
 /** Attestation lifetime per tier: LOW 7d, MEDIUM 24h, HIGH 1h. */

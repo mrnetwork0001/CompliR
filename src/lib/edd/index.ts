@@ -1,5 +1,5 @@
 /**
- * Enhanced Due Diligence (EDD) answer flow — spec C14.
+ * Enhanced Due Diligence (EDD) answer flow - spec C14.
  *
  * MEDIUM/HIGH verdicts carry `eddRequested: string[]` (questions written by the Risk Analyst). The pipeline (or an
  * operator) opens an EDD request for the counterparty, who answers it on the public page `/edd/<id>`. The answers are
@@ -45,7 +45,7 @@ export interface EddRequest {
   status: EddStatus;
   createdAt: number;
   answeredAt: number | null;
-  /** private — never return from a public route */
+  /** private - never return from a public route */
   response: EddResponse | null;
 }
 /** What the public GET route / page may show: no answers, no contact, masked subject. */
@@ -149,7 +149,7 @@ export interface AnswerResult {
 }
 
 /**
- * Store the answers (one shot — a second answer is rejected), log the hash, then re-screen the subject.
+ * Store the answers (one shot - a second answer is rejected), log the hash, then re-screen the subject.
  * The claim `UPDATE … WHERE status='OPEN'` is atomic, so concurrent double-submits cannot both succeed.
  */
 export async function answerEdd(id: string, answers: string[], contact?: string): Promise<AnswerResult> {

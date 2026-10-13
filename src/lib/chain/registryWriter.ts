@@ -3,8 +3,8 @@
  * Requires REGISTRY_ADDRESS + ATTESTER_PRIVATE_KEY (the attester signs the EIP-712 message locally). No-op otherwise.
  *
  * Who pays the USDC gas is the signer switch (SIGNER_MODE, docs/CIRCLE_WALLETS.md):
- *   local  (default) — the attester key itself sends the tx (viem).
- *   circle           — the Circle Developer-Controlled `ops` wallet relays it via contract execution (`attest` is
+ *   local  (default) - the attester key itself sends the tx (viem).
+ *   circle           - the Circle Developer-Controlled `ops` wallet relays it via contract execution (`attest` is
  *                      permissionless: the signature is the authority), Gas Station-sponsored when a policy is active.
  *                      Falls back to `local` when Circle is not configured or the relay fails.
  */

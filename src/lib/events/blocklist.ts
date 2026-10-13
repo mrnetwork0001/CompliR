@@ -6,7 +6,7 @@
  * implementation is Circle's FiatToken: on mainnet the proxy 0x3600…0000 (impl 0xc6ad…3ca6, FiatTokenProxy slot
  * 0x7050c9e0…) contains the topic hashes of `Blacklisted(address indexed _account)` / `UnBlacklisted(address …)`
  * and NOT of Blocklisted/UnBlocklisted (verified by bytecode inspection 2026-10-13). Logs surface at the PROXY
- * address (delegatecall), so we filter on USDC_ADDRESS with all four event names — whichever variant a future
+ * address (delegatecall), so we filter on USDC_ADDRESS with all four event names - whichever variant a future
  * upgrade emits is caught, and `eventName` is recorded as seen. The system emitter 0xffff…fffE only logs
  * Transfer, so it is not consulted here.
  *
@@ -17,10 +17,10 @@
  * id (store/repo INTERNAL_CLIENT_IDS) so these screens never count as traction or as "held elsewhere".
  *
  * Cursor: events_meta.cursor_block, advanced only through contiguously fetched blocks; a lag > EVENTS_MAX_LAG skips
- * ahead (this is a live reactor, not an indexer — the cadence watcher remains the baseline).
+ * ahead (this is a live reactor, not an indexer - the cadence watcher remains the baseline).
  *
  * Drill (no real blocklist event needed): `simulateBlocklistEvent(addr)` runs the identical handler. The re-screen
- * reads the chain, so for the verdict to flip the address must read as blocklisted — put
+ * reads the chain, so for the verdict to flip the address must read as blocklisted - put
  *   { "<addr>": { "usdcBlacklisted": true } }   in .data/overrides.json (or OVERRIDES_JSON)
  * first (overrides merge over live facts, src/lib/evidence/overrides.ts). Remove it and simulate again with
  * kind "UNBLOCKLISTED" to show the tier dropping back.
@@ -107,7 +107,7 @@ export async function rescreenAddressNow(address: Address, reason: string, deps:
     await appendDecision({ kind: "TIER_CHANGE", subject: addr, clientId: "events", payload: { from, to: verdict.tier, decisionId: verdict.decisionId, trigger: reason } });
   }
 
-  // Trust Map: regrade in place when the address is a graded node (never adds nodes — that's the tailer's job).
+  // Trust Map: regrade in place when the address is a graded node (never adds nodes - that's the tailer's job).
   try {
     const node = await getNode(addr);
     if (node) {

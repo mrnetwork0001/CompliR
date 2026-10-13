@@ -1,5 +1,5 @@
 /**
- * Event reactor — public surface.
+ * Event reactor - public surface.
  *   pollBlocklistEvents(opts)                 one tick: USDC Blacklisted/UnBlacklisted logs → re-screen → webhooks
  *   simulateBlocklistEvent(address, kind)     the "blacklist drill" (same handler, no chain event needed)
  *   rescreenAddressNow(address, reason)       re-screen + push to every watch (used by both)

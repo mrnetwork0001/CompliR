@@ -23,7 +23,7 @@ const COLOR: Record<BadgeStatus, string> = {
 
 export function fmtBadgeDate(unix: number): string {
   const d = new Date(unix * 1000);
-  if (Number.isNaN(d.getTime())) return "—";
+  if (Number.isNaN(d.getTime())) return "-";
   return d.toISOString().slice(0, 10);
 }
 

@@ -1,5 +1,5 @@
 /**
- * POST|GET /api/internal/usyc — one USYC sweep tick (Vercel Cron / external scheduler).
+ * POST|GET /api/internal/usyc - one USYC sweep tick (Vercel Cron / external scheduler).
  * Protected by `Authorization: Bearer $CRON_SECRET`. Dry-run by default; see docs/USYC.md.
  */
 import { runSweepOnce } from "@/lib/usyc";

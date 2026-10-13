@@ -1,7 +1,7 @@
 import "../__tests__/setup";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/** Mocked Circle SDK — every client method is a vi.fn the tests program per case. */
+/** Mocked Circle SDK - every client method is a vi.fn the tests program per case. */
 const sdk = vi.hoisted(() => ({
   listWalletSets: vi.fn(),
   createWalletSet: vi.fn(),

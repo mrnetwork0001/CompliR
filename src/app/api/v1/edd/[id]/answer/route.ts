@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/edd/:id/answer — the counterparty answers the EDD questions. Public, one answer per request
+ * POST /api/v1/edd/:id/answer - the counterparty answers the EDD questions. Public, one answer per request
  * (a second submission gets 409). Body: { answers: string[] (same length as questions, each ≤ 1000 chars), contact?: email }.
  * Stores the answers privately, logs keccak(answers) to the decision log, then re-screens the subject.
  */

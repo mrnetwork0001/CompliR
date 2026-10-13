@@ -4,7 +4,7 @@
  *   node --env-file=.env.local scripts/zerog/setup.ts              # config + catalog + live providers for the chosen model (free, no key needed)
  *   node --env-file=.env.local scripts/zerog/setup.ts --models     # the whole catalog (125 models on 2026-10-13)
  *   node --env-file=.env.local scripts/zerog/setup.ts --balance    # balance + 7-day usage (needs ZEROG_MANAGEMENT_KEY, an mk-… key with account:read)
- *   node --env-file=.env.local scripts/zerog/setup.ts --verify     # ONE forced-tool round trip through the router — SPENDS a few hundred tokens
+ *   node --env-file=.env.local scripts/zerog/setup.ts --verify     # ONE forced-tool round trip through the router - SPENDS a few hundred tokens
  *
  * The Router is a hosted gateway: there is no wallet key, no ledger contract and no `--fund` here. Deposits are an
  * on-chain transaction you sign in the pc.0g.ai dashboard (Dashboard → Deposit → 0G Payment Layer), see the printed
@@ -36,7 +36,7 @@ async function getJson<T>(path: string, key?: string): Promise<T> {
 }
 
 async function main() {
-  console.log(`CompliR × 0G Compute Router\n  base URL          ${base}\n  LLM_PROVIDER      ${provider}\n  model             ${model}  (format ${format} → ${format === "anthropic" ? "/v1/messages" : "/v1/chat/completions"})\n  ZEROG_API_KEY     ${apiKey ? apiKey.slice(0, 6) + "…" + apiKey.slice(-4) : "(not set)"}\n  ZEROG_MANAGEMENT_KEY ${mgmtKey ? "set" : "(not set — balance/usage skipped)"}\n`);
+  console.log(`CompliR × 0G Compute Router\n  base URL          ${base}\n  LLM_PROVIDER      ${provider}\n  model             ${model}  (format ${format} → ${format === "anthropic" ? "/v1/messages" : "/v1/chat/completions"})\n  ZEROG_API_KEY     ${apiKey ? apiKey.slice(0, 6) + "…" + apiKey.slice(-4) : "(not set)"}\n  ZEROG_MANAGEMENT_KEY ${mgmtKey ? "set" : "(not set - balance/usage skipped)"}\n`);
 
   const catalog = await getJson<{ data: Model[] }>("/v1/models");
   const all = catalog.data;
@@ -49,17 +49,17 @@ async function main() {
   const chosen = all.find((m) => m.id === model);
   console.log("");
   if (!chosen) {
-    console.log(`!! model "${model}" is NOT in the catalog — set LLM_MODEL to one of the ids above (ANALYST_MODEL=claude-sonnet-5-5 is an Anthropic id, not a router id).`);
+    console.log(`!! model "${model}" is NOT in the catalog - set LLM_MODEL to one of the ids above (ANALYST_MODEL=claude-sonnet-5-5 is an Anthropic id, not a router id).`);
   } else {
     const fmts = chosen.supported_formats ?? [];
     console.log(`Chosen model ${model}: formats ${fmts.join("/")}, ctx ${chosen.context_length}, max out ${chosen.max_completion_tokens}, tools=${(chosen.supported_parameters ?? []).includes("tools")}, verifiability=${chosen.verifiability ?? "none (relayed upstream, not TEE-attested)"}`);
-    if (!fmts.includes(format)) console.log(`!! format "${format}" is not advertised for ${model} (supported: ${fmts.join("/")}) — set ZEROG_FORMAT=${fmts[0]}`);
+    if (!fmts.includes(format)) console.log(`!! format "${format}" is not advertised for ${model} (supported: ${fmts.join("/")}) - set ZEROG_FORMAT=${fmts[0]}`);
     if (!(chosen.supported_parameters ?? []).includes("tools")) console.log(`!! ${model} does not advertise tool calling; the analyst/operator force a tool call and will fall back to deterministic output.`);
     const provs = await getJson<{ data: Prov[] }>(`/v1/providers?model=${encodeURIComponent(model)}`);
     if (!provs.data.length) console.log(`!! no live providers for ${model} right now → requests return 503 no_available_provider (pick another id).`);
     else for (const p of provs.data) console.log(`  provider ${String(p.provider_identity ?? p.address ?? "?").padEnd(14)} healthy=${p.is_healthy} latency=${p.latency ?? "?"}ms uptime=${p.uptime ?? "?"} trust=${p.trust_mode ?? "?"} $${usdPerM(p.pricing_usd?.prompt)}/$${usdPerM(p.pricing_usd?.completion)}`);
     const lat = Math.max(0, ...provs.data.map((p) => p.latency ?? 0));
-    if (lat > 8000) console.log(`  note: provider latency ${lat} ms > 8 s — keep LLM_TIMEOUT_MS at 30000 (0g default) or higher.`);
+    if (lat > 8000) console.log(`  note: provider latency ${lat} ms > 8 s - keep LLM_TIMEOUT_MS at 30000 (0g default) or higher.`);
   }
 
   if (args.has("--balance") || mgmtKey) {
@@ -100,7 +100,7 @@ async function main() {
     console.log(`structured output: ${JSON.stringify(out)}`);
     console.log(`usage: ${JSON.stringify(j.usage ?? null)}  trace: ${JSON.stringify(j.x_0g_trace ?? j._0g ?? null)}`);
     const ok = out && typeof out === "object" && (out as { ok?: unknown }).ok === true && String((out as { echo?: unknown }).echo ?? "").toLowerCase().includes("complir");
-    console.log(ok ? "\nOK — the router answers a forced tool call in the shape the analyst/operator expect. Set LLM_PROVIDER=0g to use it." : "\n!! unexpected shape — check the model/format above; the app would fall back to deterministic output for this response.");
+    console.log(ok ? "\nOK - the router answers a forced tool call in the shape the analyst/operator expect. Set LLM_PROVIDER=0g to use it." : "\n!! unexpected shape - check the model/format above; the app would fall back to deterministic output for this response.");
     if (!ok) process.exitCode = 1;
   } else {
     console.log(`\nNext: deposit & key (once) at https://pc.0g.ai → Dashboard → Deposit (0G tokens into the 0G Payment Layer contract, Router mode)

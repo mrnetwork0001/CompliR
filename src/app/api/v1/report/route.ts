@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/report — latest signed daily traction report. Free.
+ * GET /api/v1/report - latest signed daily traction report. Free.
  *   JSON: { date, hash, signature, signer, ledgerId, createdAt, report, archive: [{date, hash, final}] }
  *   ?format=md → text/markdown (the exact text pasted into Discord). 404 until the first report is published.
  */

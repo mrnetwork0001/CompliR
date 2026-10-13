@@ -1,5 +1,5 @@
 /**
- * Tip Market — public surface + the agent tick.
+ * Tip Market - public surface + the agent tick.
  *
  *   submitTip(input, meta)          create a tip (stake already settled by x402 or 0 for the same-origin demo) + ledger TIP/SUBMIT
  *   runTipsOnce(opts)               verify every SUBMITTED tip, pay every VERIFIED tip (daily cap), ledger entries for all of it
@@ -155,7 +155,7 @@ async function tick(opts: TickOptions): Promise<TipsTickResult> {
         const drop = await ledgerTip("DROP", tip, { reason: `stake not settled within ${grace}s` });
         await updateTip(tip.id, { status: "REJECTED", ledger: { ...tip.ledger, verify: drop }, decidedAt: now, verification: { tier: null, score: null, decisionId: null, reasonCodes: [], corroboration: { txs: [], urls: [], strong: 0, weak: 0 }, decision: "REJECTED", reason: "stake never settled", by: "agent", verifiedAt: now } });
         r.dropped++;
-        r.results.push({ tipId: tip.id, subject: tip.subject, status: "REJECTED", decision: "REJECTED", tier: null, bountyUsdc: 0, payoutUsdc: 0, payoutTx: null, payoutMode: null, note: "stake never settled — dropped (nothing to slash)" });
+        r.results.push({ tipId: tip.id, subject: tip.subject, status: "REJECTED", decision: "REJECTED", tier: null, bountyUsdc: 0, payoutUsdc: 0, payoutTx: null, payoutMode: null, note: "stake never settled - dropped (nothing to slash)" });
         continue;
       } else continue; // wait for the settlement to land
     }
@@ -195,7 +195,7 @@ export async function reviewTip(id: string, decision: "VERIFIED" | "REJECTED", n
   const v: TipVerification = {
     tier: prev?.tier ?? null, score: prev?.score ?? null, decisionId: prev?.decisionId ?? null, reasonCodes: prev?.reasonCodes ?? [],
     corroboration: prev?.corroboration ?? { txs: [], urls: [], strong: 0, weak: 0 },
-    decision, reason: `Human review: ${decision}${note ? ` — ${note}` : ""}${prev ? ` (agent said ${prev.decision}: ${prev.reason})` : ""}`, by: "human", verifiedAt: now,
+    decision, reason: `Human review: ${decision}${note ? ` - ${note}` : ""}${prev ? ` (agent said ${prev.decision}: ${prev.reason})` : ""}`, by: "human", verifiedAt: now,
   };
   // undo a previous automatic outcome's counters so stats stay consistent
   if (tip.status === "VERIFIED") await bumpStats(tip.submitter, { verified: -1 });

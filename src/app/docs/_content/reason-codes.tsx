@@ -32,7 +32,7 @@ const DESCRIPTIONS: Record<ReasonCode, { what: string; source: string }> = {
   NETWORK_HELD_ELSEWHERE: { what: "Other integrators rated this address HIGH in the last 7 days. Evidence is a count only; no other client is identifiable.", source: "shared screenings store (internal client ids excluded)" },
   NETWORK_SHARED_FUNDER: { what: "The subject shares a hop-1 funder with 3 or more of your own payees.", source: "your payee funders (client-scoped)" },
   COMMUNITY_TIP_VERIFIED: { what: "A staked tip about this address was verified by the agent in the last 180 days. Evidence carries tip ids, categories and strength only.", source: "tip market" },
-  CLEAN: { what: "Explicit positive: no signal from any source. Score 0.", source: "—" },
+  CLEAN: { what: "Explicit positive: no signal from any source. Score 0.", source: "-" },
 };
 
 const ORDER: ReasonCode[] = [

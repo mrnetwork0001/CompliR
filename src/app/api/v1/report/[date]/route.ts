@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/report/:date — one signed daily report. Free.
+ * GET /api/v1/report/:date - one signed daily report. Free.
  *   /api/v1/report/2026-10-13      → JSON { date, hash, signature, signer, ledgerId, createdAt, report }
  *   /api/v1/report/2026-10-13.md   → text/markdown  (also ?format=md)
  *   /api/v1/report/latest(.md)     → alias for the newest one

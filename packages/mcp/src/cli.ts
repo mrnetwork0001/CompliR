@@ -29,7 +29,7 @@ function log(msg: string): void {
 export async function main(argv: string[] = process.argv.slice(2), env: Env = process.env): Promise<void> {
   if (argv.includes("--help") || argv.includes("-h")) {
     process.stderr.write(
-      `complir-mcp v${SERVER_VERSION} — MCP server for CompliR\n\n` +
+      `complir-mcp v${SERVER_VERSION} - MCP server for CompliR\n\n` +
         `Usage: complir-mcp            stdio transport (for Claude Desktop / Claude Code / Cursor)\n` +
         `       complir-mcp --http [port]   Streamable HTTP on http://127.0.0.1:<port>/mcp (default 3333)\n\n` +
         `Env: COMPLIR_URL, COMPLIR_PAYER_PRIVATE_KEY, COMPLIR_MAX_PRICE_USDC, COMPLIR_MCP_HTTP_PORT\n`,

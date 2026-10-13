@@ -1,5 +1,5 @@
 /**
- * Local evidence overrides — merged OVER live facts for specific addresses.
+ * Local evidence overrides - merged OVER live facts for specific addresses.
  *
  * Purpose: demo HIGH / MEDIUM verdicts on wallets WE control. We must never pay (or test against) a real
  * sanctioned address (spec §4). Source: env OVERRIDES_JSON (inline JSON) or the file OVERRIDES_PATH

@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/shadow — "what we would have held that you paid". Free during the event. Spec §2.1.
+ * POST /api/v1/shadow - "what we would have held that you paid". Free during the event. Spec §2.1.
  * Body: { payeeBook: PayeeBookEntry[], recentPayments?: { to, amountUsdc, txHash? }[] }.
  * Screens every unique address (max 50, 4 in flight, depth 1) and joins with recentPayments.
  */

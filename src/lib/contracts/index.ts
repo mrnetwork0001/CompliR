@@ -1,7 +1,7 @@
 /**
  * Typed ABIs + constants for the CompliR on-chain contracts (contracts/src).
  *
- * The ABI files are generated — regenerate with:
+ * The ABI files are generated - regenerate with:
  *   cd contracts && forge build && node scripts/export-abi.mjs
  */
 import { TIER_ONCHAIN } from "../types";

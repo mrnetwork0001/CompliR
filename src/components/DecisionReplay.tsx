@@ -101,8 +101,8 @@ export function DecisionReplay({ id }: { id: string }) {
             <div><dt>Id</dt><dd className="mono break">{e.id}</dd></div>
             <div><dt>Kind</dt><dd><code>{e.kind}</code></dd></div>
             <div><dt>Seq</dt><dd className="mono">{e.seq}</dd></div>
-            <div><dt>Subject</dt><dd>{e.subject ? <HexLink value={e.subject} explorerUrl={explorerUrl} full /> : <span className="muted">—</span>}</dd></div>
-            <div><dt>Client</dt><dd className="mono break">{e.clientId ?? <span className="muted">—</span>}</dd></div>
+            <div><dt>Subject</dt><dd>{e.subject ? <HexLink value={e.subject} explorerUrl={explorerUrl} full /> : <span className="muted">-</span>}</dd></div>
+            <div><dt>Client</dt><dd className="mono break">{e.clientId ?? <span className="muted">-</span>}</dd></div>
             <div><dt>Created</dt><dd>{fmtTime(e.createdAt)}</dd></div>
           </dl>
         </section>

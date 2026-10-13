@@ -23,7 +23,7 @@ const anthropicTextReply = (text: string) => ({ body: { id: "msg_2", type: "mess
 const openAIToolReply = (args: string | object) => ({ body: { id: "cmpl", choices: [{ message: { role: "assistant", content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "submit_thing", arguments: typeof args === "string" ? args : JSON.stringify(args) } }] }, finish_reason: "tool_calls" }] } });
 const openAITextReply = (content: string) => ({ body: { id: "cmpl", choices: [{ message: { role: "assistant", content }, finish_reason: "stop" }] } });
 
-describe("selectProvider — env matrix", () => {
+describe("selectProvider - env matrix", () => {
   const cases: [Record<string, string | undefined>, string, string][] = [
     [{}, "none", "fallback"],
     [{ ANTHROPIC_API_KEY: "sk-ant" }, "anthropic", DEFAULT_ANTHROPIC_MODEL],
@@ -64,7 +64,7 @@ describe("selectProvider — env matrix", () => {
   });
 });
 
-describe("zeroGProvider — anthropic messages format (claude-* on the router)", () => {
+describe("zeroGProvider - anthropic messages format (claude-* on the router)", () => {
   it("forces the tool, sends the router auth headers, returns the tool input", async () => {
     const { f, calls } = fakeFetch([anthropicToolReply({ a: 1, b: "x" })]);
     const p = zeroGProvider({ apiKey: "sk-test", model: "claude-sonnet-5", fetchImpl: f });
@@ -103,7 +103,7 @@ describe("zeroGProvider — anthropic messages format (claude-* on the router)",
   });
 });
 
-describe("zeroGProvider — openai chat completions format (open-weight models)", () => {
+describe("zeroGProvider - openai chat completions format (open-weight models)", () => {
   it("parses tool_calls[0].function.arguments (JSON string)", async () => {
     const { f, calls } = fakeFetch([openAIToolReply({ a: 3, b: "y" })]);
     const r = await zeroGProvider({ apiKey: "k", model: "glm-5.3", fetchImpl: f }).structured(ARGS);
@@ -129,7 +129,7 @@ describe("zeroGProvider — openai chat completions format (open-weight models)"
   });
 });
 
-describe("zeroGProvider — errors, retries, timeouts", () => {
+describe("zeroGProvider - errors, retries, timeouts", () => {
   it("402 insufficient_balance → ZeroGError with status/code/request id, no retry", async () => {
     const { f, calls } = fakeFetch([{ status: 402, body: { error: { message: "Insufficient balance to process request", type: "payment_error", code: "insufficient_balance" }, request_id: "req_1" } }]);
     const err = await zeroGProvider({ apiKey: "k", model: "claude-sonnet-5", fetchImpl: f }).structured(ARGS).catch((e) => e);

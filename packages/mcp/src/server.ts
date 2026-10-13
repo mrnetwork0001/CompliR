@@ -1,5 +1,5 @@
 /**
- * @complir/mcp — MCP server exposing CompliR (counterparty risk oracle on Arc) as tools, resources and prompts.
+ * @complir/mcp - MCP server exposing CompliR (counterparty risk oracle on Arc) as tools, resources and prompts.
  * Transport-agnostic: `createServer(api)` is connected to stdio or Streamable HTTP by `cli.ts`.
  */
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -63,7 +63,7 @@ async function run(fn: () => Promise<unknown>): Promise<CallToolResult> {
 }
 const TIER_FROM_ONCHAIN: Record<number, string> = { 1: "LOW", 2: "MEDIUM", 3: "HIGH" };
 
-export const DOCS_TEXT = `# CompliR — counterparty risk oracle on Arc (MCP integration)
+export const DOCS_TEXT = `# CompliR - counterparty risk oracle on Arc (MCP integration)
 
 Before paying any address in USDC on Arc, call screen_counterparty. It returns a deterministic 0–100 risk score, a tier
 (LOW 0–20 · MEDIUM 21–60 · HIGH 61–100), recommended per-transaction / per-day limits, reason codes with evidence, a

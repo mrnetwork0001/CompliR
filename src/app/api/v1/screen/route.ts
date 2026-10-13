@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/screen — full grade of one address. Spec §2.1 (0.01 USDC via x402).
+ * POST /api/v1/screen - full grade of one address. Spec §2.1 (0.01 USDC via x402).
  * Body: ScreenRequest (src/lib/types). Response: Verdict (200) + `X-CompliR-Decision-Id` header.
  */
 import { ScreenRequestSchema } from "@/lib/types";

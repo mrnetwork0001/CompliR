@@ -7,7 +7,7 @@ import type { AnalystClient } from "../analyst/client";
 const types = (s: ReturnType<typeof snap>, opts = {}) => candidateActions(s, { now: NOW, ...opts }).candidates.map((c) => c.type);
 const rejectedFor = (s: ReturnType<typeof snap>, type: string, opts = {}) => candidateActions(s, { now: NOW, ...opts }).rejected.filter((r) => r.type === type).map((r) => r.reason).join(" | ");
 
-describe("candidateActions — liquidity guards", () => {
+describe("candidateActions - liquidity guards", () => {
   it("sweeps only the excess above USYC float + obligations due in 48 h", () => {
     const s = snap(); // float 20, cushion 5, due 8 → effective float 13 → deposit 7
     const { candidates } = candidateActions(s, { now: NOW });
@@ -36,7 +36,7 @@ describe("candidateActions — liquidity guards", () => {
   });
 });
 
-describe("candidateActions — payouts", () => {
+describe("candidateActions - payouts", () => {
   it("runs payouts when invoices are pending and the daily cap has room", () => {
     expect(types(snap())).toContain("RUN_PAYOUTS");
   });
@@ -52,7 +52,7 @@ describe("candidateActions — payouts", () => {
   });
 });
 
-describe("candidateActions — pricing guards", () => {
+describe("candidateActions - pricing guards", () => {
   it("raises 10% when paid calls / 24 h exceed the threshold (latency unmeasured = ok)", () => {
     const s = snap({ revenue: { ...snap().revenue!, callsPaid24h: 120 } });
     const price = candidateActions(s, { now: NOW, raiseCallsThreshold: 50 }).candidates.filter((c) => c.type === "ADJUST_PRICE");
@@ -125,7 +125,7 @@ describe("applyPlanGuards / model step", () => {
     expect(g2.notes.join(" ")).toMatch(/deterministic choice/);
   });
 
-  it("a model that proposes an unlisted action is overruled — code picks from the candidates", async () => {
+  it("a model that proposes an unlisted action is overruled - code picks from the candidates", async () => {
     const s = snap();
     const client: AnalystClient = {
       messages: {

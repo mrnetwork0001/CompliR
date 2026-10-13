@@ -1,5 +1,5 @@
 /**
- * Tip verification — deterministic, replayable checks run by the agent (no LLM in the decision):
+ * Tip verification - deterministic, replayable checks run by the agent (no LLM in the decision):
  *   (a) re-screen the subject through the normal pipeline (`screen({address, clientId:"tips"}, {kind:"RESCREEN"})`)
  *   (b) corroboration
  *       - evidence tx hashes: `eth_getTransactionReceipt` on Arc; a receipt that involves the subject (from / to /
@@ -11,7 +11,7 @@
  *       REJECTED      re-screen LOW with no corroboration at all
  *       NEEDS_REVIEW  everything else (LOW + something, MEDIUM alone, or the re-screen failed)
  *
- * The verification record shown to the submitter carries tier / score / reason codes / decision id only — never the
+ * The verification record shown to the submitter carries tier / score / reason codes / decision id only - never the
  * evidence bundle, never another client's data.
  */
 import type { PublicClient } from "viem";
@@ -82,7 +82,7 @@ export function decide(tier: Verdict["tier"] | null, strong: number, weak: numbe
   if (tier === "MEDIUM" && strong >= 1) return { decision: "VERIFIED", reason: `Re-screen is MEDIUM with ${strong} strong corroboration.` };
   if (tier === "LOW" && strong === 0 && weak === 0) return { decision: "REJECTED", reason: "Re-screen is LOW and the tip carries no corroboration." };
   if (tier == null) return { decision: "NEEDS_REVIEW", reason: "Re-screen unavailable; a human must look at the evidence." };
-  return { decision: "NEEDS_REVIEW", reason: `Re-screen is ${tier} with ${strong} strong / ${weak} weak corroboration — not enough to verify or reject automatically.` };
+  return { decision: "NEEDS_REVIEW", reason: `Re-screen is ${tier} with ${strong} strong / ${weak} weak corroboration - not enough to verify or reject automatically.` };
 }
 
 /** Bounty = TIP_BOUNTY_USDC × category multiplier × (0.5 + 0.5 × reputation), 6 dp. */

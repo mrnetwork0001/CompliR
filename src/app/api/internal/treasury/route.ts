@@ -1,5 +1,5 @@
 /**
- * POST /api/internal/treasury — one treasury-agent tick (Vercel Cron / external scheduler / the "Run agent now" button).
+ * POST /api/internal/treasury - one treasury-agent tick (Vercel Cron / external scheduler / the "Run agent now" button).
  * Protected by `Authorization: Bearer $CRON_SECRET`. Returns the TickResult {mode, processed, paid, limited, held, failed, results}.
  */
 import { runTreasuryOnce } from "@/lib/treasury";

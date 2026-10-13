@@ -85,8 +85,8 @@ export function LedgerList({ limit = 20 }: { limit?: number }) {
                   <td>
                     <code>{e.kind}</code>
                   </td>
-                  <td className="mono">{e.subject ? short(e.subject) : "—"}</td>
-                  <td>{tierOf(e) ? <TierBadge tier={tierOf(e)} size="sm" /> : <span className="muted">—</span>}</td>
+                  <td className="mono">{e.subject ? short(e.subject) : "-"}</td>
+                  <td>{tierOf(e) ? <TierBadge tier={tierOf(e)} size="sm" /> : <span className="muted">-</span>}</td>
                   <td className="mono" title={e.hash}>
                     {short(e.hash, 10, 6)}
                   </td>

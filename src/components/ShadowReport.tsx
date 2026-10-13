@@ -10,7 +10,7 @@ import { CopyButton } from "./CopyButton";
 import styles from "./ShadowReport.module.css";
 
 /**
- * Demo payee book: the three demo addresses, one lookalike of …cafe (same first-4 + last-4 hex, different middle —
+ * Demo payee book: the three demo addresses, one lookalike of …cafe (same first-4 + last-4 hex, different middle -
  * exactly the address-poisoning pattern wallets hide behind "0x0000…cafe"), and one ordinary payee.
  */
 export const DEMO_BOOK = `Acme Supplies Ltd,0x000000000000000000000000000000000000dead
@@ -125,14 +125,14 @@ const mask = (a: string) => short(a, 6, 4);
 export function reportMarkdown(r: ShadowResponse, labels: Map<string, string>, origin: string): string {
   const s = r.summary;
   const lines: string[] = [];
-  lines.push(`**CompliR shadow report** — ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC`);
+  lines.push(`**CompliR shadow report** - ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC`);
   lines.push(`Screened **${s.screened}** · would hold **${s.wouldHold}** · would limit **${s.wouldLimit}** · lookalikes **${s.lookalikes}**`);
   lines.push("");
   lines.push("| Payee | Address | Score | Tier | Action | Reasons |");
   lines.push("|---|---|---:|---|---|---|");
   for (const e of r.entries) {
     const action = e.wouldHold ? "HOLD" : e.wouldLimit ? "LIMIT" : "pay";
-    lines.push(`| ${e.label.replace(/\|/g, "/")} | \`${mask(e.address)}\` | ${e.score} | ${e.tier} | ${action} | ${e.reasonCodes.join(", ") || "—"} |`);
+    lines.push(`| ${e.label.replace(/\|/g, "/")} | \`${mask(e.address)}\` | ${e.score} | ${e.tier} | ${action} | ${e.reasonCodes.join(", ") || "-"} |`);
   }
   if (r.paymentsAtRisk.length) {
     lines.push("");
@@ -341,7 +341,7 @@ function Row({ e, explorerUrl }: { e: ShadowEntry; explorerUrl: string }) {
       <td className="mono">{e.score}</td>
       <td><TierBadge tier={e.tier} size="sm" /></td>
       <td>{e.wouldHold ? <span className="badge badgeHIGH">HOLD</span> : e.wouldLimit ? <span className="badge badgeMEDIUM">LIMIT</span> : <span className="badge badgeLOW">pay</span>}</td>
-      <td className={styles.codes}>{e.reasonCodes.length ? e.reasonCodes.map((c) => <code key={c}>{c}</code>) : <span className="muted">—</span>}</td>
+      <td className={styles.codes}>{e.reasonCodes.length ? e.reasonCodes.map((c) => <code key={c}>{c}</code>) : <span className="muted">-</span>}</td>
     </tr>
   );
 }

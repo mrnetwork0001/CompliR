@@ -54,7 +54,7 @@ export const riskAnalyst: DocPage = {
               ["filterEdd", "none for LOW; strings only, trimmed, ≥ 8 chars, de-duplicated, max 3", "EDD dropped: LOW tier · EDD filtered: 5 → 3"],
               ["sanitizeRationale", "every 0x hex (6–64 chars), NK-… OpenSanctions id or Q… Wikidata id must appear in the evidence, reasons or request (prefix ≥ 10 chars allowed); else replaced; then cut at 120 words", "stripped unverified identifiers: …"],
               ["requestDepth", "honoured once; ignored at depth 2 or when the client pinned depth 1", "requestDepth ignored: client pinned depth 1"],
-              ["clampConfidence", "0–1, default 0.5", "—"],
+              ["clampConfidence", "0–1, default 0.5", "-"],
             ]}
           />
           <p>
@@ -76,16 +76,16 @@ export const riskAnalyst: DocPage = {
           <Code lang="text" code={FALLBACK} />
           <ul>
             <li>
-              <strong>Limits</strong> — the band ceiling for the tier.
+              <strong>Limits</strong> - the band ceiling for the tier.
             </li>
             <li>
-              <strong>Rationale</strong> — the score, the tier and the top three reasons with their weights and one identifier each, all taken from the evidence.
+              <strong>Rationale</strong> - the score, the tier and the top three reasons with their weights and one identifier each, all taken from the evidence.
             </li>
             <li>
-              <strong>EDD</strong> — none for LOW; otherwise one question per top reason (at most two), naming the path&apos;s last address.
+              <strong>EDD</strong> - none for LOW; otherwise one question per top reason (at most two), naming the path&apos;s last address.
             </li>
             <li>
-              <strong>Cadence</strong> — the top of the window; halved after a tier change.
+              <strong>Cadence</strong> - the top of the window; halved after a tier change.
             </li>
           </ul>
           <p>

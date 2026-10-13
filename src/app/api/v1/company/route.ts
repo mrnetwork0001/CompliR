@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/company — the agent-run company in one read: snapshot + last 10 operator decisions. Free, public,
+ * GET /api/v1/company - the agent-run company in one read: snapshot + last 10 operator decisions. Free, public,
  * cached 30 s (in-process memo + Cache-Control) because the snapshot touches Arc RPC and Circle.
  */
 import { companySnapshot, recentOperatorDecisions, type CompanySnapshot } from "@/lib/operator";

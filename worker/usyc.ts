@@ -1,7 +1,7 @@
 /**
  * Hourly USYC revenue sweep loop (not for Vercel serverless; use /api/internal/usyc with a cron there).
  * Run: `npx tsx --env-file=.env.local worker/usyc.ts`
- * Default is DRY-RUN (logs the plan to the decision log). Set USYC_MODE=live + REVENUE_PRIVATE_KEY to execute — see docs/USYC.md.
+ * Default is DRY-RUN (logs the plan to the decision log). Set USYC_MODE=live + REVENUE_PRIVATE_KEY to execute - see docs/USYC.md.
  */
 import { runSweepOnce } from "../src/lib/usyc";
 

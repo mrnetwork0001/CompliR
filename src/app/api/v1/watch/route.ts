@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/watch — register address + webhook for adaptive re-screening. Spec §2.1 (0.05 USDC / 30 days).
+ * POST /api/v1/watch - register address + webhook for adaptive re-screening. Spec §2.1 (0.05 USDC / 30 days).
  * Body: WatchRequest (src/lib/types). Response: Watch (200). Re-registering the same address+client upserts.
  */
 import { WatchRequestSchema } from "@/lib/types";

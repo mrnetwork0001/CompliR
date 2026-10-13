@@ -6,7 +6,7 @@
  *
  *   format "anthropic" → POST {base}/v1/messages          (Anthropic Messages shape; the only format the claude-* models
  *                                                           on the Router advertise: supported_formats: ["anthropic"])
- *   format "openai"    → POST {base}/v1/chat/completions   (OpenAI shape; open-weight models — glm-*, qwen*, deepseek-*)
+ *   format "openai"    → POST {base}/v1/chat/completions   (OpenAI shape; open-weight models - glm-*, qwen*, deepseek-*)
  *   format "auto"      → "anthropic" for claude-* model ids, "openai" otherwise
  *
  * Both paths force one tool call against the caller's JSON schema and return its arguments. If the model answers in
@@ -103,7 +103,7 @@ export function extractOpenAI(res: unknown, toolName: string): Extracted {
 type Turn = { role: "assistant" | "user"; content: string };
 
 function repairInstruction(args: StructuredArgs): string {
-  return `Your previous reply was not a valid ${args.toolName} call. Call the ${args.toolName} tool, or return ONLY a JSON object matching this schema — no prose, no code fences:\n${JSON.stringify(args.schema)}`;
+  return `Your previous reply was not a valid ${args.toolName} call. Call the ${args.toolName} tool, or return ONLY a JSON object matching this schema - no prose, no code fences:\n${JSON.stringify(args.schema)}`;
 }
 
 function anthropicBody(model: string, args: StructuredArgs, extra: Turn[]): Record<string, unknown> {
@@ -149,7 +149,7 @@ export function zeroGProvider(opts: ZeroGProviderOptions): LlmProvider {
   const maxRetries = opts.maxRetries ?? 1;
   const headers: Record<string, string> = {
     "content-type": "application/json",
-    // docs: Authorization: Bearer sk-…; the gateway also reads x-api-key (Anthropic SDK convention) — send both.
+    // docs: Authorization: Bearer sk-…; the gateway also reads x-api-key (Anthropic SDK convention) - send both.
     authorization: `Bearer ${opts.apiKey}`,
     "x-api-key": opts.apiKey,
     ...(format === "anthropic" ? { "anthropic-version": ZEROG_ANTHROPIC_VERSION } : {}),

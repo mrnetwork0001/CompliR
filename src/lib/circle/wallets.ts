@@ -1,8 +1,8 @@
 /**
  * CompliR's two Circle Developer-Controlled Wallets on Arc (docs/CIRCLE_WALLETS.md):
  *
- *   revenue — x402 payTo (what `X402_PAY_TO` should be set to) and the USYC sweep source
- *   ops     — gas-paying relayer for `AttestationRegistry.attest(...)` (permissionless relay of the
+ *   revenue - x402 payTo (what `X402_PAY_TO` should be set to) and the USYC sweep source
+ *   ops     - gas-paying relayer for `AttestationRegistry.attest(...)` (permissionless relay of the
  *             locally-signed EIP-712 attestation). SCA by default so Circle Gas Station can sponsor it.
  *
  * `ensureWallets()` is idempotent: ids are persisted in the `circle_wallets` table (and wallets are looked up
@@ -10,7 +10,7 @@
  *
  * Spending controls: Circle's API-managed *spending policies* (per-tx / daily / weekly caps, allow/blocklists)
  * exist only for **Agent Wallets** (Agent Stack; user-controlled MPC wallets driven by the Circle CLI
- * `circle wallet limit set --chain ARC …`, mainnet only) — there is no REST endpoint to attach one to a
+ * `circle wallet limit set --chain ARC …`, mainnet only) - there is no REST endpoint to attach one to a
  * developer-controlled wallet. So the policy is stored per role in `circle_wallets.policy` and enforced here
  * (`checkSpend`) before any outbound Circle transaction; Gas Station adds Circle-side gas caps on top.
  */
@@ -30,7 +30,7 @@ export interface SpendingPolicy {
   dailyUsdc: number;
   /** Contract / recipient allowlist (lower-case). Empty = any target. */
   allowlist: Address[];
-  /** How the policy is enforced — app-side here; Circle-side only for Agent Wallets. */
+  /** How the policy is enforced - app-side here; Circle-side only for Agent Wallets. */
   enforcement: "app" | "circle-agent-wallet";
 }
 
@@ -112,7 +112,7 @@ function rowFrom(r: Record<string, unknown>): CircleWalletRow {
   };
 }
 
-/** Persisted wallet for a role on the configured chain (DB only — never calls Circle). */
+/** Persisted wallet for a role on the configured chain (DB only - never calls Circle). */
 export async function walletByRole(role: WalletRole): Promise<CircleWalletRow | null> {
   await ensureCircleSchema();
   const bc = circleBlockchain();
@@ -159,7 +159,7 @@ async function resolveWalletSet(stored: CircleWalletRow[]): Promise<{ id: string
 
 /**
  * Create-or-fetch the "complir" wallet set and the `revenue` + `ops` wallets on the configured Arc network.
- * Dry-run (no credentials) returns whatever is already stored and a reason — it never throws for config reasons.
+ * Dry-run (no credentials) returns whatever is already stored and a reason - it never throws for config reasons.
  */
 export async function ensureWallets(): Promise<EnsureWalletsResult> {
   const status = circleStatus();
@@ -228,7 +228,7 @@ export async function balances(role: WalletRole): Promise<BalancesResult> {
 }
 
 /**
- * Store the intended spending policy for a role. Enforcement is app-side (`checkSpend`) — Circle has no API to attach
+ * Store the intended spending policy for a role. Enforcement is app-side (`checkSpend`) - Circle has no API to attach
  * per-wallet caps to a developer-controlled wallet; the equivalent Circle-side control exists for Agent Wallets via
  * `circle wallet limit set --chain ARC --policy-type stablecoin --per-tx … --daily …` (returned as `cliHint`).
  */

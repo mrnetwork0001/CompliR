@@ -1,5 +1,5 @@
 /**
- * USYC revenue sweep — spec C15.
+ * USYC revenue sweep - spec C15.
  *
  * x402 revenue lands as USDC in the revenue wallet. Idle USDC above a small float is subscribed into USYC
  * (Circle's tokenized money-market fund on Arc) via the USYC Teller; when the float runs low, USYC is redeemed back.
@@ -10,7 +10,7 @@
  *   USYC Teller   0x51A8CE47dC08ba5CD19c7aa84EA6fD6664f60f9b   (testnet 0x9fdF14c5B14173D74C08Af27AebFf39240dC105A)
  *   Entitlements  0xb69ecb156Dc0028198028c501340d5367845ca72   (testnet 0xcc205224862c7641930c87679e98999d23c26113)
  * Teller interface (developers.circle.com/tokenized/usyc/subscribe-and-redeem):
- *   deposit(uint256 _assets, address _receiver) returns (uint256 shares)   — after usdc.approve(teller, _assets)
+ *   deposit(uint256 _assets, address _receiver) returns (uint256 shares)   - after usdc.approve(teller, _assets)
  *   redeem(uint256 _shares, address _receiver, address _account) returns (uint256 assets)
  *
  * IMPORTANT: USYC is a permissioned token. The Teller and the token query the Entitlements contract; a wallet that

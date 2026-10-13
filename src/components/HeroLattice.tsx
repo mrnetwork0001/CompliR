@@ -1,6 +1,6 @@
 "use client";
 /**
- * HeroLattice — continuous "risk lattice" animation for the landing hero.
+ * HeroLattice - continuous "risk lattice" animation for the landing hero.
  * A 2-hop funder graph drifts around a subject; signal pulses travel inward along dashed edges;
  * a slow radar sweep grades each node as it passes (flicks it to its tier colour, then fades);
  * a mono readout ticks the last screenings. Pure SVG + rAF, no deps. Static under reduced motion.
@@ -151,7 +151,7 @@ export default function HeroLattice() {
             <span>#{r.n}</span><span>{r.addr}</span><span style={{ color: TIER_COLOR[r.tier] }}>{r.tier}</span><span>{r.score}</span>
           </li>
         ))}
-        {readout.length === 0 && !reduced && <li className={styles.readoutRow}><span>—</span><span>sweep warming up</span><span /><span /></li>}
+        {readout.length === 0 && !reduced && <li className={styles.readoutRow}><span>-</span><span>sweep warming up</span><span /><span /></li>}
       </ol>
     </div>
   );

@@ -1,4 +1,4 @@
-/** GET /api/v1/map/changes?limit=25 — most recent tier changes seen by the Trust Map tailer. Free. */
+/** GET /api/v1/map/changes?limit=25 - most recent tier changes seen by the Trust Map tailer. Free. */
 import { recentTierChanges } from "@/lib/trustmap/query";
 import { handle, ok } from "../../../_lib/respond";
 import { parseLimit } from "../../../_lib/parse";

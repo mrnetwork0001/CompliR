@@ -7,7 +7,7 @@
  *
  * Circle Nanopayments (Gateway batched x402) is NOT a rail here: it is a buyer→x402-seller flow (the buyer signs
  * EIP-3009 authorizations against a Gateway deposit; the seller's middleware settles batches). There is no server-side
- * "push USDC to an arbitrary address" API and the SDK (@circle-fin/x402-batching) is not installed — see docs/TIPS.md.
+ * "push USDC to an arbitrary address" API and the SDK (@circle-fin/x402-batching) is not installed - see docs/TIPS.md.
  *
  * Slash = the stake was already settled to X402_PAY_TO by x402; we only record it (ledger "TIP"/SLASH) and update stats.
  * Daily cap: TIPS_DAILY_CAP_USDC (default 5). A VERIFIED tip beyond today's cap stays VERIFIED and is retried tomorrow.
@@ -97,7 +97,7 @@ export async function payTip(tip: Tip, amountUsdc: number, opts: PayOptions = {}
   const payable = /^0x[0-9a-f]{40}$/i.test(tip.submitter) && tip.submitter !== DEMO_SUBMITTER && tip.submitter !== ANON_SUBMITTER;
   if (!payable) {
     await addSpend(amount, now);
-    return { paid: true, mode: "dry-run", txHash: null, amountUsdc: amount, note: `${tip.submitter} submitter has no payout address (same-origin demo / x402 disabled) — bounty recorded, nothing sent` };
+    return { paid: true, mode: "dry-run", txHash: null, amountUsdc: amount, note: `${tip.submitter} submitter has no payout address (same-origin demo / x402 disabled) - bounty recorded, nothing sent` };
   }
   const transfer = opts.transfer ?? defaultTransfer;
   const r = await transfer(tip.submitter.toLowerCase() as Address, amount, `complir:tip:${tip.id}`);

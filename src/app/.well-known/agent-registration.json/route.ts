@@ -1,4 +1,4 @@
-/** GET /.well-known/agent-registration.json — ERC-8004 registration metadata (see docs/ERC8004.md). */
+/** GET /.well-known/agent-registration.json - ERC-8004 registration metadata (see docs/ERC8004.md). */
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { config } from "@/lib/config";

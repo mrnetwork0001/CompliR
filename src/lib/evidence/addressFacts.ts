@@ -23,7 +23,7 @@ export interface ActivityOptions {
   client?: Pick<PublicClient, "getTransactionCount"> | null;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
-  /** earliest on-chain sighting we already know of (unix s) — used as a floor */
+  /** earliest on-chain sighting we already know of (unix s) - used as a floor */
   firstSeenHint?: number | null;
 }
 

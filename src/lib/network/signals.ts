@@ -1,5 +1,5 @@
 /**
- * Cross-client network signal — the two things only a SHARED risk oracle can say (docs/SUGGESTIONS.md §G item 37):
+ * Cross-client network signal - the two things only a SHARED risk oracle can say (docs/SUGGESTIONS.md §G item 37):
  *
  *   heldElsewhere      "this address was rated HIGH by N other treasuries this week"   (from `screenings`)
  *   sharedFunder       "shares a hop-1 funder with N of YOUR payees"                   (from `payee_funders`, this client only)

@@ -1,5 +1,5 @@
 /**
- * POST /api/internal/trustmap — one Trust Map tailer tick (Vercel Cron / external scheduler / the /map "run one
+ * POST /api/internal/trustmap - one Trust Map tailer tick (Vercel Cron / external scheduler / the /map "run one
  * tick" dev button). Protected by `Authorization: Bearer $CRON_SECRET`, same pattern as /api/internal/watcher.
  * Returns the TailResult (blocks scanned, recipients, graded nodes, rpc calls, partial/rateLimited flags).
  */

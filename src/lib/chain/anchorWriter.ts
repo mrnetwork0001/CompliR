@@ -4,7 +4,7 @@
  *
  * `anchorRoot` is `onlyAttester` (not a permissionless relay like `attest`), so under SIGNER_MODE=circle the Circle
  * `ops` wallet can only anchor if it *is* the registry attester (owner called `setAttester(opsWallet)`; needs an EOA
- * wallet — see docs/CIRCLE_WALLETS.md). We read `attester()` on-chain and pick: Circle when it matches, else the
+ * wallet - see docs/CIRCLE_WALLETS.md). We read `attester()` on-chain and pick: Circle when it matches, else the
  * local attester key. `via` in the result says which one ran.
  */
 import { createPublicClient, createWalletClient, http } from "viem";

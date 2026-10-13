@@ -1,6 +1,6 @@
 /**
  * Model access for the analyst and the operator. Since the provider seam (src/lib/llm) the model is chosen from the
- * environment — LLM_PROVIDER=anthropic | 0g | none (see docs/LLM_PROVIDERS.md) — and both callers only ever call
+ * environment - LLM_PROVIDER=anthropic | 0g | none (see docs/LLM_PROVIDERS.md) - and both callers only ever call
  * `provider.structured(...)`. Config is read defensively: config() validates the whole environment (Arc RPC etc.) and
  * throws when incomplete; the analyst must never throw, so we fall back to raw env for the keys we need.
  *

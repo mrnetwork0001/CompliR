@@ -80,7 +80,7 @@ describe("tailOnce", () => {
     expect(r.toBlock).toBe(110);
     expect(r.logs).toBe(6);
     expect(r.recipients).toBe(4);
-    expect(r.candidates).toBe(3); // C 100, K 60, A 35 — B (10) is below 25
+    expect(r.candidates).toBe(3); // C 100, K 60, A 35 - B (10) is below 25
     expect(r.skippedContracts).toBe(1);
     expect(r.gradedNodes.map((g) => [g.address, g.tier])).toEqual([[C, "HIGH"], [A, "LOW"]]);
     expect(screenFn).toHaveBeenCalledTimes(2);

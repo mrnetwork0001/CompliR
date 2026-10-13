@@ -1,6 +1,6 @@
 "use client";
 /**
- * TimingDiagram — one screen as a logic-analyser capture.
+ * TimingDiagram - one screen as a logic-analyser capture.
  * Five lanes (EVIDENCE with six concurrent sub-traces, RULES, ANALYST, ATTESTATION, REGISTRY·LEDGER) draw digital
  * waveforms over a 0–2.4 s axis. A time cursor sweeps left→right; when it crosses a lane's rising edge the lane's
  * mono readout on the right updates. After the sweep a dashed "re-screen in 24 h" return carries the cursor back
@@ -249,7 +249,7 @@ export default function TimingDiagram() {
           const v = readouts[i];
           return (
             <text key={`ro${l.id}`} x={readX} y={r2(cy)} className={`${styles.readout} ${v === null ? styles.readoutIdle : ""}`}>
-              {v ?? "—"}
+              {v ?? "-"}
             </text>
           );
         })}
@@ -285,7 +285,7 @@ export default function TimingDiagram() {
         {LANES.map((l, i) => (
           <li key={l.id}>
             <span>{l.id}</span>
-            <span className={readouts[i] === null ? styles.idle : undefined}>{readouts[i] ?? "—"}</span>
+            <span className={readouts[i] === null ? styles.idle : undefined}>{readouts[i] ?? "-"}</span>
           </li>
         ))}
       </ol>

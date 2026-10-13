@@ -1,5 +1,5 @@
 /**
- * Network signal — public surface.
+ * Network signal - public surface.
  *   networkSignals(subject, clientId, { funders })  → NetworkSignal (counts only)
  *   recordFunders(clientId, subject, bundle)         → remember hop-1 funders for the shared-funder signal
  */

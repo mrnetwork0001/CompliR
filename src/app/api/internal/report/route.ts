@@ -1,5 +1,5 @@
 /**
- * /api/internal/report — generate + sign + store the daily traction report (Vercel Cron / scheduler; CRON_SECRET).
+ * /api/internal/report - generate + sign + store the daily traction report (Vercel Cron / scheduler; CRON_SECRET).
  *   GET|POST ?date=YYYY-MM-DD (default: today UTC) &force=1 (regenerate; otherwise idempotent per date)
  *   `?date=yesterday` publishes the last complete UTC day (what worker/report.ts does at 00:05 UTC).
  */

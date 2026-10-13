@@ -1,8 +1,8 @@
 /**
  * Network-signal persistence. Own table (CREATE TABLE IF NOT EXISTS, idempotent) on the shared libsql db():
- *   payee_funders   (client_id, payee, funder) — hop-1 funders seen for each client's payees, written on every screen
+ *   payee_funders   (client_id, payee, funder) - hop-1 funders seen for each client's payees, written on every screen
  *
- * Reads also touch the lead's `screenings` (held-elsewhere) and the Trust Map's `trustmap_edges` (concentration) —
+ * Reads also touch the lead's `screenings` (held-elsewhere) and the Trust Map's `trustmap_edges` (concentration) -
  * read-only, and only ever reduced to counts before leaving this module.
  */
 import { db, migrate } from "../store/db";
@@ -62,7 +62,7 @@ export async function upsertPayeeFunders(clientId: string, payee: Address, funde
 
 /**
  * Distinct OTHER clients whose screen rated `subject` HIGH since `since`. Internal ids (our UI/workers/demos) and
- * `clientId` itself never count. Returns a count + the latest such screen — no client id leaves the store.
+ * `clientId` itself never count. Returns a count + the latest such screen - no client id leaves the store.
  */
 export async function heldElsewhere(subject: Address, clientId: string | null, since: number): Promise<{ clients: number; lastAt: number | null }> {
   await migrateNetwork();
@@ -98,7 +98,7 @@ export async function sharedFunderForClient(clientId: string, subject: Address, 
 
 /**
  * Network-wide: how many OTHER payees (any client's payee book) or Trust Map recipients were funded by one of
- * `funders`? Picks the funder with the most. Count only — the funder is the subject's own hop-1 funder.
+ * `funders`? Picks the funder with the most. Count only - the funder is the subject's own hop-1 funder.
  */
 export async function concentrationAcrossNetwork(subject: Address, funders: Address[]): Promise<{ funder: Address; otherPayees: number } | null> {
   await migrateNetwork();

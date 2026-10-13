@@ -1,5 +1,5 @@
 /**
- * POST|GET /api/internal/tips — one Tip Market tick (verify SUBMITTED tips, pay VERIFIED ones) for Vercel Cron / an
+ * POST|GET /api/internal/tips - one Tip Market tick (verify SUBMITTED tips, pay VERIFIED ones) for Vercel Cron / an
  * external scheduler / the "Run verifier now" button. Protected by `Authorization: Bearer $CRON_SECRET`.
  *
  * Human review override: POST with JSON `{ "review": "tip_…", "decision": "VERIFIED" | "REJECTED", "note"?: "…" }`

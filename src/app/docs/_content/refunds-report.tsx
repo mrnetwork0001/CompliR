@@ -15,7 +15,7 @@ curl -s -X POST https://complir.example/api/internal/refunds -H "Authorization: 
 # tick the queue + list everything          GET  /api/internal/refunds
 # retry a DRY_RUN / FAILED row              POST /api/internal/refunds { "requeue": "ref_…" }`;
 
-const NOTES = `// .data/report-notes.json (REPORT_NOTES_PATH) — read every time a report is generated
+const NOTES = `// .data/report-notes.json (REPORT_NOTES_PATH) - read every time a report is generated
 {
   "notes":    [{ "date": "2026-10-13", "text": "Shadow report delivered to Steward (DM)." }],
   "mistakes": [{ "date": "2026-10-13", "what": "Charged 0.01 USDC for a screen that 500'd (RPC timeout). Auto-refunded.", "refundTx": "0x…" }],

@@ -125,7 +125,7 @@ export const httpApi: DocPage = {
               ["502", "verify-unavailable", "facilitator /verify unreachable; no charge"],
               ["502", "settle-unavailable", "facilitator /settle unreachable after the handler ran; retry with the same authorization, you will not be charged twice"],
               ["502", "refund-queued", "settled but undelivered: PAID_BUT_UNDELIVERED, refund queued to the payer"],
-              ["503", "—", "PAYMENT_MISCONFIGURED: x402 enabled but X402_PAY_TO / facilitator URL missing; no charge"],
+              ["503", "-", "PAYMENT_MISCONFIGURED: x402 enabled but X402_PAY_TO / facilitator URL missing; no charge"],
             ]}
           />
           <p>

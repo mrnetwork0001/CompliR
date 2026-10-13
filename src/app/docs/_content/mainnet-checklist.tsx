@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Code, Status, Table } from "../_components/Doc";
 import type { DocPage } from "./types";
 
-const REGISTRY = `# contracts/README.md — Arc mainnet, chain id 5042, gas is USDC; use a keystore account, not a raw key
+const REGISTRY = `# contracts/README.md - Arc mainnet, chain id 5042, gas is USDC; use a keystore account, not a raw key
 export ARC_RPC_URL=https://rpc.mainnet.arc.io
 export OWNER_ADDRESS=0x…        # cold admin: rotates the attester, pauses, revokes
 export ATTESTER_ADDRESS=0x…     # address of ATTESTER_PRIVATE_KEY

@@ -1,5 +1,5 @@
 /**
- * /api/internal/refunds — refund queue, protected by `Authorization: Bearer $CRON_SECRET`.
+ * /api/internal/refunds - refund queue, protected by `Authorization: Bearer $CRON_SECRET`.
  *   GET  → one processing tick, then {status, refunds}            (Vercel Cron uses GET)
  *   POST {}                                             → tick
  *   POST {payer, amountUsdc, reason, originalTx?}       → human-initiated refund, queued + tick

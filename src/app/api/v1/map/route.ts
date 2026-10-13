@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/map?limit=150 — Trust Map snapshot (nodes, edges among them, header stats). Free.
+ * GET /api/v1/map?limit=150 - Trust Map snapshot (nodes, edges among them, header stats). Free.
  * Served from the store with a 10 s in-process cache (+ Cache-Control max-age=10) so the auto-refreshing
  * page and curious judges never hammer sqlite.
  */

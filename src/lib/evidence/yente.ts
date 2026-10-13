@@ -2,7 +2,7 @@
  * Self-hosted yente (OpenSanctions) matcher. POST {YENTE_URL}/match/{dataset}
  * Docs: https://www.opensanctions.org/docs/api/matching/ , /docs/api/request/ , /docs/api/response/
  *   body   { queries: { <key>: { schema, properties: { <prop>: string[] } } } }
- *   params threshold (default 0.7 — scores at/above count as `match`), limit (default 5), algorithm
+ *   params threshold (default 0.7 - scores at/above count as `match`), limit (default 5), algorithm
  *   reply  { responses: { <key>: { status, results: [{ id, caption, schema, datasets, score, match, … }] } } }
  * Names are matched as Person, Company and LegalEntity; addresses as CryptoWallet.publicKey (both lowercase
  * and EIP-55 spellings are sent). yente unreachable / non-2xx / timeout → [] (never throws).

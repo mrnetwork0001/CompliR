@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/ledger/verify — re-walk the hash chain and report the first broken seq (if any). Free.
+ * GET /api/v1/ledger/verify - re-walk the hash chain and report the first broken seq (if any). Free.
  */
 import { verifyChain } from "@/lib/ledger";
 import { handle, ok } from "../../../_lib/respond";

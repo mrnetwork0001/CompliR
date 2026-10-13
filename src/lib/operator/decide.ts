@@ -1,12 +1,12 @@
 /**
  * Operator decision: deterministic candidate actions under hard guards, then a guard-railed model step.
  *
- *   candidateActions(snapshot)  — code enumerates what is *allowed* right now (and why the rest is not)
- *   chooseWithModel(...)        — the model may only (a) pick among the listed candidates, (b) write the rationale,
+ *   candidateActions(snapshot)  - code enumerates what is *allowed* right now (and why the rest is not)
+ *   chooseWithModel(...)        - the model may only (a) pick among the listed candidates, (b) write the rationale,
  *                                 (c) set the next check interval in [15 min, 6 h]. Same pattern as analyst/analyze.ts:
  *                                 forced-tool structured output through the LLM provider seam (src/lib/llm: Anthropic or
  *                                 0G Compute, chosen by env), zod-parsed, deterministic fallback on any failure.
- *   validateAction(...)         — re-derives the candidate set and rejects anything not in it; run.ts calls this
+ *   validateAction(...)         - re-derives the candidate set and rejects anything not in it; run.ts calls this
  *                                 again right before executing, so the model can never add an action.
  */
 import { resolveProvider, type AnalystModel } from "../analyst/client";
@@ -82,7 +82,7 @@ export function candidateActions(s: CompanySnapshot, opts: DecideOptions = {}): 
   if (!res || res.floatUsdc == null) {
     rejected.push({ type: "SWEEP_TO_USYC", reason: `float unknown (${res?.error ?? s.errors.reserves ?? "no revenue wallet"})` });
   } else if (due48h == null) {
-    rejected.push({ type: "SWEEP_TO_USYC", reason: `obligations unknown (${s.errors.obligations ?? "treasury unreadable"}) — never sweep blind` });
+    rejected.push({ type: "SWEEP_TO_USYC", reason: `obligations unknown (${s.errors.obligations ?? "treasury unreadable"}) - never sweep blind` });
   } else {
     const effectiveFloat = r6(res.usycFloatUsdc + due48h);
     const plan = planSweep({ balanceUsdc: res.floatUsdc, floatUsdc: effectiveFloat, minSweepUsdc: res.usycMinSweepUsdc, usycUsdc: res.usycUsdc ?? 0 });
@@ -96,7 +96,7 @@ export function candidateActions(s: CompanySnapshot, opts: DecideOptions = {}): 
   if (!ob) rejected.push({ type: "RUN_PAYOUTS", reason: `obligations unknown (${s.errors.obligations ?? "treasury unreadable"})` });
   else if (ob.pendingInvoices === 0) rejected.push({ type: "RUN_PAYOUTS", reason: "no pending invoices" });
   else if (ob.dailyHeadroomUsdc <= 0) rejected.push({ type: "RUN_PAYOUTS", reason: `daily cap exhausted (${ob.spentTodayUsdc} of ${ob.policy?.dailyCapUsdc ?? "?"} USDC spent today)` });
-  else if (s.mode?.treasury === "live" && res?.floatUsdc != null && res.floatUsdc <= 0 && (res.usycUsdc ?? 0) <= 0) rejected.push({ type: "RUN_PAYOUTS", reason: "live treasury with zero reserves — refill before paying" });
+  else if (s.mode?.treasury === "live" && res?.floatUsdc != null && res.floatUsdc <= 0 && (res.usycUsdc ?? 0) <= 0) rejected.push({ type: "RUN_PAYOUTS", reason: "live treasury with zero reserves - refill before paying" });
   else add("RUN_PAYOUTS", { pendingInvoices: ob.pendingInvoices, amountUsdc: ob.dueTodayUsdc }, `${ob.pendingInvoices} pending invoice(s) totalling ${ob.pendingUsdc} USDC; ${ob.dailyHeadroomUsdc} USDC daily headroom (${s.mode?.treasury ?? "dry-run"}); every payee is screened and GuardedTreasury re-checks the tier on-chain`);
 
   // ── pricing: raise on demand, lower on silence, always within bounds / step / cooldown ──
@@ -112,9 +112,9 @@ export function candidateActions(s: CompanySnapshot, opts: DecideOptions = {}): 
       let direction: "up" | "down" | null = null;
       let why = "";
       if (rev.callsPaid24h > raiseAt && latencyOk) { direction = "up"; why = `${rev.callsPaid24h} paid calls in 24 h > ${raiseAt} threshold${p95 == null ? " (latency unmeasured)" : ` (p95 ${p95} ms ≤ ${maxP95})`}`; }
-      else if (rev.callsPaid24h > raiseAt && !latencyOk) { rejected.push({ type: "ADJUST_PRICE", reason: `${key}: demand is there (${rev.callsPaid24h} calls) but p95 ${p95} ms > ${maxP95} ms — fix latency before raising` }); continue; }
+      else if (rev.callsPaid24h > raiseAt && !latencyOk) { rejected.push({ type: "ADJUST_PRICE", reason: `${key}: demand is there (${rev.callsPaid24h} calls) but p95 ${p95} ms > ${maxP95} ms - fix latency before raising` }); continue; }
       else if (rev.outsideCalls48h === 0 && st.priceUsdc > PRICE_BOUNDS[key].min) { direction = "down"; why = `zero outside paid calls in 48 h`; }
-      if (!direction) { rejected.push({ type: "ADJUST_PRICE", reason: `${key}: ${rev.callsPaid24h} paid calls / 24 h (raise above ${raiseAt}), ${rev.outsideCalls48h} outside calls / 48 h — price ${st.priceUsdc} holds` }); continue; }
+      if (!direction) { rejected.push({ type: "ADJUST_PRICE", reason: `${key}: ${rev.callsPaid24h} paid calls / 24 h (raise above ${raiseAt}), ${rev.outsideCalls48h} outside calls / 48 h - price ${st.priceUsdc} holds` }); continue; }
       const target = steppedPrice(key, st.priceUsdc, direction, stepPct);
       if (target == null) { rejected.push({ type: "ADJUST_PRICE", reason: `${key}: already at the ${direction === "up" ? "ceiling" : "floor"} ${st.priceUsdc} USDC` }); continue; }
       const check = validatePriceChange(key, st.priceUsdc, target, st.changedAt, now);
@@ -123,7 +123,7 @@ export function candidateActions(s: CompanySnapshot, opts: DecideOptions = {}): 
     }
   }
 
-  add("HOLD", {}, candidates.length ? "do nothing this tick" : rejected.length ? `no allowed action — ${rejected.map((r) => `${r.type}: ${r.reason}`).join("; ")}` : "nothing to do: reserves, obligations and prices are where the guards want them");
+  add("HOLD", {}, candidates.length ? "do nothing this tick" : rejected.length ? `no allowed action - ${rejected.map((r) => `${r.type}: ${r.reason}`).join("; ")}` : "nothing to do: reserves, obligations and prices are where the guards want them");
   return { candidates, rejected };
 }
 
@@ -150,7 +150,7 @@ export function fallbackChoice(candidates: OperatorAction[], s: CompanySnapshot)
   const rev = s.revenue, ob = s.obligations, res = s.reserves;
   const lines = [
     `Revenue ${rev ? `${rev.totalUsdc} USDC all-time (${rev.last24hUsdc} last 24 h, ${rev.callsPaid24h} paid calls)` : "unknown"}; reserves ${res?.floatUsdc != null ? `${res.floatUsdc} USDC float + ${res.usycUsdc ?? 0} in USYC` : "unknown"}; obligations ${ob ? `${ob.pendingInvoices} pending (${ob.pendingUsdc} USDC), ${ob.heldInvoices} held` : "unknown"}.`,
-    acts.length ? `Acting: ${acts.map((a) => `${a.type} — ${a.reason}`).join(" · ")}.` : `Holding: ${candidates.find((c) => c.type === "HOLD")?.reason ?? "no allowed action"}.`,
+    acts.length ? `Acting: ${acts.map((a) => `${a.type} - ${a.reason}`).join(" · ")}.` : `Holding: ${candidates.find((c) => c.type === "HOLD")?.reason ?? "no allowed action"}.`,
   ];
   return { chosen, rationale: lines.join(" "), nextCheckInSeconds: acts.length ? NEXT_CHECK_MIN_S * 2 : NEXT_CHECK_DEFAULT_S };
 }
@@ -181,7 +181,7 @@ export function buildOperatorMessage(s: CompanySnapshot, candidates: OperatorAct
   const slim = { ...s, reserves: s.reserves ? { ...s.reserves, circle: { enabled: s.reserves.circle.enabled, wallets: s.reserves.circle.wallets.map((w) => ({ role: w.role, status: w.status, balances: w.balances })) } } : null };
   return [
     "COMPANY SNAPSHOT (JSON):", JSON.stringify(slim),
-    "", "ALLOWED CANDIDATES (choose by id):", ...candidates.map((c) => `${c.id}: ${c.type}${Object.keys(c.params).length ? " " + JSON.stringify(c.params) : ""} — ${c.reason}`),
+    "", "ALLOWED CANDIDATES (choose by id):", ...candidates.map((c) => `${c.id}: ${c.type}${Object.keys(c.params).length ? " " + JSON.stringify(c.params) : ""} - ${c.reason}`),
     "", "NOT ALLOWED THIS TICK (for your rationale only):", ...(rejected.length ? rejected.map((r) => `${r.type}: ${r.reason}`) : ["(none)"]),
     "", "Call submit_plan.",
   ].join("\n");

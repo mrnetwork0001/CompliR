@@ -1,4 +1,4 @@
-/** GET /api/v1/map/:address — one Trust Map node with its tier-change history and edges. 404 if not graded. Free. */
+/** GET /api/v1/map/:address - one Trust Map node with its tier-change history and edges. 404 if not graded. Free. */
 import { nodeHistory } from "@/lib/trustmap/query";
 import { ApiError, handle, ok } from "../../../_lib/respond";
 import { parseAddress } from "../../../_lib/parse";

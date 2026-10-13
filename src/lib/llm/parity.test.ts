@@ -49,7 +49,7 @@ function zeroGMock(answer: unknown, format: "anthropic" | "openai", fail?: { sta
 }
 const strip = <T extends { meta: { latencyMs: number; model: string } }>(r: T) => ({ ...r, meta: { ...r.meta, latencyMs: 0, model: "" } });
 
-describe("provider parity — Risk Analyst", () => {
+describe("provider parity - Risk Analyst", () => {
   it("identical guarded decision through anthropic, 0g/anthropic-format and 0g/openai-format", async () => {
     const a = await analyze(input, anthropicMock(analystAnswer));
     const z1 = await analyze(input, zeroGMock(analystAnswer, "anthropic"));
@@ -79,7 +79,7 @@ describe("provider parity — Risk Analyst", () => {
   });
 });
 
-describe("provider parity — Operator", () => {
+describe("provider parity - Operator", () => {
   const s = snap();
   const { candidates } = candidateActions(s, { now: NOW });
   const payouts = candidates.find((c) => c.type === "RUN_PAYOUTS")!;

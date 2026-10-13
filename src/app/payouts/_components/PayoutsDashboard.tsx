@@ -76,8 +76,8 @@ export function PayoutsDashboard() {
         <p style={{ marginTop: 8 }}>
           The agent only <em>proposes</em> a payment. <code>GuardedTreasury.release(payee, amount)</code> asks the on-chain AttestationRegistry
           whether the payee&apos;s current CompliR tier is at most <code>MEDIUM</code> and still valid, and reverts otherwise. A HIGH-tier
-          address has no valid attestation at or below that tier, so even a buggy, compromised or over-eager agent — or the treasury
-          owner calling the contract by hand — cannot move the USDC. The decision is enforced by the contract, not by the agent&apos;s judgement.
+          address has no valid attestation at or below that tier, so even a buggy, compromised or over-eager agent - or the treasury
+          owner calling the contract by hand - cannot move the USDC. The decision is enforced by the contract, not by the agent&apos;s judgement.
         </p>
         <pre><code>{`// contracts/src/examples/GuardedTreasury.sol
 function release(address payee, uint256 amount) external onlyOwner {
@@ -106,11 +106,11 @@ function Totals({ data }: { data: PayoutsResponse | null }) {
   );
   return (
     <div className={styles.totals}>
-      {cell(styles.statPaid, "Paid", t ? String(t.paid) : "—", "in full")}
-      {cell(styles.statLimited, "Limited", t ? String(t.limited) : "—", "capped, rest held")}
-      {cell(styles.statHeld, "Held", t ? String(t.held) : "—", "nothing sent")}
-      {cell("", "USDC released", t ? fmtUsdc(t.paidUsdc) : "—", t ? `${fmtUsdc(t.heldUsdc)} held` : undefined)}
-      {cell("", "Invoices", t ? String(t.count) : "—", t ? `${t.pending} pending${t.failed ? `, ${t.failed} failed` : ""}` : undefined)}
+      {cell(styles.statPaid, "Paid", t ? String(t.paid) : "-", "in full")}
+      {cell(styles.statLimited, "Limited", t ? String(t.limited) : "-", "capped, rest held")}
+      {cell(styles.statHeld, "Held", t ? String(t.held) : "-", "nothing sent")}
+      {cell("", "USDC released", t ? fmtUsdc(t.paidUsdc) : "-", t ? `${fmtUsdc(t.heldUsdc)} held` : undefined)}
+      {cell("", "Invoices", t ? String(t.count) : "-", t ? `${t.pending} pending${t.failed ? `, ${t.failed} failed` : ""}` : undefined)}
     </div>
   );
 }
@@ -127,7 +127,7 @@ function PolicyCard({ data, explorer }: { data: PayoutsResponse | null; explorer
         <dt>Per payout cap</dt><dd>{fmtUsdc(p.perPayoutCapUsdc)}</dd>
         <dt>Daily cap</dt><dd>{fmtUsdc(p.dailyCapUsdc)}</dd>
         <dt>MEDIUM payees</dt><dd>capped to the analyst&apos;s recommended per-tx limit; remainder held</dd>
-        <dt>Registry check</dt><dd>{p.requireAttestationOnChain ? "required — hold unless the Arc registry holds a valid attestation" : "off (dry-run); the contract still checks it in live mode"}</dd>
+        <dt>Registry check</dt><dd>{p.requireAttestationOnChain ? "required - hold unless the Arc registry holds a valid attestation" : "off (dry-run); the contract still checks it in live mode"}</dd>
         <dt>Treasury</dt><dd>{s.treasuryAddress ? <HexLink value={s.treasuryAddress} explorerUrl={explorer} /> : <span className="muted">not deployed (GUARDED_TREASURY_ADDRESS)</span>}</dd>
         <dt>Agent key</dt><dd>{s.agentAddress ? <HexLink value={s.agentAddress} explorerUrl={explorer} /> : <span className="muted">unset (TREASURY_PRIVATE_KEY)</span>}</dd>
         <dt>Registry</dt><dd>{s.registryAddress ? <HexLink value={s.registryAddress} explorerUrl={explorer} /> : <span className="muted">unset (REGISTRY_ADDRESS)</span>}</dd>
@@ -154,7 +154,7 @@ function AddInvoice({ onAdded }: { onAdded: () => Promise<void> }) {
     setBusy(true); setMsg(null);
     try {
       const r = await postJson<{ invoice: Invoice }>("/api/v1/payouts", { payee: payee.trim(), label: label.trim(), amountUsdc: Number(amount) });
-      setMsg({ ok: true, text: `Queued ${r.invoice.label} (${fmtUsdc(r.invoice.amountUsdc)}) — pending until the next agent run.` });
+      setMsg({ ok: true, text: `Queued ${r.invoice.label} (${fmtUsdc(r.invoice.amountUsdc)}) - pending until the next agent run.` });
       setPayee(""); setLabel(""); setAmount("");
       await onAdded();
     } catch (err) {
@@ -164,7 +164,7 @@ function AddInvoice({ onAdded }: { onAdded: () => Promise<void> }) {
   return (
     <form onSubmit={submit}>
       <h2>Add invoice</h2>
-      <p className="muted small">Try <code>0x…cafe</code> (LOW), <code>0x…beef</code> (MEDIUM) or <code>0x…dead</code> (HIGH) — the demo payees — or any Arc address.</p>
+      <p className="muted small">Try <code>0x…cafe</code> (LOW), <code>0x…beef</code> (MEDIUM) or <code>0x…dead</code> (HIGH) - the demo payees - or any Arc address.</p>
       <div className={styles.form}>
         <div className={styles.field}>
           <label htmlFor="payee">Payee address</label>
@@ -172,7 +172,7 @@ function AddInvoice({ onAdded }: { onAdded: () => Promise<void> }) {
         </div>
         <div className={styles.field}>
           <label htmlFor="label">Label</label>
-          <input id="label" className="input" required maxLength={80} placeholder="Vendor — what for" value={label} onChange={(e) => setLabel(e.target.value)} />
+          <input id="label" className="input" required maxLength={80} placeholder="Vendor - what for" value={label} onChange={(e) => setLabel(e.target.value)} />
         </div>
         <div className={styles.field}>
           <label htmlFor="amount">USDC</label>
@@ -210,7 +210,7 @@ function RunAgent({ onDone }: { onDone: () => Promise<void> }) {
       {err && <div className={`alert alertError ${styles.result}`} role="alert">{err}</div>}
       {res && (
         <div className={`alert alertInfo ${styles.result}`} role="status">
-          <strong>{res.mode === "live" ? "LIVE" : "DRY-RUN"} tick:</strong> {res.processed} processed — {res.paid} paid, {res.limited} limited, {res.held} held{res.failed ? `, ${res.failed} failed` : ""}.
+          <strong>{res.mode === "live" ? "LIVE" : "DRY-RUN"} tick:</strong> {res.processed} processed - {res.paid} paid, {res.limited} limited, {res.held} held{res.failed ? `, ${res.failed} failed` : ""}.
           {res.results.length > 0 && (
             <ul>
               {res.results.map((x) => (
@@ -256,14 +256,14 @@ function InvoiceTable({ data, explorer }: { data: PayoutsResponse | null; explor
                 </td>
                 <td className="mono">{fmtUsdc(it.amountUsdc)}</td>
                 <td>
-                  {it.status === "PENDING" ? <span className="muted">—</span> : (
+                  {it.status === "PENDING" ? <span className="muted">-</span> : (
                     <>
                       <div className="mono">{fmtUsdc(it.paidUsdc)}</div>
                       {it.heldUsdc > 0 && <div className={`${styles.split} ${styles.splitHeld}`}>{fmtUsdc(it.heldUsdc)} held</div>}
                     </>
                   )}
                 </td>
-                <td>{it.tier ? <><TierBadge tier={it.tier} size="sm" /> <span className="mono small">{it.score}</span></> : <span className="muted">—</span>}</td>
+                <td>{it.tier ? <><TierBadge tier={it.tier} size="sm" /> <span className="mono small">{it.score}</span></> : <span className="muted">-</span>}</td>
                 <td className={styles.reason}>
                   {it.reason ? (
                     <>
@@ -278,10 +278,10 @@ function InvoiceTable({ data, explorer }: { data: PayoutsResponse | null; explor
                       <Link href={`/log/${encodeURIComponent(it.decisionId)}`} className="mono small" title="Screening verdict (SCREEN)">{short(it.decisionId, 10, 4)}</Link>
                       {it.payoutDecisionId && <div><Link href={`/log/${encodeURIComponent(it.payoutDecisionId)}`} className="small muted" title="Payout decision (PAYOUT)">payout entry</Link></div>}
                     </>
-                  ) : <span className="muted">—</span>}
+                  ) : <span className="muted">-</span>}
                 </td>
                 <td>
-                  {it.txHash ? <HexLink value={it.txHash} explorerUrl={explorer} /> : it.status === "PENDING" ? <span className="muted">—</span> : it.paidUsdc > 0 && it.mode !== "live" ? <span className="muted" title="Dry-run: no transaction was sent">simulated</span> : <span className="muted">none</span>}
+                  {it.txHash ? <HexLink value={it.txHash} explorerUrl={explorer} /> : it.status === "PENDING" ? <span className="muted">-</span> : it.paidUsdc > 0 && it.mode !== "live" ? <span className="muted" title="Dry-run: no transaction was sent">simulated</span> : <span className="muted">none</span>}
                 </td>
                 <td title={fmtTime(it.decidedAt ?? it.createdAt)}>{fmtRelative(it.decidedAt ?? it.createdAt)}</td>
               </tr>

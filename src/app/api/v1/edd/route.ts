@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/edd — open an Enhanced Due Diligence request for a counterparty (spec C14).
+ * POST /api/v1/edd - open an Enhanced Due Diligence request for a counterparty (spec C14).
  * Internal only: `Authorization: Bearer $CRON_SECRET` or a same-origin browser call (sec-fetch-site: same-origin).
  * Body: { subject, decisionId, questions[] }. Response: { id, url, status: "OPEN" }.
  */

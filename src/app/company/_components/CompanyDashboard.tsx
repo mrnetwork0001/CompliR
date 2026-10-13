@@ -28,7 +28,7 @@ const asOperator = (e: DecisionLogEntry): OperatorPayload | null => {
 };
 
 function usdc(n: number | null | undefined, dp = 2): string {
-  if (n == null || !Number.isFinite(n)) return "—";
+  if (n == null || !Number.isFinite(n)) return "-";
   return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: dp });
 }
 function errMsg(e: unknown): string {
@@ -195,7 +195,7 @@ function Strips({ s }: { s: CompanySnapshot | null }) {
   const held = res && (res.floatUsdc != null || res.usycUsdc != null) ? (res.floatUsdc ?? 0) + (res.usycUsdc ?? 0) : null;
   const items = [
     { label: "Earned", value: rev ? `${usdc(rev.totalUsdc, 4)} USDC` : null, sub: rev ? `${rev.callsPaid} paid calls · ${rev.payers} payers · ${usdc(rev.last24hUsdc, 4)} last 24 h` : "" },
-    { label: "Held", value: s ? (held == null ? "—" : `${usdc(held)} USDC`) : null, sub: res ? `${res.floatUsdc == null ? "float unknown" : `${usdc(res.floatUsdc)} float`} · ${res.usycUsdc == null ? "USYC unknown" : `${usdc(res.usycUsdc)} USYC`}` : "" },
+    { label: "Held", value: s ? (held == null ? "-" : `${usdc(held)} USDC`) : null, sub: res ? `${res.floatUsdc == null ? "float unknown" : `${usdc(res.floatUsdc)} float`} · ${res.usycUsdc == null ? "USYC unknown" : `${usdc(res.usycUsdc)} USYC`}` : "" },
     { label: "Paid out", value: ob ? `${usdc(ob.paidUsdc)} USDC` : null, sub: ob ? `${ob.paidInvoices} invoice(s) · ${usdc(ob.spentTodayUsdc)} today` : "" },
     { label: "Refused", value: ob ? `${usdc(ob.heldUsdc)} USDC` : null, sub: ob ? `${ob.heldInvoices} invoice(s) held by the oracle${rev?.refunds ? ` · ${rev.refunds} refund(s)` : ""}` : "" },
   ];
@@ -219,7 +219,7 @@ function ReservesCard({ s, explorer }: { s: CompanySnapshot | null; explorer: st
       <div className={styles.cardHead}><h2>Reserves</h2>{r && <span className={`badge ${r.usycMode === "live" ? "badgeLOW" : "badgeNeutral"}`}>USYC {r.usycMode === "live" ? "live" : "dry-run"}</span>}</div>
       {!s ? <span className="skeleton" /> : !r ? <p className="muted small">unavailable</p> : (
         <dl className={styles.kv}>
-          <dt>Float (USDC)</dt><dd>{r.floatUsdc == null ? <span className="muted">unknown{r.error ? ` — ${r.error}` : ""}</span> : usdc(r.floatUsdc, 4)}</dd>
+          <dt>Float (USDC)</dt><dd>{r.floatUsdc == null ? <span className="muted">unknown{r.error ? ` - ${r.error}` : ""}</span> : usdc(r.floatUsdc, 4)}</dd>
           <dt>USYC</dt><dd>{r.usycUsdc == null ? <span className="muted">unknown</span> : `${usdc(r.usycUsdc, 4)} USDC (${usdc(r.usycShares, 4)} shares)`}</dd>
           <dt>Keep liquid</dt><dd>{usdc(r.usycFloatUsdc)} cushion + obligations due 48 h · min sweep {usdc(r.usycMinSweepUsdc)}</dd>
           <dt>Revenue wallet</dt><dd className="mono">{r.revenueWallet ? <a href={addressUrl(explorer, r.revenueWallet) ?? "#"} target="_blank" rel="noopener noreferrer">{short(r.revenueWallet)}</a> : <span className="muted">unset</span>}</dd>
@@ -272,7 +272,7 @@ function PricingCard({ s }: { s: CompanySnapshot | null }) {
         <dl className={styles.kv}>
           <dt>screen</dt><dd><strong>{p.screenUsdc} USDC</strong> <span className="muted small">per call · bounds 0.005–0.05</span></dd>
           <dt>watch</dt><dd><strong>{p.watchUsdc} USDC</strong> <span className="muted small">per 30 days · bounds 0.02–0.2</span></dd>
-          <dt>Last change</dt><dd className="small">{p.lastChangeAt ? `${fmtRelative(p.lastChangeAt)} — ${p.reason}` : p.reason}</dd>
+          <dt>Last change</dt><dd className="small">{p.lastChangeAt ? `${fmtRelative(p.lastChangeAt)} - ${p.reason}` : p.reason}</dd>
           <dt>Rails</dt><dd className="muted small">≤ 20% per change · ≥ 6 h between changes · raise on demand, lower after 48 h without an outside paid call</dd>
         </dl>
       )}

@@ -1,12 +1,12 @@
 /**
- * GET /api/v1/network/:address — the cross-client network signal for one address. Free, anonymised.
+ * GET /api/v1/network/:address - the cross-client network signal for one address. Free, anonymised.
  *
  * What only a shared oracle can answer:
  *   heldElsewhere      { clients, lastAt }        how many distinct integrators rated it HIGH in the window (count only)
  *   concentrationHint  { funder, otherPayees }    a hop-1 funder of the address also funded N other payees / graded nodes
  *   events             last blocklist events (on-chain or drills) that touched the address
  * `sharedFunder` ("shares a funder with N of YOUR payees") is client-scoped, so it is only returned inside a paid
- * screen (verdict.evidence.network) — never here. No client id, payee book or other address ever leaves the store.
+ * screen (verdict.evidence.network) - never here. No client id, payee book or other address ever leaves the store.
  */
 import { eventLogsOf } from "@/lib/events";
 import { networkSignals } from "@/lib/network";

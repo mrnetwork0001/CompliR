@@ -36,19 +36,19 @@ const policy = {
 
 function printConsoleSteps() {
   console.log(`
-CompliR × Circle — DRY-RUN (no CIRCLE_API_KEY / CIRCLE_ENTITY_SECRET). Nothing was created. To go live:
+CompliR × Circle - DRY-RUN (no CIRCLE_API_KEY / CIRCLE_ENTITY_SECRET). Nothing was created. To go live:
 
  1. https://console.circle.com → create an account → API Keys → "Create a key" (Wallets access). Put it in CIRCLE_API_KEY.
     Toggle the console to MAINNET for Arc mainnet (5042); testnet keys only see ARC-TESTNET.
  2. Entity secret:   node scripts/circle/setup.ts --generate-secret     → CIRCLE_ENTITY_SECRET (64 hex chars; Circle never stores it)
  3. Register it ONCE: node --env-file=.env.local scripts/circle/setup.ts --register
-    (alternative: console → Wallets → Configurator → paste the ciphertext). Save the recovery file it writes — it is the only
+    (alternative: console → Wallets → Configurator → paste the ciphertext). Save the recovery file it writes - it is the only
     way to reset the secret and can only be downloaded during registration.
  4. Provision:       node --env-file=.env.local scripts/circle/setup.ts
     → prints CIRCLE_WALLET_SET_ID, X402_PAY_TO (= revenue wallet) and the ops wallet address.
  5. Gas sponsorship (SCA wallets only): console → Gas Station → mainnet → New policy → blockchain ${blockchain ?? "ARC"},
     max spend/day + per-tx in USD → Create → Activate. Add a card (sponsored gas is billed in USD + 5%).
-    Without a policy the wallet's own USDC balance pays gas (USDC is Arc's native gas asset) — fund ops with a few USDC.
+    Without a policy the wallet's own USDC balance pays gas (USDC is Arc's native gas asset) - fund ops with a few USDC.
  6. Set SIGNER_MODE=circle so registry writes relay through the ops wallet. Keep ATTESTER_PRIVATE_KEY (it signs EIP-712 off-chain).
 `);
 }
@@ -60,7 +60,7 @@ async function main() {
     return;
   }
   if (!env.CIRCLE_API_KEY || !env.CIRCLE_ENTITY_SECRET) { printConsoleSteps(); return; }
-  if (!/^[0-9a-fA-F]{64}$/.test(env.CIRCLE_ENTITY_SECRET)) throw new Error("CIRCLE_ENTITY_SECRET must be 64 hex chars (32 bytes) — run --generate-secret");
+  if (!/^[0-9a-fA-F]{64}$/.test(env.CIRCLE_ENTITY_SECRET)) throw new Error("CIRCLE_ENTITY_SECRET must be 64 hex chars (32 bytes) - run --generate-secret");
   if (!blockchain) throw new Error(`ARC_CHAIN_ID=${chainId} is not a Circle-supported Arc network (5042 → ARC, 5042002 → ARC-TESTNET)`);
 
   if (args.has("--register")) {
@@ -68,7 +68,7 @@ async function main() {
     const res = await registerEntitySecretCiphertext({ apiKey: env.CIRCLE_API_KEY, entitySecret: env.CIRCLE_ENTITY_SECRET, ...(env.CIRCLE_BASE_URL ? { baseUrl: env.CIRCLE_BASE_URL } : {}) });
     const out = `.data/circle-recovery-${Date.now()}.dat`;
     writeFileSync(out, res.data?.recoveryFile ?? "");
-    console.log(`Entity secret registered. Recovery file written to ${out} — move it somewhere safe (it cannot be downloaded again).`);
+    console.log(`Entity secret registered. Recovery file written to ${out} - move it somewhere safe (it cannot be downloaded again).`);
   }
 
   const client = initiateDeveloperControlledWalletsClient({ apiKey: env.CIRCLE_API_KEY, entitySecret: env.CIRCLE_ENTITY_SECRET, ...(env.CIRCLE_BASE_URL ? { baseUrl: env.CIRCLE_BASE_URL } : {}) });
@@ -117,14 +117,14 @@ SIGNER_MODE=circle
 # revenue wallet:       ${wallets.revenue.address}  (${wallets.revenue.accountType}; walletId ${wallets.revenue.id})
 
 # ── spending policy (app-enforced by src/lib/circle/wallets.ts; stored per wallet, shown by GET /api/internal/circle) ──
-# ops:     per-tx ${policy.ops.perTx} USDC · daily ${policy.ops.daily} USDC · contract allowlist ${policy.ops.allow || "(any — set REGISTRY_ADDRESS or CIRCLE_OPS_POLICY_ALLOWLIST)"}
+# ops:     per-tx ${policy.ops.perTx} USDC · daily ${policy.ops.daily} USDC · contract allowlist ${policy.ops.allow || "(any - set REGISTRY_ADDRESS or CIRCLE_OPS_POLICY_ALLOWLIST)"}
 # revenue: per-tx ${policy.revenue.perTx} USDC · daily ${policy.revenue.daily} USDC · recipient allowlist ${policy.revenue.allow || "(any)"}
 # Circle-side equivalents exist only for Agent Wallets (Circle CLI, mainnet): e.g.
 #   circle wallet limit set --address ${wallets.ops.address} --chain ARC --policy-type stablecoin --per-tx ${policy.ops.perTx} --daily ${policy.ops.daily}
 
 # ── gas ──
 # ${accountType === "SCA" ? "SCA wallets: activate a mainnet Gas Station policy for " + blockchain + " (console → Gas Station) to sponsor gas; otherwise" : "EOA wallets are never sponsored;"}
-# the wallet's own USDC pays gas natively on Arc — send a few USDC to the ops wallet.
+# the wallet's own USDC pays gas natively on Arc - send a few USDC to the ops wallet.
 `);
 }
 

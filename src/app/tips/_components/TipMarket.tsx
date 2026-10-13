@@ -45,7 +45,7 @@ export function TipMarket() {
       <div className={styles.head}>
         <div>
           <p className="kicker">oracle · tip market · x402 stake</p>
-          <h1>Tip Market — earn USDC for risk intelligence</h1>
+          <h1>Tip Market - earn USDC for risk intelligence</h1>
           <p className="muted">
             Seen an address linked to sanctions, a mixer, a scam, address poisoning or stolen funds? Tell CompliR, stake a little USDC, get paid when the
             tip verifies. Verified tips feed every verdict the oracle issues from then on.
@@ -82,7 +82,7 @@ export function TipMarket() {
       <section className={`card ${styles.explain}`}>
         <h2>How a tip is verified</h2>
         <p style={{ marginTop: 8 }}>
-          No judgement calls: the agent <strong>re-screens the subject</strong> through the normal CompliR pipeline (sanctions, USDC blocklist, funder graph —
+          No judgement calls: the agent <strong>re-screens the subject</strong> through the normal CompliR pipeline (sanctions, USDC blocklist, funder graph -
           logged as a replayable <code>RESCREEN</code>), then checks the evidence. A tx hash that exists on Arc <em>and touches the subject</em> is strong corroboration;
           so is a URL on an official list ({c?.strongDomains.join(", ") ?? "OFAC, OpenSanctions, EU, UK"}). Anything else is weak.
         </p>
@@ -93,10 +93,10 @@ export function TipMarket() {
         </ul>
         <p className="muted small" style={{ marginTop: 8 }}>
           Bounty = base {c ? usdc(c.bountyUsdc) : "0.25 USDC"} × category multiplier (sanctions ×2, poisoning ×1.5) × reputation factor (0.5 → 1.0). Every submit,
-          verdict, payout and slash is a <code>TIP</code> entry in the hash-chained <Link href="/ledger">decision ledger</Link>. Submitters never see client data —
+          verdict, payout and slash is a <code>TIP</code> entry in the hash-chained <Link href="/ledger">decision ledger</Link>. Submitters never see client data -
           only tier, score, reason codes and the re-screen id. Submitters are shown anonymised. Daily payout cap {c ? usdc(c.dailyCapUsdc) : "5 USDC"}.
         </p>
-        <pre><code>{`# stake 0.05 USDC via x402 (the payment IS the stake) — any x402 client
+        <pre><code>{`# stake 0.05 USDC via x402 (the payment IS the stake) - any x402 client
 curl -X POST https://<your-complir-host>/api/v1/tips \\
   -H 'Content-Type: application/json' -H 'PAYMENT-SIGNATURE: <base64 x402 v2 payload>' \\
   -d '{"subject":"0x…","category":"sanctions","claim":"…","evidenceUrls":["https://sanctionssearch.ofac.treas.gov/…"],"evidenceTxs":["0x…"]}'`}</code></pre>
@@ -112,7 +112,7 @@ function HowItWorks({ data }: { data: TipsResponse | null }) {
       <div className={styles.step}>
         <div className={styles.stepNum}>1</div>
         <div className={styles.stepTitle}>Submit + stake <span className={styles.stepAmount}>{c ? usdc(c.stakeUsdc) : "0.05 USDC"}</span></div>
-        <div className="muted small">Address, category, what you saw, evidence (tx hashes, URLs). The x402 payment is the stake — no account, no form.</div>
+        <div className="muted small">Address, category, what you saw, evidence (tx hashes, URLs). The x402 payment is the stake - no account, no form.</div>
       </div>
       <div className={styles.step}>
         <div className={styles.stepNum}>2</div>
@@ -141,10 +141,10 @@ function Totals({ data }: { data: TipsResponse | null }) {
   const open = t ? t.byStatus.SUBMITTED + t.byStatus.VERIFYING + t.byStatus.NEEDS_REVIEW : 0;
   return (
     <div className={styles.totals}>
-      {cell("Verified", t ? String(t.byStatus.VERIFIED + t.byStatus.PAID) : "—", t ? `${t.byStatus.PAID} paid` : undefined)}
-      {cell("Slashed", t ? String(t.byStatus.SLASHED + t.byStatus.REJECTED) : "—", t ? `${usdc(t.slashedUsdc)} kept` : undefined)}
-      {cell("Paid out", t ? usdc(t.paidUsdc) : "—", c ? `${usdc(c.spentTodayUsdc)} of ${usdc(c.dailyCapUsdc)} today` : undefined)}
-      {cell("Open", t ? String(open) : "—", t ? `${t.byStatus.NEEDS_REVIEW} need review · ${t.total} total` : undefined)}
+      {cell("Verified", t ? String(t.byStatus.VERIFIED + t.byStatus.PAID) : "-", t ? `${t.byStatus.PAID} paid` : undefined)}
+      {cell("Slashed", t ? String(t.byStatus.SLASHED + t.byStatus.REJECTED) : "-", t ? `${usdc(t.slashedUsdc)} kept` : undefined)}
+      {cell("Paid out", t ? usdc(t.paidUsdc) : "-", c ? `${usdc(c.spentTodayUsdc)} of ${usdc(c.dailyCapUsdc)} today` : undefined)}
+      {cell("Open", t ? String(open) : "-", t ? `${t.byStatus.NEEDS_REVIEW} need review · ${t.total} total` : undefined)}
     </div>
   );
 }
@@ -242,7 +242,7 @@ function Leaderboard({ data }: { data: TipsResponse | null }) {
       {!data ? (
         <span className="skeleton" style={{ width: "80%", marginTop: 10 }} />
       ) : rows.length === 0 ? (
-        <p className="muted" style={{ marginTop: 10 }}>No tipsters yet — be the first.</p>
+        <p className="muted" style={{ marginTop: 10 }}>No tipsters yet - be the first.</p>
       ) : (
         <div className="tableWrap" style={{ marginTop: 8 }}>
           <table className="table">
@@ -282,7 +282,7 @@ function RunVerifier({ onDone }: { onDone: () => Promise<void> }) {
   return (
     <div>
       <h2>Run verifier now</h2>
-      <p className="muted small">Dev convenience: one tick of <code>POST /api/internal/tips</code> with your <code>CRON_SECRET</code> — verifies submitted tips and pays verified ones.</p>
+      <p className="muted small">Dev convenience: one tick of <code>POST /api/internal/tips</code> with your <code>CRON_SECRET</code> - verifies submitted tips and pays verified ones.</p>
       <div className={styles.runRow}>
         <input className="input" type="password" placeholder="CRON_SECRET" value={secret} onChange={(e) => setSecret(e.target.value)} autoComplete="off" aria-label="CRON_SECRET" />
         <button type="button" className="btn btnPrimary" onClick={() => void run()} disabled={busy || !secret}>{busy ? "Running…" : "Run verifier"}</button>
@@ -322,14 +322,14 @@ function TipsTable({ data, explorer }: { data: TipsResponse | null; explorer: st
                     {t.verdict?.by === "human" && <span className="muted small"> (human)</span>}
                   </td>
                   <td>
-                    {t.verdict?.tier ? <TierBadge tier={t.verdict.tier} size="sm" /> : <span className="muted">—</span>}
+                    {t.verdict?.tier ? <TierBadge tier={t.verdict.tier} size="sm" /> : <span className="muted">-</span>}
                     {t.verdict?.decisionId && <> <Link href={`/log/${t.verdict.decisionId}`} className="small">replay</Link></>}
                   </td>
                   <td>
                     {t.status === "PAID" ? <>{usdc(t.payoutUsdc)} {t.payoutTx ? <HexLink value={t.payoutTx} explorerUrl={explorer} /> : <span className="muted small">({t.payoutMode ?? "dry-run"})</span>}</>
                       : t.status === "VERIFIED" ? <>{usdc(t.payoutUsdc)} <span className="muted small">pending</span></>
                       : t.status === "SLASHED" ? <span className="muted">−{usdc(t.stakeUsdc)}</span>
-                      : <span className="muted">—</span>}
+                      : <span className="muted">-</span>}
                   </td>
                   <td><code>{t.submitter}</code>{t.demo && <span className="muted small"> demo</span>}</td>
                 </tr>

@@ -2,7 +2,7 @@
 
 /**
  * Client-side data for the console. Every endpoint is fetched independently and degrades to null
- * (a 404 on /report, a 503 on /health, a cold sqlite) — the page always renders, with skeletons then zeros.
+ * (a 404 on /report, a 503 on /health, a cold sqlite) - the page always renders, with skeletons then zeros.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CompanyResponse } from "@/app/api/v1/company/route";

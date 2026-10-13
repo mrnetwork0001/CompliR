@@ -4,7 +4,7 @@
  * Built for Circle's Facilitator Service (https://developers.circle.com/facilitator-service), base
  * `https://api.circle.com/v1/facilitator/x402`, which authenticates each call with EITHER
  *   - `Authorization: Bearer <CIRCLE_API_KEY>` (production), or
- *   - `Facilitator-Seller-Proof: <base64url envelope>` — an EIP-712 `SellerRequest` signed by the key that
+ *   - `Facilitator-Seller-Proof: <base64url envelope>` - an EIP-712 `SellerRequest` signed by the key that
  *     controls `payTo`, bound to the request body hash (keyless trial; also valid in production).
  *   https://developers.circle.com/facilitator-service/sign-seller-proof
  * Without either it degrades to a plain unauthenticated client (works with the x402.org facilitator).

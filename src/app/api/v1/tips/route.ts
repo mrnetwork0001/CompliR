@@ -1,6 +1,6 @@
 /**
- * Tip Market — public API.
- *   POST /api/v1/tips  submit a tip. API clients stake TIPS_STAKE_USDC (default 0.05) via x402 — the payment IS the stake
+ * Tip Market - public API.
+ *   POST /api/v1/tips  submit a tip. API clients stake TIPS_STAKE_USDC (default 0.05) via x402 - the payment IS the stake
  *                      (settled before the tip is created; `settleFirst`). Same-origin browsers (the /tips page) submit
  *                      unstaked DEMO tips (submitter "demo", stake 0, no payout address). With X402_DISABLED the
  *                      submitter is "anonymous" (stake 0).

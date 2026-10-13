@@ -9,7 +9,7 @@ import TimingDiagram from "@/components/figures/TimingDiagram";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "CompliR — Counterparty risk oracle on Arc. Compiled to signed verdicts.",
+  title: "CompliR - Counterparty risk oracle on Arc. Compiled to signed verdicts.",
   description:
     "Grade any counterparty in one call. Signed EIP-712 verdicts a contract can check, mirrored on-chain, re-graded continuously, replayable from a hash-chained log. Never holds funds.",
 };
@@ -66,7 +66,7 @@ const STEPS = [
 const ANATOMY: [string, string][] = [
   ["score", "0–100, deterministic"],
   ["tier", "LOW / MEDIUM / HIGH"],
-  ["recommendedLimits", "maxPerTxUsdc, maxPerDayUsdc — clamped to the tier band"],
+  ["recommendedLimits", "maxPerTxUsdc, maxPerDayUsdc - clamped to the tier band"],
   ["reasons[]", "code, weight and evidence: tx hashes, funder paths, sanctions entity ids"],
   ["rationale", "written by the Risk Analyst, ≤120 words"],
   ["eddRequested[]", "up to three questions to ask the counterparty instead of refusing"],

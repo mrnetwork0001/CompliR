@@ -6,7 +6,7 @@ import type { Address } from "../types";
 
 /** Arc system emitter: logs a Transfer(from,to,value) (18 dp) for EVERY USDC movement (EIP-7708). */
 export const ARC_SYSTEM_EMITTER = "0xfffffffffffffffffffffffffffffffffffffffe" as Address; // 0xffff…fffE
-/** USDC ERC-20 interface (NativeFiatTokenV2 proxy, 6 dp) — same address on Arc mainnet and testnet. */
+/** USDC ERC-20 interface (NativeFiatTokenV2 proxy, 6 dp) - same address on Arc mainnet and testnet. */
 export const ARC_USDC_ERC20 = "0x3600000000000000000000000000000000000000" as Address;
 
 const num = (v: string | undefined, d: number) => {

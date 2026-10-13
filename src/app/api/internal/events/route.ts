@@ -1,5 +1,5 @@
 /**
- * POST|GET /api/internal/events — one USDC-blocklist reactor tick (Vercel Cron / external scheduler), or a drill.
+ * POST|GET /api/internal/events - one USDC-blocklist reactor tick (Vercel Cron / external scheduler), or a drill.
  * Protected by `Authorization: Bearer $CRON_SECRET`, same pattern as /api/internal/watcher.
  *
  *   POST (empty body) / GET              → pollBlocklistEvents(): PollResult (blocks scanned, events, handled, webhooks)
@@ -8,7 +8,7 @@
  *                                          that address: relevance check → re-screen → webhooks → events_log.
  *
  * Drill recipe (video): 1) POST /api/v1/watch {address, webhookUrl}  2) add {"<address>": {"usdcBlacklisted": true}}
- * to .data/overrides.json (overrides merge over live chain facts)  3) POST here {simulate: "<address>"} — the
+ * to .data/overrides.json (overrides merge over live chain facts)  3) POST here {simulate: "<address>"} - the
  * response shows tierFrom→tierTo and webhooks delivered; the webhook receives `tier.changed` within seconds.
  */
 import { z } from "zod";

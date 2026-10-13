@@ -7,7 +7,7 @@ hash = keccak256( prevHash ‖ utf8(canonical(payload)) ‖ uint64be(seq) ‖ ut
 genesis prevHash = 0x00…00 (32 bytes) · seq starts at 1 and is contiguous
 canonical() = keys sorted recursively, arrays in order, no whitespace, undefined dropped, bigint → decimal string
 
-// src/lib/ledger/anchor.ts — Merkle root over the hashes of every unanchored entry, in seq order
+// src/lib/ledger/anchor.ts - Merkle root over the hashes of every unanchored entry, in seq order
 pair(a, b) = keccak256(min(a, b) ‖ max(a, b))          // sorted pairs, so proofs need no position bits
 odd level  → last leaf is duplicated
 root → AttestationRegistry.anchorRoot(root, fromSeq, toSeq)   // every ANCHOR_EVERY_N = 50 entries

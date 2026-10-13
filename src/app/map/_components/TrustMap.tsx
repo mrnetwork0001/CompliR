@@ -169,7 +169,7 @@ function Ticker({ changes, onPick }: { changes: TierChange[]; onPick: (a: Addres
     <div className={styles.ticker} aria-label="Recent tier changes">
       <span className={styles.tickerTag}><i className={styles.liveDot} /> Tier changes</span>
       <div className={styles.tickerTrack}>
-        {changes.length === 0 && <span className="muted small">None yet — nodes are regraded after the regrade window; changes show up here as they happen.</span>}
+        {changes.length === 0 && <span className="muted small">None yet - nodes are regraded after the regrade window; changes show up here as they happen.</span>}
         {changes.map((c) => (
           <button key={c.id} type="button" className={styles.tickerItem} onClick={() => onPick(c.address)} title={c.address}>
             <span className="mono">{short(c.address)}</span> <TierBadge tier={c.from} size="sm" /> → <TierBadge tier={c.to} size="sm" />
@@ -209,7 +209,7 @@ function EmptyState({ lastTick, onDone }: { lastTick: MapSnapshot["stats"]["last
       </p>
       {lastTick && (
         <p className="muted small">
-          Last tick {fmtRelative(lastTick.at)}: scanned {lastTick.blocksScanned} blocks, {lastTick.recipients} recipients, {lastTick.candidates} candidates, {lastTick.graded} graded{lastTick.rateLimited ? " — RPC rate-limited, backing off" : ""}.
+          Last tick {fmtRelative(lastTick.at)}: scanned {lastTick.blocksScanned} blocks, {lastTick.recipients} recipients, {lastTick.candidates} candidates, {lastTick.graded} graded{lastTick.rateLimited ? " - RPC rate-limited, backing off" : ""}.
         </p>
       )}
       <RunTick onDone={onDone} />

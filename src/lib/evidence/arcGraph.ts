@@ -226,7 +226,7 @@ export async function traceFunders(subject: Address, opts: TraceOptions): Promis
   if (opts.depth === 2 && hop1.length > 0) {
     const exclude = new Set<Address>([subj, ...hop1.map((f) => f.address)]);
     // Biggest funders first, one parent at a time (its chunks run in parallel under the gate); stop when the
-    // request budget or the deadline is hit — the caller gets hop 1 + whatever hop 2 we managed, partial=true.
+    // request budget or the deadline is hit - the caller gets hop 1 + whatever hop 2 we managed, partial=true.
     const results: { parent: Funder; hop2: Funder[]; ok: boolean }[] = [];
     for (const parent of hop1) {
       if (w.stats.requests + chunksPerWallet > budget || (opts.deadline && Date.now() >= opts.deadline)) {

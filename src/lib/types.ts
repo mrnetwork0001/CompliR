@@ -97,7 +97,7 @@ export interface EvidenceBundle {
   communityTips?: { tipId: string; category: string; strength: string; verifiedAt: number }[];
 }
 
-/** What only a shared oracle can say. Every field is a count or the subject's OWN funder — no other client is identifiable. */
+/** What only a shared oracle can say. Every field is a count or the subject's OWN funder - no other client is identifiable. */
 export interface NetworkSignal {
   /** distinct OTHER (non-internal) clients whose screen rated the subject HIGH inside the window */
   heldElsewhere: { clients: number; lastAt: number | null };
@@ -127,7 +127,7 @@ export const ScreenRequestSchema = z.object({
 export type ScreenRequest = z.infer<typeof ScreenRequestSchema>;
 export type PayeeBookEntry = z.infer<typeof PayeeBookEntrySchema>;
 
-// ─── Analyst (LLM) decision — rules own score/tier; analyst owns the rest ────
+// ─── Analyst (LLM) decision - rules own score/tier; analyst owns the rest ────
 export interface AnalystDecision {
   recommendedLimits: { maxPerTxUsdc: number; maxPerDayUsdc: number };
   rationale: string;

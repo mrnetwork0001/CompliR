@@ -20,7 +20,7 @@ export function EddForm({ initial }: { initial: EddPublicView }) {
     const ledgerId = result?.ledgerEntryId ?? initial.ledgerEntryId;
     return (
       <section className={`card ${styles.done}`} aria-live="polite">
-        <h2>{result ? "Thank you — your answers were received." : "This request has already been answered."}</h2>
+        <h2>{result ? "Thank you - your answers were received." : "This request has already been answered."}</h2>
         {rescreen ? (
           <>
             <div className={styles.tierRow}>
@@ -114,7 +114,7 @@ export function EddForm({ initial }: { initial: EddPublicView }) {
       ))}
       <div className={styles.q}>
         <label className={styles.qLabel} htmlFor="contact">
-          Contact email <span className="muted small">(optional — only if the reviewer should follow up)</span>
+          Contact email <span className="muted small">(optional - only if the reviewer should follow up)</span>
         </label>
         <input id="contact" className="input" type="email" value={contact} onChange={(e) => setContact(e.target.value)} disabled={busy} autoComplete="email" />
       </div>

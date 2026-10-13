@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/decision/:id — one hash-chained decision-log entry (replayable). Free. Spec §2.7.
+ * GET /api/v1/decision/:id - one hash-chained decision-log entry (replayable). Free. Spec §2.7.
  */
 import { getDecision } from "@/lib/ledger";
 import { ApiError, handle, ok } from "../../../_lib/respond";

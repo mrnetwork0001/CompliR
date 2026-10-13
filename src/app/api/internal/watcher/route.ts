@@ -1,5 +1,5 @@
 /**
- * POST /api/internal/watcher — one watcher tick (for Vercel Cron / external scheduler).
+ * POST /api/internal/watcher - one watcher tick (for Vercel Cron / external scheduler).
  * Protected by `Authorization: Bearer $CRON_SECRET`. Returns {checked, changed, failed}.
  */
 import { runWatcherOnce } from "@/lib/watcher";

@@ -1,5 +1,5 @@
 /**
- * POST /api/internal/operator — one operator tick (Vercel Cron / external scheduler / worker/operator.ts fallback).
+ * POST /api/internal/operator - one operator tick (Vercel Cron / external scheduler / worker/operator.ts fallback).
  * Protected by `Authorization: Bearer $CRON_SECRET`. Returns {entryId, seq, chosen, rationale, nextCheckAt, meta}.
  */
 import { runOperatorOnce } from "@/lib/operator";

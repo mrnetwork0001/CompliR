@@ -48,13 +48,13 @@ export const welcome: DocPage = {
       </p>
       <ul>
         <li>
-          <strong>Arc</strong> — money that settles in USDC. Chain id 5042, gas paid in USDC, deterministic finality.
+          <strong>Arc</strong> - money that settles in USDC. Chain id 5042, gas paid in USDC, deterministic finality.
         </li>
         <li>
-          <strong>CompliR</strong> — the risk layer that money runs on. Deterministic rules score, a guard-railed analyst explains, an attester key signs.
+          <strong>CompliR</strong> - the risk layer that money runs on. Deterministic rules score, a guard-railed analyst explains, an attester key signs.
         </li>
         <li>
-          <strong>The operator</strong> — a company with no human in the loop. Every action is a ledger entry you can replay.
+          <strong>The operator</strong> - a company with no human in the loop. Every action is a ledger entry you can replay.
         </li>
       </ul>
     </>
@@ -67,13 +67,13 @@ export const welcome: DocPage = {
         <>
           <Kv
             rows={[
-              { k: "Live app", v: <Link href="/">complir — landing</Link> },
-              { k: "Console", v: <><Link href="/app">/app</Link> — status, KPIs, decision ticker, today&apos;s operator decision</> },
-              { k: "Company", v: <><Link href="/company">/company</Link> — the agent-run company: reserves, obligations, pricing, decisions with reasons</> },
-              { k: "Trust Map", v: <><Link href="/map">/map</Link> — Arc mainnet tailed and graded as it moves</> },
-              { k: "Guarded Payouts", v: <><Link href="/payouts">/payouts</Link> — a treasury agent paying through <code>GuardedTreasury</code> <Status kind="dry-run">dry-run</Status></> },
-              { k: "Ledger", v: <><Link href="/ledger">/ledger</Link> — hash-chained decision log, verify and replay</> },
-              { k: "Daily report", v: <><Link href="/report">/report</Link> — signed traction report, one per UTC day</> },
+              { k: "Live app", v: <Link href="/">complir - landing</Link> },
+              { k: "Console", v: <><Link href="/app">/app</Link> - status, KPIs, decision ticker, today&apos;s operator decision</> },
+              { k: "Company", v: <><Link href="/company">/company</Link> - the agent-run company: reserves, obligations, pricing, decisions with reasons</> },
+              { k: "Trust Map", v: <><Link href="/map">/map</Link> - Arc mainnet tailed and graded as it moves</> },
+              { k: "Guarded Payouts", v: <><Link href="/payouts">/payouts</Link> - a treasury agent paying through <code>GuardedTreasury</code> <Status kind="dry-run">dry-run</Status></> },
+              { k: "Ledger", v: <><Link href="/ledger">/ledger</Link> - hash-chained decision log, verify and replay</> },
+              { k: "Daily report", v: <><Link href="/report">/report</Link> - signed traction report, one per UTC day</> },
               {
                 k: "Registry · Arc 5042",
                 v: (
@@ -92,11 +92,11 @@ export const welcome: DocPage = {
                   </>
                 ),
               },
-              { k: "EIP-712 domain", v: <><Addr>CompliR v1</Addr> <span className="muted">— name <code>CompliR</code>, version <code>1</code>, chainId <code>5042</code>, verifyingContract = registry</span></> },
+              { k: "EIP-712 domain", v: <><Addr>CompliR v1</Addr> <span className="muted">- name <code>CompliR</code>, version <code>1</code>, chainId <code>5042</code>, verifyingContract = registry</span></> },
               { k: "USDC on Arc", v: <Addr note="ERC-20 interface, 6 dp · native gas is USDC">0x3600000000000000000000000000000000000000</Addr> },
               { k: "GitHub", v: <a href="https://github.com/mrnetwork0001/complir" target="_blank" rel="noopener noreferrer">github.com/mrnetwork0001/complir</a> },
-              { k: "MCP", v: <><Link href="/docs/mcp"><code>@complir/mcp</code></Link> — <span id="mcp">screen, watch, verify and replay as agent tools</span></> },
-              { k: "SDK", v: <><Link href="/docs/sdk"><code>@complir/sdk</code></Link> — TypeScript client with the x402 payment loop built in</> },
+              { k: "MCP", v: <><Link href="/docs/mcp"><code>@complir/mcp</code></Link> - <span id="mcp">screen, watch, verify and replay as agent tools</span></> },
+              { k: "SDK", v: <><Link href="/docs/sdk"><code>@complir/sdk</code></Link> - TypeScript client with the x402 payment loop built in</> },
             ]}
           />
         </>
@@ -136,15 +136,15 @@ export const welcome: DocPage = {
           <p>Everything on this site reads from the same code paths an API client hits. Where a loop is waiting on a key or a deploy, the pages say so and so do these docs.</p>
           <ul>
             <li>
-              <strong>Live</strong> — screening, attestations (signed off-chain), watch and webhooks, shadow reports, badge, Trust Map tailer, hash-chained ledger, operator ticks, tip
+              <strong>Live</strong> - screening, attestations (signed off-chain), watch and webhooks, shadow reports, badge, Trust Map tailer, hash-chained ledger, operator ticks, tip
               market, signed daily report, MCP server and SDK.
             </li>
             <li>
-              <strong>Dry-run</strong> — Guarded Payouts (verdicts and ledger are real, transfers simulated), USYC sweep (plans logged), Circle wallets and Gas Station relay
+              <strong>Dry-run</strong> - Guarded Payouts (verdicts and ledger are real, transfers simulated), USYC sweep (plans logged), Circle wallets and Gas Station relay
               (reported as dry-run without credentials), auto-refunds without a signer.
             </li>
             <li>
-              <strong>Pending</strong> — <code>AttestationRegistry</code> and <code>GuardedTreasury</code> on Arc mainnet, x402 charging (<code>X402_DISABLED=1</code> by default),
+              <strong>Pending</strong> - <code>AttestationRegistry</code> and <code>GuardedTreasury</code> on Arc mainnet, x402 charging (<code>X402_DISABLED=1</code> by default),
               ERC-8004 registration, the hosted URL. The <Link href="/docs/mainnet-checklist">mainnet checklist</Link> lists the exact keys that flip each.
             </li>
           </ul>

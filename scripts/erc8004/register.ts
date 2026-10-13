@@ -25,7 +25,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const args = new Set(process.argv.slice(2));
 
 export const IDENTITY_REGISTRY: Record<number, Address> = {
-  5042: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432", // Arc mainnet — verified on-chain: name()="AgentIdentity", agent #1 = APEX
+  5042: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432", // Arc mainnet - verified on-chain: name()="AgentIdentity", agent #1 = APEX
   5042002: "0x8004A818BFB912233c491871b3d84c89A494BD9e", // Arc testnet
 };
 export const identityAbi = parseAbi([

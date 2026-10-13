@@ -1,6 +1,6 @@
 "use client";
 /**
- * SignalField — interactive page background. A matrix of tiny mono ticks that:
+ * SignalField - interactive page background. A matrix of tiny mono ticks that:
  *  • turn slowly with a drifting field (never still),
  *  • get swept by continuous pulse bands (data on a bus),
  *  • swing toward the pointer and brighten within reach,

@@ -22,7 +22,7 @@ interface ICompliR {
 
 const ONE_LINE = `require(ICompliR(COMPLIR_REGISTRY).isAllowed(payee, ICompliR.Tier.MEDIUM), "CompliR: payee tier too high");`;
 
-const TREASURY = `// contracts/src/examples/GuardedTreasury.sol — the one-line integration as a complete example
+const TREASURY = `// contracts/src/examples/GuardedTreasury.sol - the one-line integration as a complete example
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -85,7 +85,7 @@ export const solidity: DocPage = {
           <Code lang="solidity" code={IFACE} />
           <Kv
             rows={[
-              { k: "Tier values", v: "UNKNOWN 0 · LOW 1 · MEDIUM 2 · HIGH 3 — mirrored in src/lib/types.ts TIER_ONCHAIN" },
+              { k: "Tier values", v: "UNKNOWN 0 · LOW 1 · MEDIUM 2 · HIGH 3 - mirrored in src/lib/types.ts TIER_ONCHAIN" },
               { k: "decisionHash", v: "keccak256 of the canonical decision JSON; the same value sits in the signed attestation and the ledger entry" },
               { k: "Registry", v: "AttestationRegistry.sol: Ownable2Step + Pausable, attester role, EIP-712 attest (permissionless, signature is the authority), attestDirect / attestBatch (attester), revoke, anchorRoot (onlyAttester)" },
             ]}

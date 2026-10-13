@@ -3,9 +3,9 @@
  *
  * Gas on Arc: USDC *is* the native gas asset, so an EOA/SCA wallet pays gas from its own USDC balance.
  * "Sponsored" means an active Circle Gas Station policy for ARC (console → Gas Station → mainnet policy; needs an
- * SCA wallet) — then Circle's ERC-4337 paymaster pays and bills the developer in USD (+5%). Sponsorship is decided
+ * SCA wallet) - then Circle's ERC-4337 paymaster pays and bills the developer in USD (+5%). Sponsorship is decided
  * by the policy, not by a request field; the request always carries a `fee.level` (CIRCLE_FEE_LEVEL).
- * Circle Paymaster (user pays gas in USDC) is a different product and not deployed on Arc — not needed there.
+ * Circle Paymaster (user pays gas in USDC) is a different product and not deployed on Arc - not needed there.
  *
  * Every function reports `status: "dry-run"` (never throws) when Circle is not configured.
  */
@@ -141,7 +141,7 @@ export type SignTypedDataResult =
  * EIP-712 signature by a role's Circle wallet (`POST /v1/w3s/developer/sign/typedData`). Only an **EOA** wallet yields a
  * plain secp256k1 signature that `AttestationRegistry.attest` can `ECDSA.recover`; an SCA signs ERC-1271-style, which
  * the registry does not verify. So to make a Circle wallet the registry attester it must be created with
- * CIRCLE_ACCOUNT_TYPE=EOA (which forfeits Gas Station sponsorship — see docs/CIRCLE_WALLETS.md).
+ * CIRCLE_ACCOUNT_TYPE=EOA (which forfeits Gas Station sponsorship - see docs/CIRCLE_WALLETS.md).
  */
 export async function signTypedDataWithCircle(role: WalletRole, typedData: AttestationTypedData | Record<string, unknown>, memo?: string): Promise<SignTypedDataResult> {
   const status = circleStatus();

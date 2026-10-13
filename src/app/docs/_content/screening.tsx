@@ -121,17 +121,17 @@ export const screening: DocPage = {
       body: (
         <ul>
           <li>
-            <strong>GET /api/v1/attestation/:address</strong> — the latest stored verdict and attestation (<code>source: &quot;store&quot;</code>); an address never seen is screened
+            <strong>GET /api/v1/attestation/:address</strong> - the latest stored verdict and attestation (<code>source: &quot;store&quot;</code>); an address never seen is screened
             once (<code>source: &quot;fresh&quot;</code>).
           </li>
           <li>
-            <strong>GET /api/v1/decision/:id</strong> — the ledger entry: payload, prev/this hash, anchor tx.
+            <strong>GET /api/v1/decision/:id</strong> - the ledger entry: payload, prev/this hash, anchor tx.
           </li>
           <li>
-            <strong>GET /api/v1/network/:address</strong> — the anonymised cross-client signal (held elsewhere, concentration hint, blocklist events).
+            <strong>GET /api/v1/network/:address</strong> - the anonymised cross-client signal (held elsewhere, concentration hint, blocklist events).
           </li>
           <li>
-            <strong>GET /api/v1/badge/:address.svg</strong> — a &quot;Screened by CompliR&quot; badge from the stored attestation.
+            <strong>GET /api/v1/badge/:address.svg</strong> - a &quot;Screened by CompliR&quot; badge from the stored attestation.
           </li>
         </ul>
       ),

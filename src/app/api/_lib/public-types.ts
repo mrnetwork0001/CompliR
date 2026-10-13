@@ -48,7 +48,7 @@ export interface FeedResponse {
   source: "store";
 }
 
-/** GET /api/v1/numbers — honest public counters. Own wallets are always excluded. */
+/** GET /api/v1/numbers - honest public counters. Own wallets are always excluded. */
 export interface PublicStats {
   screenings: number;
   distinctClients: number;

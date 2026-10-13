@@ -4,8 +4,8 @@
  *   invoice → screen(payee) → decidePayout(policy) → [LIVE] GuardedTreasury.release(payee, amount) → ledger "PAYOUT"
  *
  * Modes (env, see treasuryStatus()):
- *   dry-run (default)  — screens, decides, records; txHash = null ("simulated"). No key needed.
- *   live               — TREASURY_MODE=live + TREASURY_PRIVATE_KEY + GUARDED_TREASURY_ADDRESS + REGISTRY_ADDRESS.
+ *   dry-run (default)  - screens, decides, records; txHash = null ("simulated"). No key needed.
+ *   live               - TREASURY_MODE=live + TREASURY_PRIVATE_KEY + GUARDED_TREASURY_ADDRESS + REGISTRY_ADDRESS.
  *                        The attestation is mirrored to the registry first (awaited), then `release` is simulated and
  *                        sent; nonces are serialised in-process; the receipt is awaited (Arc finality is deterministic).
  */
@@ -212,7 +212,7 @@ export async function runTreasuryOnce(opts: TickOptions = {}): Promise<TickResul
     } catch (e) {
       error = (e as Error)?.message ?? String(e);
       status = "FAILED";
-      reason = `FAILED: ${error}${decision ? ` — intended ${decision.action} ${decision.amount} USDC. ${decision.reason}` : ""}`;
+      reason = `FAILED: ${error}${decision ? ` - intended ${decision.action} ${decision.amount} USDC. ${decision.reason}` : ""}`;
       console.warn("[treasury] invoice", inv.id, "failed:", error);
     }
 

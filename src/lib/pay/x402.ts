@@ -312,7 +312,7 @@ async function process_(
     return { kind: "other", snapshot: await snapshot(res) };
   }
 
-  // 4. paid: record it (sink) — from here on the payer has been charged and every failure path refunds
+  // 4. paid: record it (sink) - from here on the payer has been charged and every failure path refunds
   const amountUsdc = atomicToUsdc(settle.amount ?? payload.payload.authorization.value);
   const event: PaymentEvent = {
     txHash: settle.transaction,

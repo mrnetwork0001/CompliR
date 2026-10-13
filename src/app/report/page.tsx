@@ -81,7 +81,7 @@ export default async function ReportPage({ searchParams }: Props) {
                 <dt>Signature (EIP-191)</dt>
                 <dd>{report.signature}</dd>
                 <dt>Ledger entry</dt>
-                <dd>{report.ledgerId ? <Link href={`/log/${encodeURIComponent(report.ledgerId)}`}>{report.ledgerId}</Link> : "—"}</dd>
+                <dd>{report.ledgerId ? <Link href={`/log/${encodeURIComponent(report.ledgerId)}`}>{report.ledgerId}</Link> : "-"}</dd>
                 <dt>Generated</dt>
                 <dd>{new Date(report.createdAt * 1000).toISOString()}</dd>
               </dl>

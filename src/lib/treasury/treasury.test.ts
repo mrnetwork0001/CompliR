@@ -134,7 +134,7 @@ describe("invoices + dry-run tick", () => {
 
   it("a never-paid address that resembles a trusted payee is flagged as a lookalike (address poisoning)", async () => {
     const poison = "0x000000000000000000000000000000000000caf1" as Address; // one hex char away from Lela's …cafe
-    const inv = await createInvoice({ payee: poison, label: "Lela — logo design", amountUsdc: 5 });
+    const inv = await createInvoice({ payee: poison, label: "Lela - logo design", amountUsdc: 5 });
     const r = await runTreasuryOnce({ policy: { maxTier: "LOW", perPayoutCapUsdc: 25, dailyCapUsdc: 1000, requireAttestationOnChain: false } });
     const x = r.results.find((y) => y.invoiceId === inv.id)!;
     const p = (await getDecision(x.payoutDecisionId!))?.payload as { verdict: { reasonCodes: string[] } };
@@ -144,7 +144,7 @@ describe("invoices + dry-run tick", () => {
   }, 60_000);
 
   it("a new invoice to a LOW payee is paid on the next tick; daily cap carries over", async () => {
-    const inv = await createInvoice({ payee: DEMO_INVOICES[0].payee as Address, label: "Lela — second invoice", amountUsdc: 30 });
+    const inv = await createInvoice({ payee: DEMO_INVOICES[0].payee as Address, label: "Lela - second invoice", amountUsdc: 30 });
     const r = await runTreasuryOnce({ policy: { maxTier: "MEDIUM", perPayoutCapUsdc: 25, dailyCapUsdc: 50, requireAttestationOnChain: false } });
     const x = r.results.find((y) => y.invoiceId === inv.id)!;
     // 35 already spent today of a 50 cap → 15 headroom

@@ -3,7 +3,7 @@
  * Run: `npx tsx --env-file=.env.local worker/events.ts`   (interval: EVENTS_TICK_MS, default 20 s)
  *
  * Each tick tails new Arc blocks for Blacklisted/UnBlacklisted on the USDC contract and re-screens every affected
- * address that is watched, on the Trust Map, or screened in the last 30 days — pushing tier.changed webhooks.
+ * address that is watched, on the Trust Map, or screened in the last 30 days - pushing tier.changed webhooks.
  */
 import { pollBlocklistEvents } from "../src/lib/events";
 import { eventsEnv } from "../src/lib/events/env";
