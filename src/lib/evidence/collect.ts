@@ -10,7 +10,7 @@
  * a subject override with `funders` replaces the chain trace entirely.
  */
 import type { PublicClient } from "viem";
-import type { Address, AddressFacts, EvidenceBundle, NetworkSignal, PayeeBookEntry, ScreenRequest, Tier } from "../types";
+import type { Address, AddressFacts, AgentSignal, EvidenceBundle, InboundSignal, NetworkSignal, PayeeBookEntry, ScreenRequest, Tier } from "../types";
 import { networkSignals, recordFunders, type NetworkSignalsFn } from "../network";
 import { fetchActivity, type AddressActivity } from "./addressFacts";
 import { emptyFacts, traceFunders, type FunderEntry, type GraphClient, type TraceResult } from "./arcGraph";
@@ -22,6 +22,8 @@ import { arcClient } from "./rpc";
 import { isUsdcBlacklisted, usdcBlacklistMany } from "./usdcBlacklist";
 import { lower, withTimeout } from "./util";
 import { screenAddresses, screenSanctions } from "./yente";
+import { agentFacts as erc8004AgentFacts, type AgentFactsOptions } from "../erc8004/read";
+import { inboundEvidenceFor } from "../cctp/store";
 
 export type EvidenceClient = GraphClient & Pick<PublicClient, "readContract" | "getTransactionCount">;
 
@@ -43,6 +45,10 @@ export interface CollectOptions {
   now?: number;
   /** cross-client network signal (src/lib/network); injected for tests, `null` disables the source. default networkSignals */
   network?: NetworkSignalsFn | null;
+  /** ERC-8004 agent facts (src/lib/erc8004); injected for tests, `null` disables the source. default agentFacts */
+  agent?: ((address: Address, opts: AgentFactsOptions) => Promise<AgentSignal | null>) | null;
+  /** CCTP inbound signal (src/lib/cctp); injected for tests, `null` disables the source. default inboundEvidenceFor */
+  inbound?: ((address: Address, opts: { now: number }) => Promise<InboundSignal | null>) | null;
 }
 
 export type SourceStatus = "ok" | "timeout_or_error" | "override" | "skipped";
@@ -50,7 +56,7 @@ export type SourceStatus = "ok" | "timeout_or_error" | "override" | "skipped";
 export interface CollectResult {
   bundle: EvidenceBundle;
   /** per-source outcome, for logs / the decision record */
-  sources: Record<"activity" | "usdcBlacklist" | "protocolBlocklist" | "sanctions" | "trace" | "funderEnrichment" | "network", SourceStatus>;
+  sources: Record<"activity" | "usdcBlacklist" | "protocolBlocklist" | "sanctions" | "trace" | "funderEnrichment" | "network" | "agent" | "inbound", SourceStatus>;
   trace: Pick<TraceResult, "fromBlock" | "toBlock" | "requests" | "partial"> | null;
 }
 
@@ -83,7 +89,9 @@ export async function collectEvidenceDetailed(req: ScreenRequest, opts: CollectO
     p ? withTimeout<T | Fail>(label, p, timeoutMs, SENTINEL) : Promise.resolve(SENTINEL);
 
   // ── Phase 1: subject + trace, concurrently ────────────────────────────────
-  const [activity, usdcFlag, protoFlag, sanctions, trace, communityTips] = await Promise.all([
+  const agentFn = opts.agent === null ? null : (opts.agent ?? erc8004AgentFacts);
+  const inboundFn = opts.inbound === null ? null : (opts.inbound ?? inboundEvidenceFor);
+  const [activity, usdcFlag, protoFlag, sanctions, trace, communityTips, agentRes, inboundRes] = await Promise.all([
     guard<AddressActivity>("activity", fetchActivity(subject, { client, fetchImpl, timeoutMs })),
     guard<boolean>("usdcBlacklist", client ? isUsdcBlacklisted(subject, { client }) : null),
     guard<boolean>("protocolBlocklist", client ? isProtocolBlocklisted(subject, { client }) : null),
@@ -102,6 +110,10 @@ export async function collectEvidenceDetailed(req: ScreenRequest, opts: CollectO
           }),
     ),
     guard("communityTips", tipEvidenceFor(subject, { now })),
+    // ERC-8004 agent identity + reputation/validation (src/lib/erc8004) - read-only registry calls on the same client
+    guard<AgentSignal | null>("agent", agentFn && client ? agentFn(subject, { client, now }) : null),
+    // CCTP inbound mints from flagged source-chain senders (src/lib/cctp) - store lookup only
+    guard<InboundSignal | null>("inbound", inboundFn ? inboundFn(subject, { now }) : null),
   ]);
 
   const traceOk = trace !== SENTINEL;
@@ -176,6 +188,8 @@ export async function collectEvidenceDetailed(req: ScreenRequest, opts: CollectO
     collectedAt: now,
     depth,
     network,
+    agent: agentRes === SENTINEL ? null : agentRes,
+    inbound: inboundRes === SENTINEL ? null : inboundRes,
   };
 
   const status = (v: unknown, p: boolean): SourceStatus => (!p ? "skipped" : v === SENTINEL ? "timeout_or_error" : "ok");
@@ -189,6 +203,8 @@ export async function collectEvidenceDetailed(req: ScreenRequest, opts: CollectO
       trace: overrideFunders ? "override" : status(trace, !!client),
       funderEnrichment: enrichment,
       network: status(networkRes, !!networkFn),
+      agent: status(agentRes, !!agentFn && !!client),
+      inbound: status(inboundRes, !!inboundFn),
     },
     trace: traceRes ? { fromBlock: traceRes.fromBlock, toBlock: traceRes.toBlock, requests: traceRes.requests, partial: traceRes.partial } : null,
   };

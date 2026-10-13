@@ -11,6 +11,8 @@ import { appendDecision } from "./ledger";
 import { insertAttestation, recordScreening, priorTier as loadPriorTier, classifyPayer } from "./store";
 import { writeAttestationToRegistry } from "./chain/registryWriter";
 import { createEddRequest } from "./edd";
+import { publishAgentVerdictInBackground } from "./erc8004/publish";
+import { attachGuarantee, GUARANTEE_CLIENT_ID } from "./guarantee";
 import { tierForScore, type Address, type PayeeBookEntry, type ScreenRequest, type Verdict } from "./types";
 
 import { collectEvidence } from "./evidence";
@@ -94,8 +96,17 @@ export async function screen(req: ScreenRequest, opts: ScreenOptions = {}): Prom
     } catch (e) { console.warn("[complir] edd request failed:", (e as Error)?.message); verdict.edd = null; }
   }
 
+  // 7c. guarantee: a LOW verdict screened with an amount carries a small bond, refunded to the payer if the subject re-grades HIGH (src/lib/guarantee)
+  if (verdict.tier === "LOW" && (req.amountUsdc ?? 0) > 0 && req.clientId !== GUARANTEE_CLIENT_ID) {
+    try { verdict.guarantee = await attachGuarantee(verdict, req); }
+    catch (e) { console.warn("[complir] guarantee failed:", (e as Error)?.message); verdict.guarantee = null; }
+  }
+
   // 8. mirror to AttestationRegistry on Arc (non-blocking; only when configured)
   if (opts.writeOnChain !== false) void writeAttestationToRegistry(verdict).catch((e) => console.warn("[complir] registry write failed:", e?.message ?? e));
+
+  // 9. ERC-8004: publish the verdict about a registered agent back to the registries (fire-and-forget; ERC8004_PUBLISH=1)
+  if (opts.writeOnChain !== false) publishAgentVerdictInBackground(verdict);
 
   return verdict;
 }

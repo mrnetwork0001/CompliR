@@ -27,8 +27,15 @@ export const WEIGHTS: Record<ReasonCode, number> = {
   COMMUNITY_TIP_VERIFIED: 15, // a staked, agent-verified community tip (src/lib/tips)
   NETWORK_HELD_ELSEWHERE: 20, // ≥2 distinct other clients rated HIGH in 7 d; a single one scores NETWORK_HELD_ELSEWHERE_SINGLE_WEIGHT
   NETWORK_SHARED_FUNDER: 8, // shares a hop-1 funder with ≥ NETWORK_SHARED_FUNDER_MIN_PAYEES of the client's own payees
+  AGENT_REGISTERED: -5, // positive: subject owns / is the wallet of an ERC-8004 agent on Arc (src/lib/erc8004); total is clamped ≥ 0
+  AGENT_VALIDATED: -5, // positive: ≥1 answered validation from a non-self validator in the ValidationRegistry
+  AGENT_DISPUTED: 15, // negative feedback / failed validation / dispute tag on the agent
+  INBOUND_FLAGGED: 20, // received bridged USDC (CCTP) from a sanctioned / blacklisted source-chain sender in the last INBOUND_FLAGGED_LOOKBACK_DAYS
   CLEAN: 0,
 };
+
+/** INBOUND_FLAGGED lookback (EvidenceBundle.inbound is already windowed by src/lib/cctp; this is the rule's own cap). */
+export const INBOUND_FLAGGED_LOOKBACK_DAYS = 30;
 
 /** NETWORK_HELD_ELSEWHERE: exactly one other client → 10; two or more → WEIGHTS.NETWORK_HELD_ELSEWHERE (20). */
 export const NETWORK_HELD_ELSEWHERE_SINGLE_WEIGHT = 10;
@@ -312,6 +319,45 @@ export function scoreEvidence(bundle: EvidenceBundle): ScoreResult {
         yourPayees: net.sharedFunder.count,
         hint: `shares hop-1 funder with ${net.sharedFunder.count} of your own payees`,
       },
+    });
+  }
+
+  // 5c. ERC-8004 agent identity (src/lib/erc8004). Evidence carries agentId + registry addresses (all public on-chain data).
+  const agent = bundle.agent;
+  if (agent?.registered) {
+    const agentEvidence = {
+      agentId: agent.agentId, role: agent.role, agentURI: agent.agentURI, owner: agent.owner, agentWallet: agent.agentWallet,
+      registries: agent.registries, indexPending: agent.indexPending ?? false,
+    };
+    reasons.push({
+      code: "AGENT_REGISTERED",
+      weight: WEIGHTS.AGENT_REGISTERED,
+      evidence: { ...agentEvidence, reputation: agent.reputation, validations: agent.validations ? { count: agent.validations.count, responded: agent.validations.responded, nonSelf: agent.validations.nonSelf } : null, checkedAt: iso(now) },
+    });
+    if (agent.validations && agent.validations.nonSelf > 0) {
+      reasons.push({
+        code: "AGENT_VALIDATED",
+        weight: WEIGHTS.AGENT_VALIDATED,
+        evidence: { agentId: agent.agentId, registry: agent.registries.validation, validators: [...agent.validations.validators].sort(), responded: agent.validations.responded, nonSelf: agent.validations.nonSelf, last: agent.validations.last ? { ...agent.validations.last, at: iso(agent.validations.last.at) } : null },
+      });
+    }
+    if (agent.disputes.length > 0) {
+      const disputes = [...agent.disputes].sort((a, b) => a.source.localeCompare(b.source) || JSON.stringify(a).localeCompare(JSON.stringify(b)));
+      reasons.push({
+        code: "AGENT_DISPUTED",
+        weight: WEIGHTS.AGENT_DISPUTED,
+        evidence: { agentId: agent.agentId, registries: { reputation: agent.registries.reputation, validation: agent.registries.validation }, count: disputes.length, disputes, negativeFeedback: agent.reputation?.negative ?? 0, failedValidations: agent.validations?.failed ?? 0 },
+      });
+    }
+  }
+
+  // 5d. CCTP inbound from a flagged source-chain sender (src/lib/cctp). Counts + source chains only; the sender itself stays in cctp_inbound.
+  const inbound = bundle.inbound;
+  if (inbound && inbound.flaggedCount > 0 && (inbound.lastAt == null || now - inbound.lastAt <= INBOUND_FLAGGED_LOOKBACK_DAYS * 86_400)) {
+    reasons.push({
+      code: "INBOUND_FLAGGED",
+      weight: WEIGHTS.INBOUND_FLAGGED,
+      evidence: { flaggedMints: inbound.flaggedCount, lastAt: iso(inbound.lastAt), sources: [...inbound.sources].sort(), windowDays: inbound.windowDays, hint: "received bridged USDC via CCTP from a sanctioned or USDC-blacklisted source-chain wallet; see /api/v1/inbound/{address}" },
     });
   }
 

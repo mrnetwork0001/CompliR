@@ -44,6 +44,10 @@ export const REASON_CODES = [
   "NETWORK_HELD_ELSEWHERE", // shared-oracle signal: other integrators rated this address HIGH in the last 7 days (anonymised count)
   "NETWORK_SHARED_FUNDER", // shares a hop-1 funder with ≥3 of this client's own payees (src/lib/network)
   "COMMUNITY_TIP_VERIFIED", // a staked community tip about this address was verified by the agent (src/lib/tips)
+  "AGENT_REGISTERED", // subject owns (or is the agentWallet of) an ERC-8004 agent on Arc (src/lib/erc8004) - positive, weight -5
+  "AGENT_VALIDATED", // that agent has ≥1 answered validation from a non-self validator (ValidationRegistry) - positive, weight -5
+  "AGENT_DISPUTED", // negative feedback / failed validation / dispute tag on that agent (Reputation + Validation registries)
+  "INBOUND_FLAGGED", // received bridged USDC via CCTP from a sanctioned / blacklisted source-chain sender in the last 30 days (src/lib/cctp)
   "CLEAN", // explicit positive: no signals
 ] as const;
 export type ReasonCode = (typeof REASON_CODES)[number];
@@ -95,6 +99,51 @@ export interface EvidenceBundle {
   network?: NetworkSignal | null;
   /** verified community tips (tip market); counts + categories only */
   communityTips?: { tipId: string; category: string; strength: string; verifiedAt: number }[];
+  /** ERC-8004 agent identity + reputation/validation summary for the subject (src/lib/erc8004). null = not an agent / absent = source unavailable. */
+  agent?: AgentSignal | null;
+  /** CCTP inbound mints to the subject whose source-chain sender was sanctioned/blacklisted (src/lib/cctp). null = none / absent = store unavailable. */
+  inbound?: InboundSignal | null;
+}
+
+/** What the ERC-8004 registries on Arc say about the subject's agent. Every address here is public on-chain data. */
+export interface AgentSignal {
+  registered: boolean;
+  /** how the subject relates to the agent token */
+  role: "owner" | "wallet";
+  /** decimal string (bigint is not JSON-safe); null when balanceOf > 0 but the address→agentId index has not caught up */
+  agentId: string | null;
+  indexPending?: boolean;
+  agentURI: string | null;
+  owner: Address | null;
+  agentWallet: Address | null;
+  registries: { chainId: number; identity: Address; reputation: Address; validation: Address };
+  /** ReputationRegistry: feedback count / average value over the agent's clients; null = registry unavailable */
+  reputation: { count: number; avg: number | null; negative: number; clients: number } | null;
+  /** ValidationRegistry: requests filed for the agent, how many were answered, by validators other than the agent itself */
+  validations: {
+    count: number;
+    responded: number;
+    nonSelf: number;
+    failed: number;
+    validators: Address[];
+    last: { requestHash: `0x${string}`; validator: Address; response: number; tag: string; at: number } | null;
+  } | null;
+  disputes: (
+    | { source: "feedback"; client: Address; value: number; tag: string }
+    | { source: "validation"; validator: Address; response: number; tag: string; requestHash: `0x${string}` }
+  )[];
+}
+
+/** CCTP inbound screening summary for the subject as mint recipient (cctp_inbound rows in the window). */
+export interface InboundSignal {
+  flaggedCount: number;
+  /** unix seconds of the latest flagged mint */
+  lastAt: number | null;
+  /** distinct source chains of the flagged mints, e.g. ["ethereum", "base"] */
+  sources: string[];
+  windowDays: number;
+  /** total inbound mints seen for the subject in the window (flagged or not) */
+  seen?: number;
 }
 
 /** What only a shared oracle can say. Every field is a count or the subject's OWN funder - no other client is identifiable. */
@@ -178,10 +227,12 @@ export interface Verdict {
   evidence: EvidenceBundle;
   /** Enhanced Due Diligence request the payer can forward to the counterparty (MEDIUM/HIGH only). */
   edd?: { id: string; url: string } | null;
+  /** Bond on a LOW verdict with `amountUsdc` (src/lib/guarantee): refunded to the payer if the subject re-grades HIGH before `until`. null = no bond could be sized. */
+  guarantee?: { bondUsdc: number; until: string; terms: string } | null;
 }
 
 // ─── Decision log (hash-chained, Merkle-anchored) ────────────────────────────
-export type DecisionKind = "SCREEN" | "RESCREEN" | "TIER_CHANGE" | "EDD_RESPONSE" | "NOOP" | "ANCHOR" | "PAYOUT" | "OPERATOR" | "TIP" | "REFUND" | "REPORT";
+export type DecisionKind = "SCREEN" | "RESCREEN" | "TIER_CHANGE" | "EDD_RESPONSE" | "NOOP" | "ANCHOR" | "PAYOUT" | "OPERATOR" | "TIP" | "REFUND" | "REPORT" | "GUARANTEE";
 export interface DecisionLogEntry {
   id: string; // dec_<ulid>
   seq: number; // monotonically increasing
