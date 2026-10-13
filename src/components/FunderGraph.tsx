@@ -178,8 +178,8 @@ export function FunderGraph({ evidence, onSelect }: { evidence: EvidenceBundle; 
         {Array.from({ length: 12 }, (_, i) => (i / 12) * Math.PI * 2).map((a) => (
           <line key={a} x1={r2(CX + Math.cos(a) * (R2 + 18))} y1={r2(CY + Math.sin(a) * (R2 + 18))} x2={r2(CX + Math.cos(a) * (R2 + 22))} y2={r2(CY + Math.sin(a) * (R2 + 22))} className={styles.tick} />
         ))}
-        <text x={CX + R1 + 5} y={CY - 5} className={styles.ringLabel}>HOP 1 · {funders.filter((n) => n.hop === 1).length}</text>
-        <text x={CX + R2 + 5} y={CY - 5} className={styles.ringLabel}>HOP 2 · {funders.filter((n) => n.hop === 2).length}</text>
+        <text x={CX + R1 - 4} y={CY - 5} textAnchor="end" className={styles.ringLabel}>HOP 1 · {funders.filter((n) => n.hop === 1).length}</text>
+        <text x={CX + R2 - 4} y={CY - 5} textAnchor="end" className={styles.ringLabel}>HOP 2 · {funders.filter((n) => n.hop === 2).length}</text>
 
         {/* paths: funder → funded mark, dashes flow toward the subject */}
         {edges.map((e, i) => {
