@@ -20,7 +20,7 @@ export const AnalystOutputSchema = z.object({
   /** seconds until next re-screen; clamped into the tier window by guards */
   nextRescreenInSeconds: z.number(),
   /** 2 to ask the pipeline for a second funder hop before the final verdict; null otherwise */
-  requestDepth: z.literal(2).nullable(),
+  requestDepth: z.literal(2).nullable().optional(), // relayed providers may omit it; undefined == null
   /** 0..1 self-assessed confidence in limits/cadence (not in the tier) */
   confidence: z.number(),
 });
