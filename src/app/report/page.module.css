@@ -115,3 +115,16 @@
 .doc {
   composes: fig from global;
 }
+
+/* long hashes / signatures inside the rendered document wrap instead of overflowing the panel */
+.doc code,
+.doc :global(code) {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.doc li,
+.doc p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
