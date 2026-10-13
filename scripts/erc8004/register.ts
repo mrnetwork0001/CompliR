@@ -41,7 +41,8 @@ const rpc = process.env.ARC_RPC_URL ?? "https://rpc.mainnet.arc.io";
 const baseUrl = (process.env.PUBLIC_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 const registry = (process.env.ERC8004_IDENTITY_REGISTRY as Address | undefined) ?? IDENTITY_REGISTRY[chainId];
 const agentId = process.env.ERC8004_AGENT_ID ? BigInt(process.env.ERC8004_AGENT_ID) : null;
-const key = (process.env.ERC8004_OWNER_PRIVATE_KEY ?? process.env.ATTESTER_PRIVATE_KEY) as `0x${string}` | undefined;
+// blank env values ("ERC8004_OWNER_PRIVATE_KEY=") count as unset
+const key = (process.env.ERC8004_OWNER_PRIVATE_KEY || process.env.ATTESTER_PRIVATE_KEY || undefined) as `0x${string}` | undefined;
 
 function chain(): Chain {
   const base = chainId === arc.id ? arc : chainId === arcTestnet.id ? arcTestnet : { ...arc, id: chainId, name: `arc-${chainId}` };
