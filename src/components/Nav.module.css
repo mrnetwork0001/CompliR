@@ -102,7 +102,8 @@
 .trigger:hover,
 .group[data-open] .trigger {
   color: var(--text);
-  background: var(--code-bg);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  box-shadow: inset 0 -1px 0 var(--acc); /* hairline underline, no filled box */
   text-decoration: none;
 }
 .triggerActive {
@@ -128,10 +129,15 @@
   min-width: 296px;
   max-width: calc(100vw - 32px);
   padding: 6px;
-  background: var(--panel-solid);
+  /* datasheet panel: translucent surface over the signal field, hairline edge, scale rule along the top */
+  background:
+    linear-gradient(to right, var(--line-2) 1px, transparent 1px) 0 0 / 8px 3px repeat-x,
+    color-mix(in srgb, var(--panel-solid) 92%, transparent);
   border: 1px solid var(--line-2);
   border-radius: var(--radius);
-  box-shadow: var(--menu-shadow);
+  box-shadow: 0 1px 0 var(--line), 0 18px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
   z-index: 30;
 }
 /* keep the hover bridge between trigger and panel */
