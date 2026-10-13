@@ -2,19 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Address } from "@/lib/types";
-import type { MapSnapshot, TierChange } from "@/lib/trustmap/types";
+import type { MapCandidate, MapNode, MapSnapshot, TierChange } from "@/lib/trustmap/types";
 import type { HealthResponse } from "@/app/api/_lib/public-types";
 import { TierBadge } from "@/components/TierBadge";
 import { HttpError, apiFetch, fmtRelative, getHealth, short } from "@/components/api";
 import { MapCanvas } from "./MapCanvas";
-import { NodePanel } from "./NodePanel";
+import { NodePanel, type PanelItem } from "./NodePanel";
 import styles from "./TrustMap.module.css";
 
 const REFRESH_MS = 15_000;
 
 type TickResult = {
   blocksScanned: number; fromBlock: number | null; toBlock: number | null; logs: number; recipients: number; candidates: number; graded: number;
-  skippedContracts: number; skippedRecent: number; skippedBudget: number; tierChanges: number; edges: number; rpcCalls: number; partial: boolean; rateLimited: boolean; seeded: boolean; tookMs: number;
+  skippedContracts: number; skippedRecent: number; skippedBudget: number; tierChanges: number; edges: number; observedNow: number; observed?: number; rpcCalls: number; partial: boolean; rateLimited: boolean; seeded: boolean; tookMs: number;
   gradedNodes: { address: Address; tier: "LOW" | "MEDIUM" | "HIGH"; score: number; changed: boolean }[];
   failures: { address: Address; error: string }[];
 };
@@ -34,7 +34,7 @@ export function TrustMap() {
   const load = useCallback(() => {
     if (inflight.current) return Promise.resolve();
     inflight.current = true;
-    return Promise.all([apiFetch<MapSnapshot>("/api/v1/map?limit=150"), apiFetch<{ items: TierChange[] }>("/api/v1/map/changes?limit=30")])
+    return Promise.all([apiFetch<MapSnapshot>("/api/v1/map?limit=150&candidates=200"), apiFetch<{ items: TierChange[] }>("/api/v1/map/changes?limit=30")])
       .then(([s, c]) => {
         setSnap(s);
         setChanges(c.items);
@@ -67,11 +67,18 @@ export function TrustMap() {
 
   const explorerUrl = health?.network.explorerUrl ?? "";
   const nodes = useMemo(() => snap?.nodes ?? [], [snap]);
+  const candidates = useMemo(() => snap?.candidates ?? [], [snap]);
   const edges = useMemo(() => snap?.edges ?? [], [snap]);
-  const byAddr = useMemo(() => new Map(nodes.map((n) => [n.address, n])), [nodes]);
-  const focusNode = (selected && byAddr.get(selected)) || (hovered && byAddr.get(hovered)) || null;
+  const items = useMemo(() => {
+    const m = new Map<Address, PanelItem>();
+    for (const c of candidates) m.set(c.address, { kind: "candidate", candidate: c satisfies MapCandidate });
+    for (const n of nodes) m.set(n.address, { kind: "node", node: n satisfies MapNode });
+    return m;
+  }, [nodes, candidates]);
+  const focusItem = (selected && items.get(selected)) || (hovered && items.get(hovered)) || null;
+  const focusAddr = focusItem ? (focusItem.kind === "node" ? focusItem.node.address : focusItem.candidate.address) : null;
   const stats = snap?.stats;
-  const empty = snap !== null && nodes.length === 0;
+  const empty = snap !== null && nodes.length === 0 && candidates.length === 0;
 
   return (
     <div className={styles.page}>
@@ -80,8 +87,8 @@ export function TrustMap() {
           <p className="kicker" style={{ marginBottom: 8 }}><span className="live-dot" aria-hidden="true" />oracle · trust map · Arc 5042</p>
           <h1>Arc Trust Map</h1>
           <p className="muted">
-            Live, chain-wide view: every tick tails new Arc blocks, picks counterparties receiving meaningful USDC, grades them with the CompliR pipeline and plots them by tier.
-            Node size ∝ USDC received in 24h · arrows are USDC transfers between graded nodes · pulsing ring = tier changed in the last 24h.
+            Live, chain-wide view: every tick tails new Arc blocks, records every USDC recipient it sees, grades the biggest with the CompliR pipeline and places them on their tier ring.
+            Core ∝ USDC received in 24h · dashed signal lines are USDC transfers flowing toward the recipient · faint marks on the outer ring are observed, not graded yet.
           </p>
         </div>
         <div className={styles.controls}>
@@ -100,6 +107,7 @@ export function TrustMap() {
         <Stat label="High" value={stats?.high} tone="HIGH" />
         <Stat label="Medium" value={stats?.medium} tone="MEDIUM" />
         <Stat label="Low" value={stats?.low} tone="LOW" />
+        <Stat label="Observed" value={stats?.observed} />
         <Stat label="Tier changes 24h" value={stats?.tierChanges24h} />
         <Stat label="Cursor block" value={stats?.cursorBlock ?? undefined} mono />
         <Stat label="Last tick" value={stats ? (stats.lastTickAt ? fmtRelative(stats.lastTickAt) : "never") : undefined} />
@@ -112,32 +120,26 @@ export function TrustMap() {
       ) : (
         <div className={styles.body}>
           <div className={styles.mapCard}>
-            <div className={styles.mapScroll}>
-              {snap ? (
-                <MapCanvas nodes={nodes} edges={edges} selected={selected} hovered={hovered} now={now} onSelect={setSelected} onHover={setHovered} />
-              ) : (
-                <div className={styles.loading}><span className="skeleton" style={{ width: "40%" }} /></div>
-              )}
-            </div>
-            <div className={styles.legend}>
-              <span><i className={styles.swHIGH} /> HIGH · hold</span>
-              <span><i className={styles.swMEDIUM} /> MEDIUM · pay with limits</span>
-              <span><i className={styles.swLOW} /> LOW · pay</span>
-              <span><i className={styles.swPulse} /> tier changed (24h)</span>
-              <span><i className={styles.swDemo} /> demo seed</span>
-              <span className="muted">{nodes.length} nodes · {edges.length} edges{stats?.lastTick?.partial ? " · last tick partial (RPC limit)" : ""}</span>
+            {snap ? (
+              <MapCanvas nodes={nodes} candidates={candidates} edges={edges} stats={stats ?? null} selected={selected} hovered={hovered} now={now} onSelect={setSelected} onHover={setHovered} />
+            ) : (
+              <div className={styles.loading}><span className="skeleton" style={{ width: "40%" }} /></div>
+            )}
+            <div className={styles.mapFoot}>
+              <span>{nodes.length} graded · {candidates.length} observed · {edges.length} edges{stats?.lastTick?.partial ? " · last tick partial (RPC limit)" : ""}</span>
+              <span>angle = hash(address) · core ∝ log USDC in · sweep 20 s</span>
             </div>
           </div>
           <aside className={styles.panel} aria-live="polite">
-            {focusNode ? (
-              <NodePanel node={focusNode} pinned={selected === focusNode.address} explorerUrl={explorerUrl} onClose={() => setSelected(null)} onPick={(a) => setSelected(a)} />
+            {focusItem ? (
+              <NodePanel item={focusItem} pinned={selected === focusAddr} explorerUrl={explorerUrl} onClose={() => setSelected(null)} onPick={(a) => setSelected(a)} onPromoted={() => void load()} />
             ) : (
               <div className={styles.panelHint}>
                 <div className={styles.sectionTitle}>Pick a counterparty</div>
-                <p className="muted small">Hover a node for a preview, click to pin it: score, reason codes, last block, transfers with other graded nodes and a one-click jump into the Explorer.</p>
+                <p className="muted small">Hover a mark for a preview, click to pin it: score, reason codes, last block, transfers on the map and a one-click jump into the Explorer. Faint marks on the outer ring are observed addresses - pin one and screen it on the spot.</p>
                 {stats?.lastTick && (
                   <p className="muted small">
-                    Last tick scanned blocks {stats.lastTick.fromBlock?.toLocaleString()}–{stats.lastTick.toBlock?.toLocaleString()}: {stats.lastTick.logs} USDC transfers, {stats.lastTick.recipients} recipients, {stats.lastTick.candidates} above threshold, {stats.lastTick.graded} graded ({stats.lastTick.rpcCalls} RPC calls{stats.lastTick.rateLimited ? ", rate-limited" : ""}).
+                    Last tick scanned blocks {stats.lastTick.fromBlock?.toLocaleString()}–{stats.lastTick.toBlock?.toLocaleString()}: {stats.lastTick.logs} USDC transfers, {stats.lastTick.recipients} recipients, {stats.lastTick.candidates} above threshold, {stats.lastTick.graded} graded, {stats.lastTick.observed ?? 0} observed on file ({stats.lastTick.rpcCalls} RPC calls{stats.lastTick.rateLimited ? ", rate-limited" : ""}).
                   </p>
                 )}
                 <TopList nodes={nodes} onPick={(a) => setSelected(a)} />
@@ -236,7 +238,7 @@ function RunTick({ onDone }: { onDone: () => void }) {
         const graded = r.gradedNodes.map((g) => `${short(g.address)}=${g.tier}`).join(", ");
         setMsg({
           ok: true,
-          text: `Scanned ${r.blocksScanned} blocks (${r.fromBlock ?? "-"}→${r.toBlock ?? "-"}): ${r.logs} transfers, ${r.recipients} recipients, ${r.candidates} ≥ threshold, ${r.graded} graded${graded ? ` (${graded})` : ""}, skipped ${r.skippedRecent} recent / ${r.skippedContracts} contracts, ${r.tierChanges} tier changes, ${r.edges} new edges, ${r.rpcCalls} RPC calls${r.partial ? ", partial" : ""}${r.rateLimited ? ", rate-limited" : ""}${r.seeded ? ", demo seeded" : ""} in ${(r.tookMs / 1000).toFixed(1)}s.`,
+          text: `Scanned ${r.blocksScanned} blocks (${r.fromBlock ?? "-"}→${r.toBlock ?? "-"}): ${r.logs} transfers, ${r.recipients} recipients, ${r.candidates} ≥ threshold, ${r.graded} graded${graded ? ` (${graded})` : ""}, skipped ${r.skippedRecent} recent / ${r.skippedContracts} contracts, ${r.tierChanges} tier changes, ${r.edges} new edges, ${r.observedNow} observed, ${r.rpcCalls} RPC calls${r.partial ? ", partial" : ""}${r.rateLimited ? ", rate-limited" : ""}${r.seeded ? ", demo seeded" : ""} in ${(r.tookMs / 1000).toFixed(1)}s.`,
         });
         onDone();
       }

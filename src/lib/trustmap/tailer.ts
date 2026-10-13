@@ -2,6 +2,9 @@
  * Trust Map tailer: one tick = tail new Arc blocks → aggregate USDC received per recipient (system-emitter
  * Transfer logs, 18 dp → 6 dp) → pick EOAs above TRUSTMAP_MIN_USDC not graded in the regrade window → grade
  * up to TRUSTMAP_MAX_PER_TICK of them with the real pipeline → persist nodes / edges / tier changes / cursor.
+ * Every other recipient of the window (and every ungraded counterparty of a graded node) is persisted as an
+ * observed *candidate* (trustmap_candidates, bounded retention) so the map shows the real shape of the flow, and
+ * graded↔candidate transfers in the window become edges. No extra RPC: candidates come from the logs already fetched.
  *
  * RPC discipline: the tailer's own calls (getBlockNumber + getLogs (+ bisection) + getCode) are capped by
  * TRUSTMAP_RPC_BUDGET (default 24) and go through the shared politeness gate. A rate limit after retries ends
@@ -18,8 +21,9 @@ import type { Address, ScreenRequest, Tier, Verdict } from "../types";
 import { trustmapEnv } from "./env";
 import { seedDemo } from "./seed";
 import {
-  addInflow, allNodeAddresses, cachedIsContract, countNodes, getCursor, getNodes, inflow24h, insertEdges, insertTierChange,
-  migrateTrustmap, pruneInflow, rememberIsContract, setCursor, setLastTick, touchNode, upsertNode, type EdgeInput,
+  addInflow, allCandidateAddresses, allNodeAddresses, cachedIsContract, cachedIsContractMany, countCandidates, countNodes, deleteCandidates, getCursor, getNodes, inflow24h,
+  insertEdges, insertTierChange, migrateTrustmap, pruneCandidateEdges, pruneCandidates, pruneInflow, rememberIsContract, setCursor, setLastTick,
+  touchNode, upsertCandidates, upsertNode, CANDIDATE_BLOCKS, type CandidateInput, type EdgeInput,
 } from "./store";
 import type { TickSummary } from "./types";
 
@@ -66,6 +70,8 @@ export interface TailResult extends TickSummary {
   failures: { address: Address; error: string }[];
   tierChanges: number;
   edges: number;
+  /** candidate rows written this tick (new or refreshed) */
+  observedNow: number;
   cursorBlock: number | null;
   seeded: boolean;
   tookMs: number;
@@ -218,12 +224,12 @@ export async function tailOnce(opts: TailOptions = {}): Promise<TailResult> {
   const base: Omit<TailResult, "tookMs"> = {
     at: now, head: 0, fromBlock: null, toBlock: null, blocksScanned: 0, logs: 0, recipients: 0, candidates: 0, graded: 0, failed: 0,
     rpcCalls: 0, partial: false, rateLimited: false, skippedContracts: 0, skippedRecent: 0, skippedBudget: 0, gradedNodes: [], failures: [],
-    tierChanges: 0, edges: 0, cursorBlock: await getCursor(), seeded,
+    tierChanges: 0, edges: 0, observedNow: 0, cursorBlock: await getCursor(), seeded, observed: await countCandidates(),
   };
   const finish = async (r: Omit<TailResult, "tookMs">): Promise<TailResult> => {
     const res: TailResult = { ...r, rpcCalls: ctx.calls, partial: ctx.partial || r.partial, rateLimited: ctx.rateLimited || r.rateLimited, tookMs: Date.now() - t0 };
-    const { at, fromBlock, toBlock, blocksScanned, logs, recipients, candidates, graded, failed, rpcCalls, partial, rateLimited } = res;
-    await setLastTick({ at, fromBlock, toBlock, blocksScanned, logs, recipients, candidates, graded, failed, rpcCalls, partial, rateLimited });
+    const { at, fromBlock, toBlock, blocksScanned, logs, recipients, candidates, graded, failed, rpcCalls, partial, rateLimited, observed } = res;
+    await setLastTick({ at, fromBlock, toBlock, blocksScanned, logs, recipients, candidates, graded, failed, rpcCalls, partial, rateLimited, observed });
     return res;
   };
 
@@ -316,13 +322,40 @@ export async function tailOnce(opts: TailOptions = {}): Promise<TailResult> {
     }
   }
 
-  // ── 5. edges among graded nodes (this window's logs + funder paths from the verdicts) ──
+  // ── 5. observed candidates (no RPC: this window's logs only) ─────────────
+  //   every recipient that is not a graded node, plus every ungraded sender that paid a graded node
   const nodeSet = await allNodeAddresses();
+  const gradedNow = gradedNodes.map((g) => g.address);
+  const cand = new Map<Address, CandidateInput>();
+  const bump = (a: Address, block: number, usdcIn: number, usdcOut: number) => {
+    const c = cand.get(a);
+    if (c) {
+      c.usdcIn += usdcIn; c.usdcOut += usdcOut; c.txCount++;
+      c.firstSeenBlock = Math.min(c.firstSeenBlock, block); c.lastSeenBlock = Math.max(c.lastSeenBlock, block);
+    } else cand.set(a, { address: a, usdcIn, usdcOut, txCount: 1, firstSeenBlock: block, lastSeenBlock: block });
+  };
+  for (const l of inWindow) {
+    if (!l.args.from || !l.args.to || !l.args.value || l.args.value <= 0n) continue;
+    const f = lower(l.args.from), t = lower(l.args.to);
+    if (f === t) continue;
+    const usdc = Number(toUsdc6(l.args.value, decimals));
+    const block = Number(l.blockNumber ?? 0n);
+    if (!nodeSet.has(t) && !SYSTEM_ADDRESSES.has(t)) bump(t, block, usdc, 0);
+    if (!nodeSet.has(f) && !SYSTEM_ADDRESSES.has(f) && nodeSet.has(t)) bump(f, block, 0, usdc);
+  }
+  const codeKnown = await cachedIsContractMany([...cand.keys()]);
+  for (const c of cand.values()) c.isContract = codeKnown.get(c.address) ?? null;
+  const observedNow = await upsertCandidates([...cand.values()], now);
+  if (gradedNow.length) await deleteCandidates(gradedNow);
+  const candSet = await allCandidateAddresses();
+
+  // ── 6. edges: graded↔graded and graded↔candidate transfers in the window + funder paths from the verdicts ──
   const edges: EdgeInput[] = [];
+  const onMap = (a: Address) => nodeSet.has(a) || candSet.has(a);
   for (const l of inWindow) {
     if (!l.args.from || !l.args.to || !l.args.value || !l.transactionHash) continue;
     const f = lower(l.args.from), t = lower(l.args.to);
-    if (f === t || !nodeSet.has(f) || !nodeSet.has(t)) continue;
+    if (f === t || !onMap(f) || !onMap(t) || !(nodeSet.has(f) || nodeSet.has(t))) continue;
     edges.push({ from: f, to: t, usdc: Number(toUsdc6(l.args.value, decimals)), txHash: l.transactionHash, block: Number(l.blockNumber ?? 0n) });
   }
   for (const v of verdicts) {
@@ -336,15 +369,18 @@ export async function tailOnce(opts: TailOptions = {}): Promise<TailResult> {
   }
   const edgeCount = edges.length ? await insertEdges(edges, now) : 0;
 
-  // ── 6. cursor + housekeeping ─────────────────────────────────────────────
+  // ── 7. cursor + housekeeping (bounded retention) ─────────────────────────
   await setCursor(Number(scannedTo));
   await pruneInflow(now);
+  await pruneCandidates(Number(scannedTo));
+  await pruneCandidateEdges(Number(scannedTo) - CANDIDATE_BLOCKS);
+  const observed = await countCandidates();
 
   return finish({
     ...base,
     head: Number(head), fromBlock: Number(from), toBlock: Number(scannedTo), blocksScanned: Number(scannedTo - from + 1n),
     logs: inWindow.length, recipients: recipients.length, candidates: candidates.length, graded: gradedNodes.length, failed: failures.length,
-    skippedContracts, skippedRecent, skippedBudget, gradedNodes, failures, tierChanges, edges: edgeCount, cursorBlock: Number(scannedTo),
+    skippedContracts, skippedRecent, skippedBudget, gradedNodes, failures, tierChanges, edges: edgeCount, observedNow, observed, cursorBlock: Number(scannedTo),
     partial: ctx.partial || scannedTo < to, rateLimited: ctx.rateLimited,
   });
 }

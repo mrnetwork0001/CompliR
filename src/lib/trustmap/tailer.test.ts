@@ -3,9 +3,9 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { Address, Verdict } from "../types";
 import { aggregateRecipients, tailOnce, type ScreenFn, type TailClient } from "./tailer";
 import { mapSnapshot, nodeHistory, recentTierChanges } from "./query";
-import { getCursor, getNode, migrateTrustmap } from "./store";
-import { seedDemo, DEMO_ADDRESSES } from "./seed";
-import { layoutMap } from "./layout";
+import { countCandidates, deleteCandidates, getCandidate, getCursor, getNode, listCandidates, migrateTrustmap, pruneCandidates, upsertCandidates, CANDIDATE_ROWS } from "./store";
+import { seedDemo, DEMO_ADDRESSES, DEMO_CANDIDATE_COUNT } from "./seed";
+import { hashAngle, layoutMap, RING_RADIUS } from "./layout";
 
 const EMITTER = "0xfffffffffffffffffffffffffffffffffffffffe";
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -89,10 +89,22 @@ describe("tailOnce", () => {
     expect(getCode).toHaveBeenCalledTimes(3);
     expect(getLogs).toHaveBeenCalledTimes(1);
     expect(r.rpcCalls).toBe(5); // 1 head + 1 getLogs + 3 getCode
-    expect(r.rpcCalls).toBeLessThanOrEqual(24);
-    expect(r.edges).toBe(1); // C → A, both graded
+    expect(r.rpcCalls).toBeLessThanOrEqual(28);
+    // C → A (graded↔graded) + S → A ×2, S → C (S is an observed sender that paid graded nodes); S → K / S → B stay off (neither end graded)
+    expect(r.edges).toBe(4);
     expect(r.partial).toBe(false);
     expect(await getCursor()).toBe(110);
+
+    // observed candidates: every ungraded recipient (B, K) + the ungraded sender of graded nodes (S); graded A/C are not candidates
+    expect(r.observedNow).toBe(3);
+    expect(r.observed).toBe(3);
+    const b = await getCandidate(B);
+    expect(b).toMatchObject({ usdcIn24h: 10, usdcOut24h: 0, txCount: 1, firstSeenBlock: 102, lastSeenBlock: 102, source: "chain" });
+    const k = await getCandidate(K);
+    expect(k).toMatchObject({ usdcIn24h: 60, isContract: true }); // from the code cache, no extra RPC
+    const sNode = await getCandidate(S);
+    expect(sNode).toMatchObject({ usdcIn24h: 0, usdcOut24h: 130, txCount: 3, isContract: null }); // S→A ×2 + S→C; S→K / S→B are not to graded nodes
+    expect(await getCandidate(A)).toBeNull();
 
     const a = await getNode(A);
     expect(a?.usdcIn24h).toBeCloseTo(35);
@@ -136,7 +148,7 @@ describe("tailOnce", () => {
     expect(changes[0]).toMatchObject({ address: A, from: "LOW", to: "HIGH", score: 90 });
     const h = await nodeHistory(A);
     expect(h?.changes).toHaveLength(1);
-    expect(h?.node.reasonCodes).toEqual(["FRESH_WALLET"]);
+    expect(h?.node?.reasonCodes).toEqual(["FRESH_WALLET"]);
   });
 
   it("backs off on rate limit: partial result, cursor untouched", async () => {
@@ -149,7 +161,7 @@ describe("tailOnce", () => {
     expect(r.toBlock).toBeNull();
     expect(screenFn).not.toHaveBeenCalled();
     expect(await getCursor()).toBe(before);
-    expect(r.rpcCalls).toBeLessThanOrEqual(24);
+    expect(r.rpcCalls).toBeLessThanOrEqual(28);
   });
 
   it("bisects a range that overflows the result cap and never exceeds the RPC budget", async () => {
@@ -161,7 +173,7 @@ describe("tailOnce", () => {
     expect(getLogs.mock.calls.length).toBeGreaterThan(1);
     expect(r.logs).toBe(8);
     expect(r.graded).toBe(2);
-    expect(r.rpcCalls).toBeLessThanOrEqual(24);
+    expect(r.rpcCalls).toBeLessThanOrEqual(28);
     expect(r.candidates).toBe(8);
   });
 
@@ -172,16 +184,64 @@ describe("tailOnce", () => {
     const screenFn = vi.fn(async (req: { address: Address }) => verdict(req.address, "MEDIUM", 40, req.address === A ? [{ from: B, to: A, usdc: 12 }] : []));
     const r = await tailOnce({ ...common, client, screenFn, fromBlock: 600n, maxBlocks: 10, now: NOW });
     expect(r.graded).toBe(2);
-    expect(r.edges).toBe(1);
+    expect(r.edges).toBe(3); // S→A, S→B (observed sender → graded) + the funder path B→A
     const h = await nodeHistory(A);
-    expect(h?.edges[0]).toMatchObject({ from: B, to: A, usdc: 12 });
+    expect(h?.edges.some((e) => e.from === B && e.to === A && e.usdc === 12)).toBe(true);
+  });
+
+  it("candidate rows roll their 24 h bucket, a graded address leaves the candidate table, and retention is bounded", async () => {
+    const S = addr(0x5001), A = addr(0x5002), X = addr(0x5003);
+    const { client } = mockClient([log(S, A, 50, 701, 51), log(S, X, 5, 701, 52)], 705);
+    const screenFn = vi.fn(async (req: { address: Address }) => verdict(req.address, "LOW", 2));
+    await tailOnce({ ...common, client, screenFn, fromBlock: 700n, maxBlocks: 10, now: NOW });
+    expect(await getCandidate(X)).toMatchObject({ usdcIn24h: 5, txCount: 1 });
+    expect(await getCandidate(A)).toBeNull(); // graded this tick
+    // same window an hour later: bucket sums
+    await tailOnce({ ...common, client, screenFn, fromBlock: 700n, maxBlocks: 10, now: NOW + 3600 });
+    expect(await getCandidate(X)).toMatchObject({ usdcIn24h: 10, txCount: 2 });
+    // more than a day later: bucket restarts
+    await tailOnce({ ...common, client, screenFn, fromBlock: 700n, maxBlocks: 10, now: NOW + 2 * 86_400 });
+    expect(await getCandidate(X)).toMatchObject({ usdcIn24h: 5, txCount: 1 });
+    // the candidate shows up in the node history endpoint with its edges
+    const hx = await nodeHistory(X);
+    expect(hx?.node).toBeNull();
+    expect(hx?.candidate?.address).toBe(X);
+    // graded → candidate edge (A never paid X, S is the sender and S→X is candidate→candidate, so no edge for X)
+    expect(hx?.edges).toEqual([]);
+    const hs = await nodeHistory(S);
+    expect(hs?.candidate?.usdcOut24h).toBe(50);
+    expect(hs?.edges.some((e) => e.from === S && e.to === A)).toBe(true);
+
+    // retention: rows older than `blocks` behind the cursor go, and the table is capped at CANDIDATE_ROWS
+    const synthetic = Array.from({ length: CANDIDATE_ROWS + 40 }, (_, i) => ({ address: addr(0x60000 + i), usdcIn: 0.001 * (i + 1), usdcOut: 0, txCount: 1, firstSeenBlock: 9_000, lastSeenBlock: 9_000 }));
+    await upsertCandidates(synthetic, NOW);
+    await upsertCandidates([{ address: addr(0x7001), usdcIn: 1, usdcOut: 0, txCount: 1, firstSeenBlock: 50, lastSeenBlock: 50 }], NOW);
+    await pruneCandidates(9_000, CANDIDATE_ROWS, 8_900); // keeps the real rows of the other tests (blocks ≥ 100)
+    expect(await getCandidate(addr(0x7001))).toBeNull(); // 8 950 blocks behind
+    expect(await countCandidates()).toBe(CANDIDATE_ROWS);
+    expect(await getCandidate(X)).not.toBeNull(); // real rows out-rank the synthetic dust and survive the trim
+    const top = await listCandidates(1);
+    expect(top[0].usdcIn24h).toBeGreaterThanOrEqual(5);
+    await deleteCandidates(synthetic.map((c) => c.address)); // leave the table as the other tests expect it
   });
 });
 
 describe("mapSnapshot", () => {
   it("has the documented shape and only returns edges among returned nodes", async () => {
     const snap = await mapSnapshot({ limit: 150, now: NOW + 26 * 3600 });
-    expect(Object.keys(snap.stats).sort()).toEqual(["cursorBlock", "graded", "high", "lastTick", "lastTickAt", "low", "medium", "tierChanges24h"].sort());
+    expect(Object.keys(snap.stats).sort()).toEqual(["cursorBlock", "graded", "high", "lastTick", "lastTickAt", "low", "medium", "observed", "tierChanges24h"].sort());
+    expect(Object.keys(snap).sort()).toEqual(["candidates", "edges", "generatedAt", "nodes", "stats"]);
+    expect(snap.stats.observed).toBeGreaterThan(0);
+    expect(snap.candidates.length).toBeGreaterThan(0);
+    const gradedSet = new Set(snap.nodes.map((n) => n.address));
+    for (const c of snap.candidates) {
+      expect(c).toMatchObject({ address: expect.stringMatching(/^0x[0-9a-f]{40}$/), source: expect.stringMatching(/^(chain|demo)$/) });
+      expect(typeof c.usdcIn24h).toBe("number");
+      expect(typeof c.usdcOut24h).toBe("number");
+      expect(typeof c.txCount).toBe("number");
+      expect(typeof c.lastSeenBlock).toBe("number");
+      expect(gradedSet.has(c.address)).toBe(false); // never both graded and observed
+    }
     expect(snap.stats.graded).toBe(snap.stats.high + snap.stats.medium + snap.stats.low);
     expect(snap.stats.graded).toBeGreaterThan(0);
     expect(snap.stats.tierChanges24h).toBe(1);
@@ -194,33 +254,43 @@ describe("mapSnapshot", () => {
       expect(typeof n.lastSeenBlock).toBe("number");
       expect("changedAt" in n && "prevTier" in n).toBe(true);
     }
-    const set = new Set(snap.nodes.map((n) => n.address));
+    const set = new Set([...snap.nodes.map((n) => n.address), ...snap.candidates.map((c) => c.address)]);
     expect(snap.edges.length).toBeGreaterThan(0);
     for (const e of snap.edges) {
       expect(set.has(e.from) && set.has(e.to)).toBe(true);
+      expect(gradedSet.has(e.from) || gradedSet.has(e.to)).toBe(true); // at least one graded end
       expect(e.txHash).toMatch(/^0x/);
     }
     // nodes are sorted by inflow desc
     for (let i = 1; i < snap.nodes.length; i++) expect(snap.nodes[i - 1].usdcIn24h).toBeGreaterThanOrEqual(snap.nodes[i].usdcIn24h);
   });
 
-  it("seedDemo inserts the three demo addresses once and the layout places them in their tier clusters", async () => {
+  it("seedDemo inserts the three demo addresses + synthetic candidates once, and the radial layout places them on their rings", async () => {
     const s1 = await seedDemo({ now: NOW, force: true });
     expect(s1.seeded).toBe(true);
+    expect(s1.candidates).toBe(DEMO_CANDIDATE_COUNT);
     const s2 = await seedDemo({ now: NOW });
     expect(s2.seeded).toBe(false); // table not empty
-    const snap = await mapSnapshot({ limit: 400, now: NOW });
+    const snap = await mapSnapshot({ limit: 400, candidates: 500, now: NOW });
     const demo = snap.nodes.filter((n) => n.source === "demo");
     expect(demo.map((d) => [d.address, d.tier]).sort()).toEqual([[DEMO_ADDRESSES.HIGH, "HIGH"], [DEMO_ADDRESSES.MEDIUM, "MEDIUM"], [DEMO_ADDRESSES.LOW, "LOW"]].sort());
+    expect(snap.candidates.filter((c) => c.source === "demo")).toHaveLength(DEMO_CANDIDATE_COUNT);
     expect(snap.edges.some((e) => e.source === "demo")).toBe(true);
-    expect((await nodeHistory(DEMO_ADDRESSES.MEDIUM))?.node.prevTier).toBe("LOW");
+    // every demo candidate is tied to a demo graded node
+    const demoCands = new Set(snap.candidates.filter((c) => c.source === "demo").map((c) => c.address));
+    for (const a of demoCands) expect(snap.edges.some((e) => e.from === a || e.to === a)).toBe(true);
+    expect((await nodeHistory(DEMO_ADDRESSES.MEDIUM))?.node?.prevTier).toBe("LOW");
 
-    const l1 = layoutMap(snap.nodes, snap.edges);
-    const l2 = layoutMap(snap.nodes, snap.edges);
+    const l1 = layoutMap(snap.nodes, snap.edges, { candidates: snap.candidates });
+    const l2 = layoutMap(snap.nodes, snap.edges, { candidates: snap.candidates });
     expect(l1.nodes).toEqual(l2.nodes); // deterministic
     const high = l1.byAddress.get(DEMO_ADDRESSES.HIGH)!, low = l1.byAddress.get(DEMO_ADDRESSES.LOW)!;
-    expect(high.x).toBeLessThan(low.x); // HIGH cluster is centre-left
-    expect(high.r).toBeGreaterThan(low.r); // size ∝ log(usdc)
+    const dist = (p: { x: number; y: number }) => Math.hypot(p.x - l1.cx, p.y - l1.cy);
+    expect(Math.abs(dist(high) - RING_RADIUS.HIGH)).toBeLessThanOrEqual(28); // HIGH innermost (±lane)
+    expect(Math.abs(dist(low) - RING_RADIUS.LOW)).toBeLessThanOrEqual(28);
+    for (const a of demoCands) expect(Math.abs(dist(l1.byAddress.get(a)!) - RING_RADIUS.OBSERVED)).toBeLessThanOrEqual(28);
+    expect(high.core).toBeGreaterThan(low.core); // core ∝ log(usdc)
+    expect(hashAngle(DEMO_ADDRESSES.HIGH)).toBe(hashAngle(DEMO_ADDRESSES.HIGH.toUpperCase())); // stable, case-insensitive
     for (let i = 0; i < l1.nodes.length; i++)
       for (let j = i + 1; j < l1.nodes.length; j++) {
         const a = l1.nodes[i], b = l1.nodes[j];
@@ -232,5 +302,22 @@ describe("mapSnapshot", () => {
       expect(p.y).toBeGreaterThan(0);
       expect(p.y).toBeLessThan(l1.height);
     }
+  });
+
+  it("a crowded ring splits into lanes and still never overlaps", () => {
+    const nodes = Array.from({ length: 180 }, (_, i) => ({
+      address: addr(0x90000 + i), tier: "LOW" as const, score: 3, usdcIn24h: 30 + i * 10, lastSeenBlock: 1, changedAt: null, prevTier: null,
+      firstGradedAt: NOW, lastGradedAt: NOW, reasonCodes: ["CLEAN" as const], source: "chain" as const,
+    }));
+    const cands = Array.from({ length: 400 }, (_, i) => ({ address: addr(0xa0000 + i), usdcIn24h: i, usdcOut24h: 0, txCount: 1, firstSeenBlock: 1, lastSeenBlock: 1, isContract: null, lastSeenAt: NOW, source: "chain" as const }));
+    const l = layoutMap(nodes, [], { candidates: cands });
+    expect(l.nodes).toHaveLength(580);
+    const dist = (p: { x: number; y: number }) => Math.hypot(p.x - l.cx, p.y - l.cy);
+    for (const p of l.nodes) expect(Math.abs(dist(p) - RING_RADIUS[p.band])).toBeLessThanOrEqual(28);
+    for (let i = 0; i < l.nodes.length; i++)
+      for (let j = i + 1; j < l.nodes.length; j++) {
+        const a = l.nodes[i], b = l.nodes[j];
+        expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(a.r + b.r - 1);
+      }
   });
 });

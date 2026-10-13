@@ -18,6 +18,21 @@ export interface MapNode {
   source: NodeSource;
 }
 
+/** A USDC recipient (or a counterparty of a graded node) the tailer has seen but not graded yet. Faint on the map. */
+export interface MapCandidate {
+  address: Address;
+  /** rolling 24 h bucket: reset when the bucket is older than a day, else summed per tick */
+  usdcIn24h: number;
+  usdcOut24h: number;
+  txCount: number;
+  firstSeenBlock: number;
+  lastSeenBlock: number;
+  /** null = eth_getCode not asked yet (the tailer only asks for addresses it is about to grade) */
+  isContract: boolean | null;
+  lastSeenAt: number;
+  source: NodeSource;
+}
+
 export interface MapEdge {
   from: Address;
   to: Address;
@@ -51,6 +66,8 @@ export interface TickSummary {
   rpcCalls: number;
   partial: boolean;
   rateLimited: boolean;
+  /** candidate rows persisted after this tick (observed, ungraded) */
+  observed?: number;
 }
 
 export interface MapStats {
@@ -58,6 +75,8 @@ export interface MapStats {
   high: number;
   medium: number;
   low: number;
+  /** observed-but-ungraded candidates on file */
+  observed: number;
   tierChanges24h: number;
   cursorBlock: number | null;
   lastTickAt: string | null;
@@ -66,13 +85,19 @@ export interface MapStats {
 
 export interface MapSnapshot {
   nodes: MapNode[];
+  /** observed, ungraded - drawn faint on the outermost ring */
+  candidates: MapCandidate[];
+  /** transfers among nodes ∪ candidates (graded↔graded, graded↔candidate) */
   edges: MapEdge[];
   stats: MapStats;
   generatedAt: string;
 }
 
 export interface NodeHistory {
-  node: MapNode & { rationale: string | null; decisionId: string | null };
+  /** null when the address is only a candidate */
+  node: (MapNode & { rationale: string | null; decisionId: string | null }) | null;
+  /** set when the address is observed but not graded */
+  candidate: MapCandidate | null;
   changes: TierChange[];
   edges: MapEdge[];
 }

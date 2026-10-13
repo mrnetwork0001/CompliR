@@ -6,10 +6,17 @@
  *   trustmap_tier_changes  regrade produced a different tier
  *   trustmap_inflow        per-tick USDC received per address (rolling 24 h sum → usdc_in_24h)
  *   trustmap_code_cache    eth_getCode results (contract or not), so a tick never re-asks
+ *   trustmap_candidates    observed-but-ungraded addresses (every USDC recipient of a tick + counterparties of graded
+ *                          nodes); rolling 24 h in/out buckets; bounded retention (CANDIDATE_BLOCKS / CANDIDATE_ROWS)
  */
 import { db, migrate } from "../store/db";
 import type { Address, ReasonCode, Tier } from "../types";
-import type { MapEdge, MapNode, NodeSource, TickSummary, TierChange } from "./types";
+import type { MapCandidate, MapEdge, MapNode, NodeSource, TickSummary, TierChange } from "./types";
+
+/** candidate retention: rows last seen more than this many blocks behind the cursor are dropped … */
+export const CANDIDATE_BLOCKS = 2_000;
+/** … and the table is trimmed to this many rows (biggest inflow first) */
+export const CANDIDATE_ROWS = 500;
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS trustmap_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
@@ -33,6 +40,12 @@ const SCHEMA = [
      id INTEGER PRIMARY KEY AUTOINCREMENT, address TEXT NOT NULL, block INTEGER NOT NULL, usdc REAL NOT NULL, at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS trustmap_inflow_addr ON trustmap_inflow(address, at)`,
   `CREATE TABLE IF NOT EXISTS trustmap_code_cache (address TEXT PRIMARY KEY, is_contract INTEGER NOT NULL, checked_at INTEGER NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS trustmap_candidates (
+     address TEXT PRIMARY KEY, usdc_in_24h REAL NOT NULL DEFAULT 0, usdc_out_24h REAL NOT NULL DEFAULT 0, tx_count INTEGER NOT NULL DEFAULT 0,
+     first_seen_block INTEGER NOT NULL, last_seen_block INTEGER NOT NULL, is_contract INTEGER, bucket_at INTEGER NOT NULL, last_seen_at INTEGER NOT NULL,
+     source TEXT NOT NULL DEFAULT 'chain')`,
+  `CREATE INDEX IF NOT EXISTS trustmap_candidates_usdc ON trustmap_candidates(usdc_in_24h DESC, last_seen_block DESC)`,
+  `CREATE INDEX IF NOT EXISTS trustmap_candidates_block ON trustmap_candidates(last_seen_block)`,
 ];
 
 let migrated: Promise<void> | null = null;
@@ -314,12 +327,124 @@ export async function countTierChangesSince(since: number): Promise<number> {
   return num((r.rows[0] as Row | undefined)?.n);
 }
 
+/** Drop edges older than `minBlock` unless both ends are graded nodes (graded↔graded history is kept). */
+export async function pruneCandidateEdges(minBlock: number): Promise<number> {
+  await migrateTrustmap();
+  const r = await db().execute({
+    sql: `DELETE FROM trustmap_edges WHERE block < ? AND (from_addr NOT IN (SELECT address FROM trustmap_nodes) OR to_addr NOT IN (SELECT address FROM trustmap_nodes))`,
+    args: [minBlock],
+  });
+  return Number(r.rowsAffected ?? 0);
+}
+
+// ── candidates (observed, ungraded) ──────────────────────────────────────────
+function rowToCandidate(r: Row): MapCandidate {
+  return {
+    address: String(r.address) as Address,
+    usdcIn24h: num(r.usdc_in_24h),
+    usdcOut24h: num(r.usdc_out_24h),
+    txCount: num(r.tx_count),
+    firstSeenBlock: num(r.first_seen_block),
+    lastSeenBlock: num(r.last_seen_block),
+    isContract: r.is_contract == null ? null : num(r.is_contract) === 1,
+    lastSeenAt: num(r.last_seen_at),
+    source: (str(r.source) as NodeSource) ?? "chain",
+  };
+}
+export interface CandidateInput {
+  address: Address;
+  /** USDC received in this tick's window */
+  usdcIn: number;
+  /** USDC sent (to graded nodes) in this tick's window */
+  usdcOut: number;
+  txCount: number;
+  firstSeenBlock: number;
+  lastSeenBlock: number;
+  isContract?: boolean | null;
+  source?: NodeSource;
+}
+/**
+ * Upsert observed addresses. The 24 h figures are rolling buckets: when a row's bucket is older than a day it restarts
+ * with this tick's amounts, otherwise the amounts are added. One libsql batch per call (no per-row round trips).
+ */
+export async function upsertCandidates(list: CandidateInput[], at = nowSec()): Promise<number> {
+  await migrateTrustmap();
+  if (!list.length) return 0;
+  const stmts = list.map((c) => ({
+    sql: `INSERT INTO trustmap_candidates (address, usdc_in_24h, usdc_out_24h, tx_count, first_seen_block, last_seen_block, is_contract, bucket_at, last_seen_at, source)
+          VALUES (?,?,?,?,?,?,?,?,?,?)
+          ON CONFLICT(address) DO UPDATE SET
+            usdc_in_24h = CASE WHEN excluded.bucket_at - bucket_at >= 86400 THEN excluded.usdc_in_24h ELSE usdc_in_24h + excluded.usdc_in_24h END,
+            usdc_out_24h = CASE WHEN excluded.bucket_at - bucket_at >= 86400 THEN excluded.usdc_out_24h ELSE usdc_out_24h + excluded.usdc_out_24h END,
+            tx_count = CASE WHEN excluded.bucket_at - bucket_at >= 86400 THEN excluded.tx_count ELSE tx_count + excluded.tx_count END,
+            bucket_at = CASE WHEN excluded.bucket_at - bucket_at >= 86400 THEN excluded.bucket_at ELSE bucket_at END,
+            first_seen_block = MIN(first_seen_block, excluded.first_seen_block),
+            last_seen_block = MAX(last_seen_block, excluded.last_seen_block),
+            is_contract = COALESCE(excluded.is_contract, is_contract),
+            last_seen_at = excluded.last_seen_at,
+            source = excluded.source`,
+    args: [c.address, c.usdcIn, c.usdcOut, c.txCount, c.firstSeenBlock, c.lastSeenBlock, c.isContract == null ? null : c.isContract ? 1 : 0, at, at, c.source ?? "chain"],
+  }));
+  for (let i = 0; i < stmts.length; i += 100) await db().batch(stmts.slice(i, i + 100), "write");
+  return list.length;
+}
+export async function deleteCandidates(addresses: Address[]): Promise<void> {
+  await migrateTrustmap();
+  for (let i = 0; i < addresses.length; i += 200) {
+    const chunk = addresses.slice(i, i + 200);
+    if (!chunk.length) continue;
+    await db().execute({ sql: `DELETE FROM trustmap_candidates WHERE address IN (${chunk.map(() => "?").join(",")})`, args: chunk });
+  }
+}
+/** Retention: drop rows last seen more than CANDIDATE_BLOCKS behind `cursorBlock`, then trim to CANDIDATE_ROWS rows. */
+export async function pruneCandidates(cursorBlock: number, rows = CANDIDATE_ROWS, blocks = CANDIDATE_BLOCKS): Promise<void> {
+  await migrateTrustmap();
+  await db().execute({ sql: `DELETE FROM trustmap_candidates WHERE last_seen_block < ?`, args: [cursorBlock - blocks] });
+  await db().execute(`DELETE FROM trustmap_candidates WHERE address IN (SELECT address FROM trustmap_nodes)`); // overlapping ticks: graded wins
+  await db().execute({
+    sql: `DELETE FROM trustmap_candidates WHERE address IN (SELECT address FROM trustmap_candidates ORDER BY usdc_in_24h DESC, last_seen_block DESC, address ASC LIMIT -1 OFFSET ?)`,
+    args: [rows],
+  });
+}
+export async function listCandidates(limit: number): Promise<MapCandidate[]> {
+  await migrateTrustmap();
+  const r = await db().execute({ sql: `SELECT * FROM trustmap_candidates ORDER BY usdc_in_24h DESC, last_seen_block DESC, address ASC LIMIT ?`, args: [limit] });
+  return r.rows.map((x) => rowToCandidate(x as Row));
+}
+export async function getCandidate(address: string): Promise<MapCandidate | null> {
+  await migrateTrustmap();
+  const r = await db().execute({ sql: `SELECT * FROM trustmap_candidates WHERE address = ?`, args: [address.toLowerCase()] });
+  return r.rows[0] ? rowToCandidate(r.rows[0] as Row) : null;
+}
+export async function allCandidateAddresses(): Promise<Set<Address>> {
+  await migrateTrustmap();
+  const r = await db().execute(`SELECT address FROM trustmap_candidates`);
+  return new Set(r.rows.map((x) => String((x as Row).address) as Address));
+}
+export async function countCandidates(): Promise<number> {
+  await migrateTrustmap();
+  const r = await db().execute(`SELECT COUNT(*) AS n FROM trustmap_candidates`);
+  return num((r.rows[0] as Row | undefined)?.n);
+}
+
 // ── eth_getCode cache ────────────────────────────────────────────────────────
 export async function cachedIsContract(address: Address): Promise<boolean | null> {
   await migrateTrustmap();
   const r = await db().execute({ sql: `SELECT is_contract FROM trustmap_code_cache WHERE address = ?`, args: [address] });
   const row = r.rows[0] as Row | undefined;
   return row ? num(row.is_contract) === 1 : null;
+}
+/** Batched read of the code cache (one query per 200 addresses); addresses never asked are absent from the map. */
+export async function cachedIsContractMany(addresses: Address[]): Promise<Map<Address, boolean>> {
+  await migrateTrustmap();
+  const out = new Map<Address, boolean>();
+  for (let i = 0; i < addresses.length; i += 200) {
+    const chunk = addresses.slice(i, i + 200);
+    if (!chunk.length) continue;
+    const r = await db().execute({ sql: `SELECT address, is_contract FROM trustmap_code_cache WHERE address IN (${chunk.map(() => "?").join(",")})`, args: chunk });
+    for (const row of r.rows) out.set(String((row as Row).address) as Address, num((row as Row).is_contract) === 1);
+  }
+  return out;
 }
 export async function rememberIsContract(address: Address, isContract: boolean, at = nowSec()): Promise<void> {
   await db().execute({

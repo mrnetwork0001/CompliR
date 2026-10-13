@@ -194,19 +194,22 @@
   }
 }
 .mapCard {
-  padding: 12px 12px 0;
+  padding: 12px 12px 12px;
   gap: 0;
   overflow: hidden;
 }
 .mapScroll {
   width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  background-color: color-mix(in srgb, var(--bg) 60%, transparent);
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--text) 5%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--text) 5%, transparent) 1px, transparent 1px);
-  background-size: 48px 48px;
-  background-color: var(--panel);
+    linear-gradient(to right, color-mix(in srgb, var(--text) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--text) 4%, transparent) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
 }
 .svg {
   display: block;
@@ -214,162 +217,99 @@
   min-width: 900px;
   height: auto;
   user-select: none;
+  font-family: var(--mono);
 }
 .loading {
   padding: 48px 24px;
   min-height: 320px;
 }
-.legend {
+.mapFoot {
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
   gap: 6px 14px;
-  padding: 8px 0;
+  padding: 8px 0 0;
   border-top: 1px solid var(--line);
   font-family: var(--mono);
   font-size: 10.5px;
   letter-spacing: 0.04em;
-  color: var(--muted);
-}
-.legend i {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  margin-right: 4px;
-  vertical-align: -1px;
-}
-.swHIGH {
-  background: var(--high);
-}
-.swMEDIUM {
-  background: var(--medium);
-}
-.swLOW {
-  background: var(--low);
-}
-.swPulse {
-  background: transparent;
-  border: 2px solid var(--accent);
-}
-.swDemo {
-  background: var(--fg-muted);
-  width: 6px !important;
-  height: 6px !important;
+  color: var(--faint);
 }
 
-/* ─── svg parts ───────────────────────────────────────────── */
-.clusterRing {
-  fill: none;
-  stroke: var(--border-strong);
-  stroke-dasharray: 4 6;
-  opacity: 0.7;
-}
-.clusterHIGH .clusterRing {
-  stroke: var(--high);
-}
-.clusterMEDIUM .clusterRing {
-  stroke: var(--medium);
-}
-.clusterLOW .clusterRing {
-  stroke: var(--low);
-}
-.clusterLabel {
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  fill: var(--fg-muted);
-  font-family: var(--font-mono);
-}
-.clusterHIGH .clusterLabel {
-  fill: var(--high);
-}
-.clusterMEDIUM .clusterLabel {
-  fill: var(--medium);
-}
-.clusterLOW .clusterLabel {
-  fill: var(--low);
-}
-.edge,
-.edgeDim,
-.edgeHot {
-  stroke: var(--border-strong);
-  stroke-linecap: round;
-  transition: opacity 0.3s;
-}
+/* ─── svg: chrome ─────────────────────────────────────────── */
+.bracket { fill: none; stroke: color-mix(in srgb, var(--text) 55%, transparent); stroke-width: 1; }
+.chromeText { font: 500 9px var(--mono); letter-spacing: 0.12em; fill: var(--muted); }
+.chromeSub { font: 400 8.5px var(--mono); letter-spacing: 0.08em; fill: var(--faint); font-variant-numeric: tabular-nums; }
+.liveDotSvg { fill: var(--acc); animation: ds-blink 2.4s ease-in-out infinite; }
+.scale { stroke: var(--line-2); stroke-width: 1; }
+.tick { stroke: var(--faint); stroke-width: 1; }
+.legendPulse { fill: none; stroke: var(--acc); stroke-width: 1; stroke-dasharray: 2 2; }
+.centreKicker { font: 500 9px var(--mono); letter-spacing: 0.16em; fill: var(--faint); }
+.centreBlock { font: 500 15px var(--mono); letter-spacing: 0.02em; fill: var(--text); font-variant-numeric: tabular-nums; }
+.centreSub { font: 400 7.5px var(--mono); letter-spacing: 0.16em; fill: var(--faint); }
+
+/* ─── svg: rings + sweep ──────────────────────────────────── */
+.ring { fill: none; stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 2 5; }
+.ringObserved { fill: none; stroke: var(--line); stroke-width: 1; }
+.ringLabel { font: 500 9px var(--mono); letter-spacing: 0.14em; fill: var(--faint); paint-order: stroke; stroke: var(--panel-solid); stroke-width: 3px; stroke-linejoin: round; }
+.sweep { stroke: var(--acc); stroke-width: 1; opacity: 0.7; }
+
+/* ─── svg: edges ──────────────────────────────────────────── */
 .edge {
-  opacity: 0.75;
+  stroke: var(--faint);
+  stroke-opacity: 0.55;
+  stroke-linecap: butt;
+  stroke-dasharray: 3 5;
+  animation: ds-flow 4s linear infinite;
+  transition: stroke-opacity 0.3s;
 }
-.edgeDim {
-  opacity: 0.15;
-}
-.edgeHot {
-  stroke: var(--accent);
-  opacity: 1;
-}
-.arrow {
-  fill: var(--border-strong);
-}
-.arrowHot {
-  fill: var(--accent);
-}
-.node {
-  cursor: pointer;
-  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
-  outline: none;
-}
-.nodeDim {
-  opacity: 0.3;
-}
-.dot {
-  stroke-width: 2;
-  stroke: var(--bg-elev);
-  transition: fill 0.5s;
-}
-.nodeHIGH .dot {
-  fill: var(--high);
-}
-.nodeMEDIUM .dot {
-  fill: var(--medium);
-}
-.nodeLOW .dot {
-  fill: var(--low);
-}
-.node:hover .dot,
-.node:focus-visible .dot,
-.nodeSelected .dot {
-  stroke: var(--accent);
-  stroke-width: 3;
-}
-.demoDot {
-  fill: var(--bg-elev);
-  pointer-events: none;
-}
+.edgeHigh { stroke: var(--high); stroke-opacity: 0.4; }
+.edgeDim { stroke-opacity: 0.12; }
+.edgeHot { stroke: var(--acc); stroke-opacity: 1; stroke-dasharray: 5 3; animation-duration: 1.6s; }
+.edgeHead { fill: var(--faint); fill-opacity: 0.7; }
+.edgeHeadHot { fill: var(--acc); }
+
+/* ─── svg: marks ──────────────────────────────────────────── */
+.mark { cursor: pointer; outline: none; transition: opacity 0.3s; }
+.markDim { opacity: 0.28; }
+.markRing { fill: color-mix(in srgb, var(--panel-solid) 70%, transparent); stroke-width: 1; }
+.markRingObserved { fill: none; stroke: var(--faint); stroke-width: 0.75; stroke-dasharray: 2 2; opacity: 0.5; }
+.markRingDemo { stroke-dasharray: 1 2; }
+.markRingFocus { stroke: var(--acc) !important; stroke-width: 1.5; stroke-dasharray: none; }
+.markCore { stroke: none; opacity: 0.92; }
+.markCoreObserved { fill: var(--faint); opacity: 0.55; }
+.mark:hover .markCoreObserved, .mark:focus-visible .markCoreObserved { fill: var(--text); opacity: 1; }
 .pulse {
   fill: none;
-  stroke: var(--accent);
-  stroke-width: 2;
-  transform-origin: 0 0;
-  animation: pulse 1.6s ease-out infinite;
+  stroke: var(--acc);
+  stroke-width: 1.2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tm-pulse 1.8s ease-out infinite;
 }
-@keyframes pulse {
-  0% {
-    transform: scale(0.85);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.45);
-    opacity: 0;
-  }
+@keyframes tm-pulse {
+  0% { transform: scale(0.9); opacity: 0.9; }
+  100% { transform: scale(1.8); opacity: 0; }
 }
-.label {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  fill: var(--fg);
-  paint-order: stroke;
-  stroke: var(--bg-elev);
-  stroke-width: 3px;
-  stroke-linejoin: round;
-  pointer-events: none;
+.labelGroup { pointer-events: none; }
+.label { font: 400 9px var(--mono); letter-spacing: 0.03em; fill: var(--text); paint-order: stroke; stroke: var(--panel-solid); stroke-width: 3px; stroke-linejoin: round; font-variant-numeric: tabular-nums; }
+.labelScore { font-weight: 500; }
+.labelMeta { fill: var(--muted); }
+
+/* ─── svg: focus ──────────────────────────────────────────── */
+.cross { stroke: var(--acc); stroke-width: 1; stroke-opacity: 0.35; }
+.crossRing { fill: none; stroke: var(--acc); stroke-width: 1; stroke-dasharray: 2 2; }
+.amountBg { fill: var(--panel-solid); stroke: var(--line-2); }
+.amount { font: 500 8.5px var(--mono); letter-spacing: 0.04em; fill: var(--acc); font-variant-numeric: tabular-nums; }
+.readoutBg { fill: color-mix(in srgb, var(--panel-solid) 92%, transparent); stroke: var(--line-2); rx: 2; }
+.readoutAddr { font: 500 9px var(--mono); letter-spacing: 0.02em; fill: var(--text); }
+.readoutRule { stroke: var(--line); stroke-width: 1; }
+.readoutKey { font: 500 8.5px var(--mono); letter-spacing: 0.12em; fill: var(--faint); }
+.readoutVal { font: 400 9px var(--mono); letter-spacing: 0.03em; fill: var(--text); font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sweep { opacity: 0.3; }
+  .edge { animation: none; }
 }
 
 /* ─── side panel ──────────────────────────────────────────── */

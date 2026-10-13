@@ -49,7 +49,7 @@ export const howItWorks: DocPage = {
             <li>
               <strong>Ledger, store, registry.</strong> A <code>SCREEN</code> (or <code>RESCREEN</code>) entry is appended to the hash chain, the verdict is stored for the free
               endpoints, an EDD request is opened when questions were asked, and the attestation is written to <code>AttestationRegistry</code> on Arc without blocking the response
-              (<code>registryTx</code> is <code>null</code> until it lands; today the registry is pending deploy, so it stays <code>null</code>).
+              (<code>registryTx</code> is <code>null</code> until it lands; the registry is live at <code>0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d</code>).
             </li>
           </ol>
         </>

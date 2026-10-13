@@ -78,9 +78,9 @@ export const welcome: DocPage = {
                 k: "Registry · Arc 5042",
                 v: (
                   <>
-                    <Addr note="AttestationRegistry · pending mainnet deploy">0x… (unset)</Addr>
+                    <Addr note="AttestationRegistry · verified on Sourcify">0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d</Addr>
                     <br />
-                    The live address is published by <a href="/api/v1/health" target="_blank" rel="noopener noreferrer">/api/v1/health</a> as <code>network.registryAddress</code>.
+                    Also published by <a href="/api/v1/health" target="_blank" rel="noopener noreferrer">/api/v1/health</a> as <code>network.registryAddress</code>.
                   </>
                 ),
               },
@@ -88,7 +88,7 @@ export const welcome: DocPage = {
                 k: "GuardedTreasury",
                 v: (
                   <>
-                    <Addr note="pending deploy · payouts run dry-run until funded">0x… (unset)</Addr>
+                    <Addr note="GuardedTreasury · live · payouts gated by isAllowed(payee, MEDIUM)">0x5465f31a6155E3eCCcC35f4E5bDC0e287763B0ee</Addr>
                   </>
                 ),
               },

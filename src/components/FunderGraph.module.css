@@ -1,80 +1,95 @@
+/* Funder graph: 2-hop radial instrument. Hairline rings, mono labels, accent only on the hovered chain, --high only on flagged data. */
 .figure {
   width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  align-items: center;
+  align-items: stretch;
+}
+.readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-top: 1px solid var(--line-2);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+.readoutKey {
+  color: var(--faint);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+}
+.readoutVal {
+  color: var(--text);
+  overflow-wrap: anywhere;
 }
 .svg {
   width: 100%;
-  max-width: 440px;
+  max-width: 460px;
   height: auto;
   display: block;
-}
-.ring {
-  fill: none;
-  stroke: var(--line-2);
-  stroke-dasharray: 2 5;
-}
-.ringLabel {
-  fill: var(--faint);
-  font-size: 9.5px;
+  margin: 0 auto;
+  user-select: none;
   font-family: var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
+.bracket { fill: none; stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: 1; }
+.ring { fill: none; stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 2 5; }
+.ringOuter { fill: none; stroke: var(--line); stroke-width: 1; }
+.tick { stroke: var(--faint); stroke-width: 1; }
+.ringLabel { font: 500 9px var(--mono); letter-spacing: 0.14em; fill: var(--faint); paint-order: stroke; stroke: var(--panel-solid); stroke-width: 3px; stroke-linejoin: round; }
+
 .edge {
+  fill: none;
   stroke: var(--faint);
-  stroke-width: 1.2;
+  stroke-opacity: 0.7;
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+  animation: ds-flow 4s linear infinite;
+  transition: stroke-opacity 0.25s;
 }
-.edgeTainted {
-  stroke: var(--high);
-  stroke-width: 1.6;
-}
-.arrow {
-  fill: var(--faint);
-}
-.nodeGroup[role="button"] {
-  cursor: pointer;
-}
-.nodeGroup[role="button"]:hover circle,
-.nodeGroup[role="button"]:focus-visible circle {
-  stroke: var(--acc);
-  stroke-width: 2.5;
-}
-.node {
-  fill: var(--panel-solid);
-  stroke: var(--muted);
-  stroke-width: 1.5;
-}
-.nodeSubject {
-  fill: color-mix(in srgb, var(--acc) 12%, var(--panel-solid));
-  stroke: var(--acc);
-  stroke-width: 2;
-}
-.nodeTainted {
-  fill: var(--high);
-  stroke: var(--high);
-  stroke-width: 1.5;
-}
-.bang {
-  fill: #fff;
-  font-weight: 700;
-  font-size: 12px;
-  font-family: var(--mono);
-  pointer-events: none;
-}
-.label {
-  fill: var(--text);
-  font-size: 9.5px;
-  font-family: var(--mono);
-}
+.edgeHigh { stroke: var(--high); stroke-opacity: 0.8; stroke-width: 1.2; }
+.edgeHot { stroke: var(--acc); stroke-opacity: 1; stroke-width: 1.4; stroke-dasharray: 5 3; animation-duration: 1.6s; }
+.edgeDim { stroke-opacity: 0.15; }
+.head { fill: var(--faint); }
+.headHot { fill: var(--acc); }
+.headHigh { fill: var(--high); }
+
+.mark { outline: none; transition: opacity 0.25s; }
+.mark[role="button"] { cursor: pointer; }
+.markDim { opacity: 0.3; }
+.markRing { fill: color-mix(in srgb, var(--panel-solid) 70%, transparent); stroke-width: 1; }
+.markRingHot { stroke: var(--acc) !important; stroke-width: 1.5; }
+.mark:focus-visible .markRing { stroke: var(--acc); stroke-width: 1.5; }
+.subject .markRing { stroke: var(--acc); fill: color-mix(in srgb, var(--acc) 8%, var(--panel-solid)); }
+.subject .markCore { fill: var(--acc); }
+.hop1 .markRing { stroke: var(--muted); }
+.hop1 .markCore { fill: var(--muted); }
+.hop2 .markRing { stroke: var(--faint); stroke-dasharray: 2 2; }
+.hop2 .markCore { fill: var(--faint); }
+.flagged .markRing { stroke: var(--high); fill: color-mix(in srgb, var(--high) 10%, var(--panel-solid)); }
+.flagged .markCore { fill: var(--high); }
+.subject.flagged .markRing { stroke: var(--high); }
+.subject.flagged .markCore { fill: var(--high); }
+
+.chip { fill: var(--panel-solid); stroke: var(--line-2); rx: 2; }
+.chipText { font: 500 8.5px var(--mono); letter-spacing: 0.1em; fill: var(--text); }
+.label { font: 400 9.5px var(--mono); letter-spacing: 0.03em; fill: var(--text); paint-order: stroke; stroke: var(--panel-solid); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.amountBg { fill: var(--panel-solid); stroke: var(--line-2); }
+.amount { font: 500 8.5px var(--mono); letter-spacing: 0.04em; fill: var(--acc); font-variant-numeric: tabular-nums; }
+.empty { font: 400 9px var(--mono); letter-spacing: 0.12em; fill: var(--faint); }
+
 .legend {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 14px;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 10px;
   letter-spacing: 0.06em;
   color: var(--muted);
   justify-content: center;
@@ -86,15 +101,14 @@
   border-radius: 50%;
   margin-right: 4px;
   vertical-align: -1px;
+  box-sizing: border-box;
 }
-.swSubject {
-  background: var(--acc-dim);
-  border: 1.5px solid var(--acc);
-}
-.swNode {
-  background: var(--panel-solid);
-  border: 1.5px solid var(--muted);
-}
-.swTainted {
-  background: var(--high);
+.swSubject { background: var(--acc-dim); border: 1.5px solid var(--acc); }
+.swFunder { background: transparent; border: 1px solid var(--muted); }
+.swFlagged { background: color-mix(in srgb, var(--high) 30%, transparent); border: 1.5px solid var(--high); }
+.swFlow { border-radius: 0 !important; height: 1px !important; width: 14px !important; border: 0; border-top: 1px dashed var(--faint); vertical-align: 3px !important; }
+.legendHint { color: var(--faint); }
+
+@media (prefers-reduced-motion: reduce) {
+  .edge { animation: none; }
 }

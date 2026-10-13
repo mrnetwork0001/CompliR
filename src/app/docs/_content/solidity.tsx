@@ -73,7 +73,7 @@ export const solidity: DocPage = {
   lead: (
     <>
       <strong>On-chain, CompliR is one interface and one <code>require</code>.</strong> <code>AttestationRegistry</code> stores the latest tier per address with its expiry and the
-      decision hash; your contract asks <code>isAllowed</code> before it moves funds. The registry is pending deploy on Arc mainnet; the code below is what it will answer.
+      decision hash; your contract asks <code>isAllowed</code> before it moves funds. The registry is live on Arc mainnet at <code>0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d</code> (verified on Sourcify); the code below is what it answers.
     </>
   ),
   sections: [

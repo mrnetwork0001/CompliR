@@ -40,8 +40,8 @@ export const guardedPayouts: DocPage = {
   ),
   intro: (
     <p>
-      Status today: <Status kind="dry-run">dry-run</Status> - verdicts, decisions and ledger entries are real; transfers are simulated (<code>txHash: null</code>). The page is{" "}
-      <Link href="/payouts">/payouts</Link>; the contract is pending deploy on Arc mainnet.
+      Status today: <Status kind="live">live on Arc mainnet</Status> - <code>GuardedTreasury</code> at <code>0x5465f31a6155E3eCCcC35f4E5bDC0e287763B0ee</code> (verified). First live tick: PAID 10 USDC (<a href="https://explorer.arc.io/tx/0x83732d7451aca960b7c446d099e6bc9a521b81a8e2f0fd231457bf9add7af930" target="_blank" rel="noopener noreferrer">tx</a>), LIMITED to the 10 USDC cap (<a href="https://explorer.arc.io/tx/0xeb2a6ba05f058a2e3a7c4ab6958f5e665b35be0f876251173ac8c59b4072a34c" target="_blank" rel="noopener noreferrer">tx</a>), HELD for a sanctioned payee (no tx). The page is{" "}
+      <Link href="/payouts">/payouts</Link>.
     </p>
   ),
   sections: [

@@ -85,8 +85,8 @@ export const attestations: DocPage = {
             is what <code>GuardedTreasury</code> uses. UNKNOWN (never attested, or revoked) never passes.
           </p>
           <p>
-            Registry on Arc mainnet: <Addr>0x… (unset)</Addr> <Status kind="pending">pending deploy</Status>. Until it is deployed, <code>verifyingContract</code> in the domain is
-            the zero address and <code>registryTx</code> stays <code>null</code>. The live address will be published at <a href="/api/v1/health" target="_blank" rel="noopener noreferrer">/api/v1/health</a>.
+            Registry on Arc mainnet: <Addr>0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d</Addr> <Status kind="live">live · verified</Status>. <code>verifyingContract</code> in the EIP-712 domain is this address; every verdict
+            is mirrored with <code>attest()</code> (first one: <a href="https://explorer.arc.io/tx/0xb29418cfa4630ef52333947f9ddca2851948934dbe1720f02172f245d54a073e" target="_blank" rel="noopener noreferrer">tx</a>) and <code>registryTx</code> fills in once it lands. Also published at <a href="/api/v1/health" target="_blank" rel="noopener noreferrer">/api/v1/health</a>.
           </p>
         </>
       ),
