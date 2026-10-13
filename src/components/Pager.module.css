@@ -1,0 +1,20 @@
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+}
+.meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.buttons { display: inline-flex; gap: 6px; }
+.buttons button:disabled { opacity: 0.4; cursor: default; }

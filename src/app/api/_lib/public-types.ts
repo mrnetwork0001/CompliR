@@ -42,6 +42,9 @@ export interface FeedItem {
 export interface FeedResponse {
   items: FeedItem[];
   limit: number;
+  page: number;
+  total: number;
+  pages: number;
   source: "store";
 }
 
@@ -71,6 +74,9 @@ export interface AttestationResponse {
 export interface LedgerListResponse {
   entries: DecisionLogEntry[];
   limit: number;
+  page: number;
+  total: number;
+  pages: number;
 }
 export interface LedgerVerifyResponse {
   ok: boolean;

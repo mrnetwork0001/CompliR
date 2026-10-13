@@ -52,15 +52,23 @@ export async function getDecisionRow(id: string): Promise<DecisionLogEntry | nul
   const r = await db().execute({ sql: `SELECT * FROM decisions WHERE id = ?`, args: [id] });
   return r.rows[0] ? rowToDecision(r.rows[0] as Record<string, unknown>) : null;
 }
-export async function listDecisionRows(opts: { limit?: number; before?: number; subject?: string } = {}): Promise<DecisionLogEntry[]> {
+export async function listDecisionRows(opts: { limit?: number; before?: number; subject?: string; offset?: number } = {}): Promise<DecisionLogEntry[]> {
   await migrate();
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500);
+  const offset = Math.max(opts.offset ?? 0, 0);
   const where: string[] = []; const args: (string | number)[] = [];
   if (opts.before != null) { where.push("seq < ?"); args.push(opts.before); }
   if (opts.subject) { where.push("subject = ?"); args.push(opts.subject.toLowerCase()); }
-  const sql = `SELECT * FROM decisions ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY seq DESC LIMIT ?`;
-  const r = await db().execute({ sql, args: [...args, limit] });
+  const sql = `SELECT * FROM decisions ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY seq DESC LIMIT ? OFFSET ?`;
+  const r = await db().execute({ sql, args: [...args, limit, offset] });
   return r.rows.map((x) => rowToDecision(x as Record<string, unknown>));
+}
+export async function countDecisions(subject?: string): Promise<number> {
+  await migrate();
+  const r = subject
+    ? await db().execute({ sql: `SELECT COUNT(*) AS n FROM decisions WHERE subject = ?`, args: [subject.toLowerCase()] })
+    : await db().execute(`SELECT COUNT(*) AS n FROM decisions`);
+  return num((r.rows[0] as Record<string, unknown>).n);
 }
 export async function decisionsInRange(fromSeq: number, toSeq: number): Promise<DecisionLogEntry[]> {
   await migrate();
@@ -123,9 +131,14 @@ export async function recordScreening(v: Verdict, clientId: string | null, payer
   });
 }
 export interface FeedItem { decisionId: string; addressMasked: string; tier: Tier; score: number; reasonCodes: ReasonCode[]; screenedAt: string; payer: PayerKind }
-export async function recentScreenings(limit = 25): Promise<FeedItem[]> {
+export async function countScreenings(): Promise<number> {
   await migrate();
-  const r = await db().execute({ sql: `SELECT * FROM screenings ORDER BY id DESC LIMIT ?`, args: [Math.min(Math.max(limit, 1), 200)] });
+  const r = await db().execute(`SELECT COUNT(*) AS n FROM screenings`);
+  return num((r.rows[0] as Record<string, unknown>).n);
+}
+export async function recentScreenings(limit = 25, offset = 0): Promise<FeedItem[]> {
+  await migrate();
+  const r = await db().execute({ sql: `SELECT * FROM screenings ORDER BY id DESC LIMIT ? OFFSET ?`, args: [Math.min(Math.max(limit, 1), 200), Math.max(offset, 0)] });
   return r.rows.map((x0) => { const x = x0 as Record<string, unknown>; return {
     decisionId: String(x.decision_id), addressMasked: maskAddress(String(x.subject)), tier: x.tier as Tier, score: num(x.score),
     reasonCodes: JSON.parse(String(x.reason_codes)), screenedAt: iso(num(x.created_at)), payer: x.payer as PayerKind,

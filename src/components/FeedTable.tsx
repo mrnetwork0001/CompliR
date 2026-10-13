@@ -4,20 +4,22 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { FeedResponse } from "@/app/api/_lib/public-types";
 import { TierBadge } from "./TierBadge";
+import { Pager } from "./Pager";
 import { HttpError, apiFetch, fmtRelative, fmtTime } from "./api";
 import styles from "./FeedTable.module.css";
 
 const REFRESH_MS = 15_000;
 
-export function FeedTable({ limit = 50 }: { limit?: number }) {
+export function FeedTable({ limit = 20 }: { limit?: number }) {
   const [data, setData] = useState<FeedResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
+  const [page, setPage] = useState(1);
 
   const load = useCallback(
     () =>
-      apiFetch<FeedResponse>(`/api/v1/feed?limit=${limit}`)
+      apiFetch<FeedResponse>(`/api/v1/feed?limit=${limit}&page=${page}`)
         .then((d) => {
           setData(d);
           setError(null);
@@ -26,17 +28,17 @@ export function FeedTable({ limit = 50 }: { limit?: number }) {
         .catch((e: unknown) => {
           setError(e instanceof HttpError ? `${e.code}: ${e.message}` : e instanceof Error ? e.message : String(e));
         }),
-    [limit],
+    [limit, page],
   );
 
   useEffect(() => {
     void load();
-    if (paused) return;
+    if (paused || page !== 1) return; // live refresh only on the first page
     const id = setInterval(() => {
       if (document.visibilityState === "visible") void load();
     }, REFRESH_MS);
     return () => clearInterval(id);
-  }, [load, paused]);
+  }, [load, paused, page]);
 
   return (
     <div className="container">
@@ -48,7 +50,7 @@ export function FeedTable({ limit = 50 }: { limit?: number }) {
         </div>
         <div className={styles.controls}>
           <span className="muted small" aria-live="polite">
-            {updatedAt ? `Updated ${fmtRelative(updatedAt)}` : "Loading…"} · refreshes every 15s
+            {updatedAt ? `Updated ${fmtRelative(updatedAt)}` : "Loading…"}{page === 1 ? " · refreshes every 15s" : " · live refresh paused off page 1"}
           </span>
           <button type="button" className="btn btnSmall" onClick={() => setPaused((p) => !p)}>
             {paused ? "Resume" : "Pause"}
@@ -121,6 +123,7 @@ export function FeedTable({ limit = 50 }: { limit?: number }) {
           </table>
         </div>
       </div>
+      {data && <Pager page={data.page} pages={data.pages} total={data.total} limit={data.limit} onPage={setPage} label="screenings" />}
       <p className="muted small" style={{ marginTop: 8 }}>
         Source: {data?.source ?? "—"}. &quot;own&quot; = our own test wallets (excluded from <Link href="/numbers">Numbers</Link>); &quot;outside&quot; = paid by a wallet we do not control.
       </p>

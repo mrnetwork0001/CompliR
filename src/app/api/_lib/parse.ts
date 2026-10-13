@@ -50,3 +50,10 @@ export function parseLimit(url: URL, { def = 25, max = 100 }: { def?: number; ma
   }
   return Math.min(n, max);
 }
+
+/** 1-based page number from ?page=; defaults to 1, clamped to [1, 100000]. */
+export function parsePage(url: URL): number {
+  const raw = Number(url.searchParams.get("page") ?? "1");
+  if (!Number.isFinite(raw)) return 1;
+  return Math.min(Math.max(Math.floor(raw), 1), 100_000);
+}

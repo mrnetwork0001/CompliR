@@ -7,6 +7,7 @@ import type { DecisionLogEntry } from "@/lib/types";
 import { HttpError, apiFetch, fmtRelative, fmtTime, short } from "./api";
 import { VerifyBadge } from "./VerifyBadge";
 import { TierBadge } from "./TierBadge";
+import { Pager } from "./Pager";
 
 function tierOf(e: DecisionLogEntry): "LOW" | "MEDIUM" | "HIGH" | null {
   const p = e.payload as { tier?: unknown; verdict?: { tier?: unknown } } | null;
@@ -14,19 +15,20 @@ function tierOf(e: DecisionLogEntry): "LOW" | "MEDIUM" | "HIGH" | null {
   return t === "LOW" || t === "MEDIUM" || t === "HIGH" ? t : null;
 }
 
-export function LedgerList({ limit = 50 }: { limit?: number }) {
+export function LedgerList({ limit = 20 }: { limit?: number }) {
   const [data, setData] = useState<LedgerListResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     let alive = true;
-    apiFetch<LedgerListResponse>(`/api/v1/ledger?limit=${limit}`)
+    apiFetch<LedgerListResponse>(`/api/v1/ledger?limit=${limit}&page=${page}`)
       .then((d) => alive && setData(d))
       .catch((e) => alive && setError(e instanceof HttpError ? `${e.code}: ${e.message}` : String(e)));
     return () => {
       alive = false;
     };
-  }, [limit]);
+  }, [limit, page]);
 
   return (
     <div className="container">
@@ -101,6 +103,7 @@ export function LedgerList({ limit = 50 }: { limit?: number }) {
           </table>
         </div>
       </div>
+      {data && <Pager page={data.page} pages={data.pages} total={data.total} limit={data.limit} onPage={setPage} label="entries" />}
     </div>
   );
 }
