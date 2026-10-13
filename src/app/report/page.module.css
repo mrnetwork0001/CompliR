@@ -1,0 +1,110 @@
+.layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+}
+.doc {
+  min-width: 0;
+}
+.doc h1 {
+  font-size: 1.35rem;
+  margin-bottom: 6px;
+}
+.doc h2 {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 26px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-2);
+}
+.doc p,
+.doc ul {
+  margin: 8px 0;
+}
+.doc ul {
+  padding-left: 20px;
+}
+.doc li {
+  margin: 3px 0;
+}
+.doc em {
+  color: var(--fg-muted);
+}
+.doc :global(.tableWrap) {
+  margin: 8px 0;
+}
+.doc td,
+.doc th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: sticky;
+  top: 16px;
+  border-top: 1px solid var(--line-2);
+}
+/* side panels are rule-separated sections */
+.side > :global(.card) {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 16px 0;
+}
+.sig dt {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-top: 12px;
+}
+.sig dd {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.archive {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+}
+.archive li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+}
+.archive li:last-child {
+  border-bottom: none;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* figure treatment (globals .fig) for the report document */
+.doc {
+  composes: fig from global;
+}
