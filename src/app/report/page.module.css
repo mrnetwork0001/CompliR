@@ -52,6 +52,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  min-width: 0; /* let long hashes/signatures wrap instead of widening the column */
   position: sticky;
   top: 16px;
   border-top: 1px solid var(--line-2);
@@ -72,12 +73,18 @@
   letter-spacing: 0.12em;
   margin-top: 12px;
 }
+.sig {
+  min-width: 0;
+  max-width: 100%;
+}
 .sig dd {
   margin: 4px 0 0;
   font-family: var(--mono);
   font-size: 0.78rem;
+  white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-all;
+  max-width: 100%;
 }
 .archive {
   list-style: none;
