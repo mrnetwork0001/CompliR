@@ -3,6 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { CopyButton } from "@/components/CopyButton";
 import { getReport, latestReport, listReportDates, renderMarkdownHtml } from "@/lib/reports";
+import { MonthlyReportView } from "./MonthlyReportView";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -10,16 +11,28 @@ export const metadata: Metadata = {
   description: "Daily traction report written and signed by the CompliR agent: outside payers with tx links, own wallets excluded, refunds and mistakes listed.",
 };
 
-type Props = { searchParams: Promise<{ date?: string }> };
+type Props = { searchParams: Promise<{ date?: string; period?: string }> };
+
+/** Daily | Monthly switch at the top of the page; the daily view below is unchanged. */
+function PeriodSwitch({ period }: { period: "daily" | "monthly" }) {
+  return (
+    <nav className={styles.periodSwitch} aria-label="Report period">
+      <Link href="/report" aria-current={period === "daily" ? "page" : undefined} className={period === "daily" ? styles.periodOn : undefined}>Daily</Link>
+      <Link href="/report?period=month" aria-current={period === "monthly" ? "page" : undefined} className={period === "monthly" ? styles.periodOn : undefined}>Monthly</Link>
+    </nav>
+  );
+}
 
 export default async function ReportPage({ searchParams }: Props) {
   await connection();
-  const { date } = await searchParams;
+  const { date, period } = await searchParams;
+  if (period === "month" || period === "monthly") return <MonthlyReportView month={date} />;
   const wanted = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null;
   const [report, archive] = await Promise.all([wanted ? getReport(wanted) : latestReport(), listReportDates(365)]);
 
   return (
     <div className="container">
+      <PeriodSwitch period="daily" />
       <div className="pageHead">
         <div>
           <p className="kicker">company · daily report · signed</p>
