@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Address, Reason, Verdict } from "@/lib/types";
 import { TierBadge } from "./TierBadge";
+import { Glyph } from "./Glyph";
 import { ScoreDial } from "./ScoreDial";
 import { FunderGraph } from "./FunderGraph";
 import { EvidenceTable } from "./Evidence";
@@ -38,7 +39,7 @@ function ReasonRow({ reason, explorerUrl }: { reason: Reason; explorerUrl: strin
   return (
     <li className={styles.reason}>
       <button type="button" className={styles.reasonHead} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
-        <span className={`${styles.weight} ${positive ? styles.weightPositive : ""}`}>{positive ? "✓" : `+${reason.weight}`}</span>
+        <span className={`${styles.weight} ${positive ? styles.weightPositive : ""}`}>{positive ? <Glyph name="check" tone="low" size={12} title="no risk signals" /> : `+${reason.weight}`}</span>
         <span className={styles.reasonBody}>
           <code className={styles.code}>{reason.code}</code>
           <span className={styles.reasonText}>{REASON_TEXT[reason.code] ?? reason.code}</span>
