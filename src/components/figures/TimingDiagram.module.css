@@ -1,0 +1,74 @@
+/* Logic-analyser timing diagram of one screen. Hairline grid, ink traces, accent only on the cursor and the active edge. */
+.wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  user-select: none;
+}
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.grid { stroke: var(--line); stroke-width: 1; }
+.gridMajor { stroke: var(--line-2); stroke-width: 1; }
+.laneRule { stroke: var(--line); stroke-width: 1; }
+.axis { stroke: var(--line-2); stroke-width: 1; }
+.tick { stroke: var(--faint); stroke-width: 1; }
+.axisLabel { font: 500 9px var(--mono); letter-spacing: 0.1em; fill: var(--faint); }
+.laneLabel { font: 500 10px var(--mono); letter-spacing: 0.12em; fill: var(--muted); text-transform: uppercase; }
+.laneLabelIn { font: 500 8.5px var(--mono); letter-spacing: 0.1em; fill: var(--muted); paint-order: stroke; stroke: var(--panel-solid); stroke-width: 3px; stroke-linejoin: round; }
+.subLabel { font: 400 8.5px var(--mono); letter-spacing: 0.04em; fill: var(--faint); }
+.trace { fill: none; stroke: var(--faint); stroke-width: 1; opacity: 0.5; stroke-linejoin: miter; }
+.traceInk { fill: none; stroke: var(--text); stroke-width: 1.1; stroke-linejoin: miter; }
+.traceDash { stroke-dasharray: 3 3; }
+.traceHot { fill: none; stroke: var(--acc); stroke-width: 1.4; stroke-linejoin: miter; }
+.edgeHot { stroke: var(--acc); stroke-width: 1.6; }
+.guard { stroke: var(--text); stroke-width: 1; }
+.guardLabel { font: 500 8px var(--mono); letter-spacing: 0.12em; fill: var(--muted); text-transform: uppercase; }
+.timeout { stroke: var(--warn); stroke-width: 1; }
+.timeoutLabel { font: 500 8px var(--mono); letter-spacing: 0.1em; fill: var(--warn); }
+.cursor { stroke: var(--acc); stroke-width: 1; }
+.cursorHead { fill: var(--acc); }
+.cursorLabel { font: 500 9.5px var(--mono); letter-spacing: 0.06em; fill: var(--acc); font-variant-numeric: tabular-nums; }
+.cursorLabelBg { fill: var(--panel-solid); }
+.readout { font: 400 10px var(--mono); letter-spacing: 0.03em; fill: var(--text); font-variant-numeric: tabular-nums; }
+.readoutIdle { fill: var(--faint); }
+.loop { fill: none; stroke: var(--line-2); stroke-width: 1; stroke-dasharray: 3 4; }
+.loopArrow { fill: var(--faint); }
+.loopLabel { font: 400 9px var(--mono); letter-spacing: 0.08em; fill: var(--faint); }
+.loopDot { fill: var(--acc); }
+
+.readouts {
+  display: none;
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line-2);
+  font: 400 11px var(--mono);
+  letter-spacing: 0.03em;
+}
+.readouts li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.readouts li > span:first-child { color: var(--faint); letter-spacing: 0.12em; text-transform: uppercase; font-size: 10px; }
+.readouts li > span:last-child { color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+.readouts li > span.idle { color: var(--faint); }
+.idle { color: var(--faint) !important; }
+.wrap[data-compact="true"] .readouts { display: block; }
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cursor { opacity: 0.6; }
+}
