@@ -23,14 +23,14 @@ x-complir-event: tier.changed              # 8 s timeout; delivery is best-effor
   "registryTx": null                       # tx hash once the registry write lands
 }`;
 
-const DRILL = `# Blacklist drill: run the exact reactor handler as if USDC emitted Blacklisted(0x…).
-# 1. make the address read as blacklisted (overrides merge over live chain facts; never a real sanctioned address)
-echo '{ "0x000000000000000000000000000000000000dead": { "usdcBlacklisted": true } }' > .data/overrides.json
-# 2. fire the drill
+const DRILL = `# Blacklist drill: run the exact reactor handler as if USDC had just emitted Blacklisted(addr).
+# The subject is a real sanctioned wallet (Ronin Bridge exploiter, OFAC SDN + JP MOF) that USDC on Arc really blacklists,
+# so the re-screen reads live chain facts - no overrides, no synthetic evidence.
 curl -s -X POST http://localhost:3000/api/internal/events -H "Authorization: Bearer $CRON_SECRET" \\
-  -H 'content-type: application/json' -d '{ "simulate": "0x000000000000000000000000000000000000dead" }'
-# 3. remove the override and simulate the reverse to watch the tier drop back
-curl -s -X POST … -d '{ "simulate": "0x…dead", "kind": "UNBLOCKLISTED" }'`;
+  -H 'content-type: application/json' -d '{ "simulate": "0x098b716b8aaf21512996dc57eb0615e2383e2f96" }'
+# The reverse event only exercises the UnBlacklisted path: the re-screen still reads the chain, so the tier
+# stays HIGH until Circle really un-blacklists the address.
+curl -s -X POST … -d '{ "simulate": "0x098b716b8aaf21512996dc57eb0615e2383e2f96", "kind": "UNBLOCKLISTED" }'`;
 
 export const rescreening: DocPage = {
   slug: "rescreening",
@@ -133,8 +133,8 @@ export const rescreening: DocPage = {
         <>
           <Code lang="sh" code={DRILL} />
           <p>
-            The drill runs the identical handler and is marked <code>simulated: true</code> in the event log. The re-screen reads the chain, so the override is what makes the verdict
-            flip. Trust Map re-grades are a third loop: recipients of 25 USDC or more are re-graded every 24 hours by the tailer. See the <Link href="/docs/trust-model">trust model</Link>{" "}
+            The drill runs the identical handler and is marked <code>simulated: true</code> in the event log; only the event is simulated. The re-screen reads the chain and the
+            sanctions lists, so the verdict is the real one for that address. Trust Map re-grades are a third loop: recipients of 25 USDC or more are re-graded every 24 hours by the tailer. See the <Link href="/docs/trust-model">trust model</Link>{" "}
             for what these loops cannot see.
           </p>
         </>

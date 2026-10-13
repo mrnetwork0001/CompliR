@@ -4,7 +4,6 @@ import type { Address, Verdict } from "../types";
 import { aggregateRecipients, tailOnce, type ScreenFn, type TailClient } from "./tailer";
 import { mapSnapshot, nodeHistory, recentTierChanges } from "./query";
 import { countCandidates, deleteCandidates, getCandidate, getCursor, getNode, listCandidates, migrateTrustmap, pruneCandidates, upsertCandidates, CANDIDATE_ROWS } from "./store";
-import { seedDemo, DEMO_ADDRESSES, DEMO_CANDIDATE_COUNT } from "./seed";
 import { hashAngle, layoutMap, RING_RADIUS } from "./layout";
 
 const EMITTER = "0xfffffffffffffffffffffffffffffffffffffffe";
@@ -265,44 +264,6 @@ describe("mapSnapshot", () => {
     for (let i = 1; i < snap.nodes.length; i++) expect(snap.nodes[i - 1].usdcIn24h).toBeGreaterThanOrEqual(snap.nodes[i].usdcIn24h);
   });
 
-  it("seedDemo inserts the three demo addresses + synthetic candidates once, and the radial layout places them on their rings", async () => {
-    const s1 = await seedDemo({ now: NOW, force: true });
-    expect(s1.seeded).toBe(true);
-    expect(s1.candidates).toBe(DEMO_CANDIDATE_COUNT);
-    const s2 = await seedDemo({ now: NOW });
-    expect(s2.seeded).toBe(false); // table not empty
-    const snap = await mapSnapshot({ limit: 400, candidates: 500, now: NOW });
-    const demo = snap.nodes.filter((n) => n.source === "demo");
-    expect(demo.map((d) => [d.address, d.tier]).sort()).toEqual([[DEMO_ADDRESSES.HIGH, "HIGH"], [DEMO_ADDRESSES.MEDIUM, "MEDIUM"], [DEMO_ADDRESSES.LOW, "LOW"]].sort());
-    expect(snap.candidates.filter((c) => c.source === "demo")).toHaveLength(DEMO_CANDIDATE_COUNT);
-    expect(snap.edges.some((e) => e.source === "demo")).toBe(true);
-    // every demo candidate is tied to a demo graded node
-    const demoCands = new Set(snap.candidates.filter((c) => c.source === "demo").map((c) => c.address));
-    for (const a of demoCands) expect(snap.edges.some((e) => e.from === a || e.to === a)).toBe(true);
-    expect((await nodeHistory(DEMO_ADDRESSES.MEDIUM))?.node?.prevTier).toBe("LOW");
-
-    const l1 = layoutMap(snap.nodes, snap.edges, { candidates: snap.candidates });
-    const l2 = layoutMap(snap.nodes, snap.edges, { candidates: snap.candidates });
-    expect(l1.nodes).toEqual(l2.nodes); // deterministic
-    const high = l1.byAddress.get(DEMO_ADDRESSES.HIGH)!, low = l1.byAddress.get(DEMO_ADDRESSES.LOW)!;
-    const dist = (p: { x: number; y: number }) => Math.hypot(p.x - l1.cx, p.y - l1.cy);
-    expect(Math.abs(dist(high) - RING_RADIUS.HIGH)).toBeLessThanOrEqual(28); // HIGH innermost (±lane)
-    expect(Math.abs(dist(low) - RING_RADIUS.LOW)).toBeLessThanOrEqual(28);
-    for (const a of demoCands) expect(Math.abs(dist(l1.byAddress.get(a)!) - RING_RADIUS.OBSERVED)).toBeLessThanOrEqual(28);
-    expect(high.core).toBeGreaterThan(low.core); // core ∝ log(usdc)
-    expect(hashAngle(DEMO_ADDRESSES.HIGH)).toBe(hashAngle(DEMO_ADDRESSES.HIGH.toUpperCase())); // stable, case-insensitive
-    for (let i = 0; i < l1.nodes.length; i++)
-      for (let j = i + 1; j < l1.nodes.length; j++) {
-        const a = l1.nodes[i], b = l1.nodes[j];
-        expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(a.r + b.r - 1);
-      }
-    for (const p of l1.nodes) {
-      expect(p.x).toBeGreaterThan(0);
-      expect(p.x).toBeLessThan(l1.width);
-      expect(p.y).toBeGreaterThan(0);
-      expect(p.y).toBeLessThan(l1.height);
-    }
-  });
 
   it("a crowded ring splits into lanes and still never overlaps", () => {
     const nodes = Array.from({ length: 180 }, (_, i) => ({

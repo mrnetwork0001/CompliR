@@ -74,7 +74,7 @@ export const guardedPayouts: DocPage = {
         <>
           <ol>
             <li>
-              Seed and load pending invoices (the demo set is three: a 10 USDC design invoice, a 120 USDC sprint invoice, a 50 USDC unsolicited one; processed in that order).
+              Load pending invoices (nothing is seeded; invoices come from /payouts or the API, oldest first).
             </li>
             <li>
               Screen the payee with <code>clientId: treasury-agent</code> and the trusted payee book; the screen does not write on-chain by itself.

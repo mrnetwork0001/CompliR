@@ -2,13 +2,63 @@
 /**
  * TimingDiagram - one screen as a logic-analyser capture.
  * Five lanes (EVIDENCE with six concurrent sub-traces, RULES, ANALYST, ATTESTATION, REGISTRY·LEDGER) draw digital
- * waveforms over a 0–2.4 s axis. A time cursor sweeps left→right; when it crosses a lane's rising edge the lane's
- * mono readout on the right updates. After the sweep a dashed "re-screen in 24 h" return carries the cursor back
- * to 0 and the capture repeats. SVG + rAF (~30 fps), paused off-screen, static under reduced motion.
- * Coordinates are rounded to 2 dp (r2) so server and client serialise identically.
+ * waveforms over a SCHEMATIC 0–2.4 s axis. A time cursor sweeps left→right; when it crosses a lane's rising edge the
+ * lane's mono readout on the right updates. The readouts are NOT schematic: they come from the latest real
+ * SCREEN/RESCREEN entry in GET /api/v1/ledger (score, tier, limits, EDD count, analyst latency, attestation validity,
+ * ledger seq). With no decision on the ledger yet every readout stays idle and the figure meta says so.
+ * After the sweep a dashed "re-screen" return carries the cursor back to 0 and the capture repeats.
+ * SVG + rAF (~30 fps), paused off-screen, static under reduced motion. First render is deterministic (idle readouts);
+ * the decision arrives in useEffect. Coordinates are rounded to 2 dp (r2) so server and client serialise identically.
  */
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import type { LedgerListResponse } from "@/app/api/_lib/public-types";
+import { Fig } from "./Fig";
 import styles from "./TimingDiagram.module.css";
+
+/** The slice of a SCREEN/RESCREEN ledger payload the readouts use (see pipeline.ts `core`). */
+interface DecisionReadout {
+  seq: number;
+  id: string;
+  kind: string;
+  score: number;
+  tier: string;
+  reasons: number;
+  evidenceDepth: number;
+  limits: { maxPerTxUsdc: number; maxPerDayUsdc: number };
+  edd: number;
+  analystMs: number | null;
+  analystFallback: boolean;
+  /** seconds the attestation is valid for, from screenedAt to validUntil */
+  validForS: number | null;
+  /** seconds until the analyst's next re-screen */
+  rescreenInS: number | null;
+  anchored: boolean;
+}
+type Latest = { status: "loading" } | { status: "none" } | { status: "error" } | { status: "ready"; d: DecisionReadout };
+
+function pickDecision(body: LedgerListResponse): DecisionReadout | null {
+  const e = body.entries.find((x) => x.kind === "SCREEN" || x.kind === "RESCREEN");
+  if (!e) return null;
+  const p = (e.payload ?? {}) as Record<string, unknown>;
+  const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const lim = (p.recommendedLimits ?? {}) as Record<string, unknown>;
+  const an = (p.analyst ?? {}) as Record<string, unknown>;
+  const at = (p.attestation ?? {}) as Record<string, unknown>;
+  const screenedAt = num(p.screenedAt), validUntil = num(at.validUntil), next = num(p.nextRescreenAt);
+  return {
+    seq: e.seq, id: e.id, kind: e.kind,
+    score: num(p.score) ?? 0, tier: typeof p.tier === "string" ? p.tier : "?",
+    reasons: Array.isArray(p.reasons) ? p.reasons.length : 0,
+    evidenceDepth: num(p.evidenceDepth) ?? 1,
+    limits: { maxPerTxUsdc: num(lim.maxPerTxUsdc) ?? 0, maxPerDayUsdc: num(lim.maxPerDayUsdc) ?? 0 },
+    edd: Array.isArray(p.eddRequested) ? p.eddRequested.length : 0,
+    analystMs: num(an.latencyMs), analystFallback: an.fallback === true,
+    validForS: screenedAt !== null && validUntil !== null ? validUntil - screenedAt : null,
+    rescreenInS: screenedAt !== null && next !== null ? next - screenedAt : null,
+    anchored: e.anchorTx !== null,
+  };
+}
+const fmtDur = (s: number) => (s < 3600 ? `${Math.round(s / 60)} min` : s < 86400 ? `${Math.round(s / 3600)} h` : `${Math.round(s / 86400)} d`);
 
 const T_END = 2400; // pipeline ms shown on the axis
 const SLOW = 2.1; // real ms per pipeline ms → one sweep ≈ 5 s
@@ -37,24 +87,23 @@ const LANES: Lane[] = [
 const r2 = (v: number) => Math.round(v * 100) / 100;
 const fmtMs = (t: number) => (t === 0 ? "0 ms" : t < 1000 ? `${t}` : `${(t / 1000).toFixed(1)} s`);
 
-/** Readout text for a lane at pipeline time t (null = not reached yet). */
-function readout(i: number, t: number): string | null {
+/** Readout text for a lane at pipeline time t from the latest real decision (null = not reached yet, or no decision). */
+function readout(i: number, t: number, d: DecisionReadout | null): string | null {
   const l = LANES[i];
-  if (t < l.start) return null;
+  if (t < l.start || !d) return null;
   switch (i) {
-    case 0: {
-      const done = SOURCES.filter((s) => s.end <= t).length;
-      const to = t >= 1000 ? " · 1 timeout" : "";
-      return `${done}/6 sources${to}`;
-    }
+    case 0:
+      return `depth ${d.evidenceDepth} · ${d.reasons} reason${d.reasons === 1 ? "" : "s"}`;
     case 1:
-      return "score 23 · MEDIUM";
+      return `score ${d.score} · ${d.tier}`;
     case 2:
-      return t >= (l.guard ?? Infinity) ? "limits 250/1000 · EDD 2" : "rationale ≤120 w · clamp";
+      return t >= (l.guard ?? Infinity)
+        ? `limits ${d.limits.maxPerTxUsdc}/${d.limits.maxPerDayUsdc} · EDD ${d.edd}`
+        : `analyst ${d.analystMs === null ? "-" : `${d.analystMs} ms`}${d.analystFallback ? " · fallback" : ""}`;
     case 3:
-      return "0x1bb2…ab · valid 24 h";
+      return `attested${d.validForS === null ? "" : ` · valid ${fmtDur(d.validForS)}`}`;
     default:
-      return t >= l.end ? "tx pending → #25,714,409" : "tx pending";
+      return t >= l.end ? `ledger #${d.seq}${d.anchored ? " · anchored" : " · not yet anchored"}` : `ledger #${d.seq}`;
   }
 }
 
@@ -63,11 +112,31 @@ const subscribeRM = (cb: () => void) => { const mq = window.matchMedia(RM); mq.a
 const getRM = () => window.matchMedia(RM).matches;
 const getRMServer = () => false;
 
-export default function TimingDiagram() {
+export default function TimingDiagram({ fig }: { fig?: { n: string; label: ReactNode } }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(1000);
   const [phase, setPhase] = useState(0);
+  const [latest, setLatest] = useState<Latest>({ status: "loading" });
   const reduced = useSyncExternalStore(subscribeRM, getRM, getRMServer);
+  const d = latest.status === "ready" ? latest.d : null;
+
+  // latest real decision (limit 10 so a PAYOUT/ANCHOR at the head of the ledger does not blank the readouts)
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/v1/ledger?limit=10", { cache: "no-store" });
+        if (!res.ok) throw new Error(String(res.status));
+        const body = (await res.json()) as LedgerListResponse;
+        if (!alive) return;
+        const pick = pickDecision(body);
+        setLatest(pick ? { status: "ready", d: pick } : { status: "none" });
+      } catch { if (alive) setLatest((s) => (s.status === "ready" ? s : { status: "error" })); }
+    };
+    void load();
+    const id = setInterval(() => { if (document.visibilityState === "visible") void load(); }, 30_000);
+    return () => { alive = false; clearInterval(id); };
+  }, []);
 
   // measure
   useEffect(() => {
@@ -132,15 +201,22 @@ export default function TimingDiagram() {
   const pulse = (x0: number, x1: number, low: number, amp: number, tail = xEnd) => `M${x(0)} ${r2(low)} H${x0} V${r2(low - amp)} H${x1} V${r2(low)} H${tail}`;
   const laneLow = (i: number) => (i === 0 ? 0 : laneTops[i] + laneH - 11);
 
-  const readouts = LANES.map((_, i) => readout(i, tc));
+  const readouts = LANES.map((_, i) => readout(i, tc, d));
 
-  return (
+  const meta =
+    latest.status === "ready" ? `schematic timeline · readouts from the latest real decision #${latest.d.seq}`
+    : latest.status === "none" ? "schematic timeline · no decisions yet"
+    : latest.status === "error" ? "schematic timeline · ledger unreachable"
+    : "schematic timeline · connecting to the ledger …";
+
+  const body = (
     <div ref={wrapRef} className={styles.wrap} data-compact={compact ? "true" : undefined}>
       <svg viewBox={`0 0 ${w} ${H}`} className={styles.svg} role="img" aria-labelledby="td-title td-desc">
         <title id="td-title">Pipeline timing diagram</title>
         <desc id="td-desc">
-          One screen over 2.4 seconds: six evidence sources run concurrently from 0 to 1 s (one times out), deterministic rules score in 60 ms, the analyst writes
-          for 840 ms and is clamped by a guard, the attestation is signed in 100 ms, and the registry write settles asynchronously. Re-screened in 24 h.
+          Schematic timeline of one screen: evidence sources run concurrently, deterministic rules score, the analyst writes and is clamped by a guard, the
+          attestation is signed, and the registry write settles asynchronously. The readouts beside each lane come from the latest real decision on the ledger
+          {d ? ` (#${d.seq}: score ${d.score}, ${d.tier})` : " (none yet)"}.
         </desc>
         <defs>
           <clipPath id="td-reveal">
@@ -258,7 +334,7 @@ export default function TimingDiagram() {
         <path d={`M${xEnd} ${plotBottom} V${loopY} H${x(0)} V${plotBottom + 4}`} className={styles.loop} />
         <path d={`M${x(0)} ${plotBottom + 1} l-3 5 h6 z`} className={styles.loopArrow} />
         <text x={r2(plotX + plotW / 2)} y={loopY - 4} textAnchor="middle" className={styles.loopLabel}>
-          {compact ? "re-screen in 24 h" : "re-screen in 24 h · HIGH 1 h · MEDIUM 24 h · LOW 7 d · tier.changed webhook"}
+          {(() => { const rs = d?.rescreenInS != null ? `re-screen in ${fmtDur(d.rescreenInS)}` : "re-screen"; return compact ? rs : `${rs} · HIGH 1 h · MEDIUM 24 h · LOW 7 d · tier.changed webhook`; })()}
         </text>
         {holdK > 0 && <circle cx={r2(xEnd - (xEnd - x(0)) * holdK)} cy={loopY} r={2.2} className={styles.loopDot} />}
 
@@ -291,4 +367,5 @@ export default function TimingDiagram() {
       </ol>
     </div>
   );
+  return fig ? <Fig n={fig.n} label={fig.label} meta={meta}>{body}</Fig> : body;
 }

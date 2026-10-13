@@ -87,7 +87,7 @@ export const selfHosting: DocPage = {
               { k: "EVIDENCE_GETLOGS_CHUNK", v: "9999 (public RPC hard cap is 10,000)" },
               { k: "EVIDENCE_SOURCE_TIMEOUT_MS", v: "4000 per source" },
               { k: "YENTE_URL / YENTE_DATASET / YENTE_THRESHOLD", v: "http://localhost:8000 · default · 0.7" },
-              { k: "OVERRIDES_PATH / OVERRIDES_JSON", v: ".data/overrides.json - demo overrides on our own wallets; never a real sanctioned address" },
+              { k: "OVERRIDES_PATH / OVERRIDES_JSON", v: ".data/overrides.json - optional evidence overrides merged over chain facts, for tests only; empty on the hosted instance (no synthetic evidence)" },
             ]}
           />
           <h3>Keys and data</h3>

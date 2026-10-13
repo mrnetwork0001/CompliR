@@ -17,6 +17,8 @@
 .node { fill: var(--faint); transition: fill 0.25s ease, opacity 0.25s ease; }
 .chip { fill: var(--panel-solid); stroke: var(--line-2); rx: 2; }
 .chipText { font: 500 8.5px var(--mono); letter-spacing: 0.1em; fill: var(--text); }
+.nodeLabel { font: 400 8px var(--mono); letter-spacing: 0.04em; fill: var(--muted); paint-order: stroke; stroke: var(--panel-solid); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+.state { font: 400 10px var(--mono); letter-spacing: 0.08em; fill: var(--muted); }
 .readout {
   position: absolute;
   left: 0;
@@ -33,10 +35,12 @@
   min-width: 232px;
   backdrop-filter: blur(4px);
 }
-.readoutHead, .readoutRow { display: grid; grid-template-columns: 44px 1fr 56px 34px; gap: 8px; padding: 2px 0; }
+.readoutHead, .readoutRow { display: grid; grid-template-columns: 60px 1fr 52px 34px; gap: 8px; padding: 2px 0; }
 .readoutHead { color: var(--faint); text-transform: uppercase; letter-spacing: 0.12em; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
 .readoutRow span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
-.readoutRow:first-of-type { color: var(--text); }
+.readoutLit { color: var(--text); }
+.readoutLink { color: var(--acc); text-decoration: none; }
+.readoutLink:hover { text-decoration: underline; }
 @media (max-width: 900px) {
   .wrap { max-width: 420px; margin: 0 auto; }
   .readout { position: static; margin-top: 8px; width: 100%; }

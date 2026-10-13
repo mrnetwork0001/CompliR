@@ -10,8 +10,8 @@ const CAFE = "0x000000000000000000000000000000000000cafe" as const;
 const BAD2 = "0x000000000000000000000000000000000000bad2" as const;
 
 describe("overrides", () => {
-  it("parses the shipped .data/overrides.json demo file", () => {
-    const raw = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), ".data/overrides.json"), "utf8"));
+  it("parses a demo overrides fixture (test-only; the shipped .data/overrides.json is empty)", () => {
+    const raw = JSON.parse(fs.readFileSync(path.resolve(__dirname, "__fixtures__/overrides.demo.json"), "utf8"));
     const o = parseOverrides(raw);
     expect(o[DEAD].sanctions?.[0].matchedOn).toBe("address");
     expect(o[DEAD].usdcBlacklisted).toBe(true);

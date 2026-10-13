@@ -6,10 +6,11 @@ const QUICK_CURL = `# Screen one payee. Over x402 the first call answers 402 + P
 # (the SDK, the MCP server) signs 0.01 USDC and retries. With X402_DISABLED=1 (local dev) it is free.
 curl -s -X POST https://complir.example/api/v1/screen \\
   -H 'Content-Type: application/json' \\
-  -d '{ "address": "0x000000000000000000000000000000000000dead", "amountUsdc": 120 }' | jq '{tier, score, recommendedLimits}'
+  -d '{ "address": "0x098b716b8aaf21512996dc57eb0615e2383e2f96", "amountUsdc": 120 }' | jq '{tier, score, recommendedLimits}'
+# ↑ a real sanctioned wallet (Ronin Bridge exploiter, OFAC SDN + JP MOF): expect tier HIGH, score 100, limits 0/0
 
 # Free: the latest signed attestation for any address
-curl -s https://complir.example/api/v1/attestation/0x000000000000000000000000000000000000dead`;
+curl -s https://complir.example/api/v1/attestation/0x098b716b8aaf21512996dc57eb0615e2383e2f96`;
 
 const QUICK_SDK = `import { CompliR } from "@complir/sdk";
 import { privateKeyToAccount } from "viem/accounts";

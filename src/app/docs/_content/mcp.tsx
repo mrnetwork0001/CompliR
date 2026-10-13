@@ -96,7 +96,7 @@ export const mcp: DocPage = {
       body: (
         <>
           <p>
-            <strong>User:</strong> Pay 120 USDC to 0x…beef for the October invoice from Lela Design.
+            <strong>User:</strong> Pay 120 USDC to the new payee address for the October invoice from Lela Design. <em>(illustrative flow - a MEDIUM outcome)</em>
           </p>
           <p>
             <strong>Agent:</strong> calls <code>screen_counterparty</code> with the address, amount, name and payee book. CompliR grades it MEDIUM (score 44, FRESH_WALLET, NO_HISTORY)

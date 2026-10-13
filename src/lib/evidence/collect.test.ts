@@ -49,7 +49,7 @@ const yenteDown = vi.fn(async () => {
 let overrides: ReturnType<typeof parseOverrides>;
 beforeAll(async () => {
   const fs = await import("node:fs");
-  overrides = parseOverrides(JSON.parse(fs.readFileSync(".data/overrides.json", "utf8")));
+  overrides = parseOverrides(JSON.parse(fs.readFileSync(new URL("./__fixtures__/overrides.demo.json", import.meta.url), "utf8")));
 });
 
 describe("collectEvidence", () => {

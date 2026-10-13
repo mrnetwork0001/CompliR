@@ -1,12 +1,15 @@
 import "../__tests__/setup";
-process.env.EVIDENCE_SOURCE_TIMEOUT_MS = "800"; // RPC is unreachable in tests; fail fast, overrides supply the demo facts
+process.env.EVIDENCE_SOURCE_TIMEOUT_MS = "800"; // RPC is unreachable in tests; fail fast, the fixture overrides supply the facts
+import fs from "node:fs";
+// test-only evidence fixture (the shipped .data/overrides.json is empty: no synthetic data at runtime)
+process.env.OVERRIDES_JSON = fs.readFileSync(new URL("../evidence/__fixtures__/overrides.demo.json", import.meta.url), "utf8");
 delete process.env.TREASURY_MODE;
 delete process.env.TREASURY_PRIVATE_KEY;
 delete process.env.GUARDED_TREASURY_ADDRESS;
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { decidePayout, DEFAULT_POLICY, type TreasuryPolicy, type VerdictLike } from "./policy";
-import { seedDemoInvoices, listInvoices, migrateTreasury, spentToday, DEMO_INVOICES, createInvoice } from "./invoices";
+import { seedDemoInvoices, listInvoices, migrateTreasury, spentToday, createInvoice } from "./invoices";
 import { runTreasuryOnce, treasuryMode, treasuryStatus } from "./agent";
 import { getDecision, verifyChain } from "../ledger";
 import type { Address, Tier } from "../types";
@@ -80,14 +83,17 @@ describe("decidePayout", () => {
 describe("invoices + dry-run tick", () => {
   beforeAll(async () => { await migrateTreasury(); });
 
-  it("seedDemoInvoices is idempotent", async () => {
+  it("seedDemoInvoices seeds nothing (no synthetic invoices) and stays idempotent", async () => {
     const a = await seedDemoInvoices();
     const b = await seedDemoInvoices();
-    expect(a.inserted).toBe(3); expect(b.inserted).toBe(0);
-    const all = await listInvoices();
-    expect(all.filter((i) => i.id.startsWith("inv_demo_"))).toHaveLength(3);
-    expect(all.map((i) => i.status)).toEqual(["PENDING", "PENDING", "PENDING"]);
-    expect(all.find((i) => i.id === "inv_demo_beef")?.amountUsdc).toBe(120);
+    expect(a.inserted).toBe(0); expect(b.inserted).toBe(0);
+    expect((await listInvoices()).filter((i) => i.id.startsWith("inv_demo_"))).toHaveLength(0);
+    // the following tests create their own invoices explicitly (fixture payees: …cafe LOW, …beef MEDIUM, …dead HIGH)
+    const t = Math.floor(Date.now() / 1000) - 3;
+    await createInvoice({ payee: "0x000000000000000000000000000000000000cafe" as Address, label: "Lela - logo design", amountUsdc: 10 }, "inv_demo_cafe", t);
+    await createInvoice({ payee: "0x000000000000000000000000000000000000beef" as Address, label: "Nova Labs - API work", amountUsdc: 120 }, "inv_demo_beef", t + 1);
+    await createInvoice({ payee: "0x000000000000000000000000000000000000dead" as Address, label: "Unknown vendor", amountUsdc: 50 }, "inv_demo_dead", t + 2);
+    expect((await listInvoices()).map((i) => i.status)).toEqual(["PENDING", "PENDING", "PENDING"]);
   });
 
   it("defaults to dry-run when no treasury key is configured", () => {
@@ -144,7 +150,7 @@ describe("invoices + dry-run tick", () => {
   }, 60_000);
 
   it("a new invoice to a LOW payee is paid on the next tick; daily cap carries over", async () => {
-    const inv = await createInvoice({ payee: DEMO_INVOICES[0].payee as Address, label: "Lela - second invoice", amountUsdc: 30 });
+    const inv = await createInvoice({ payee: "0x000000000000000000000000000000000000cafe" as Address, label: "Lela - second invoice", amountUsdc: 30 });
     const r = await runTreasuryOnce({ policy: { maxTier: "MEDIUM", perPayoutCapUsdc: 25, dailyCapUsdc: 50, requireAttestationOnChain: false } });
     const x = r.results.find((y) => y.invoiceId === inv.id)!;
     // 35 already spent today of a 50 cap → 15 headroom

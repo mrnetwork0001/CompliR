@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { exampleAddresses } from "./examples";
 
 describe("exampleAddresses", () => {
-  it("always yields exactly one HIGH, MEDIUM and LOW demo address", async () => {
+  it("yields the real example addresses: one sanctioned (HIGH) and our own wallet (LOW)", async () => {
     const ex = await exampleAddresses();
-    expect(ex.map((e) => e.expectedTier)).toEqual(["HIGH", "MEDIUM", "LOW"]);
+    expect(ex.map((e) => e.expectedTier)).toEqual(["HIGH", "LOW"]);
     for (const e of ex) expect(e.address).toMatch(/^0x[0-9a-f]{40}$/);
   });
 });

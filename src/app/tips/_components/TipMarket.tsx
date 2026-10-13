@@ -331,7 +331,7 @@ function TipsTable({ data, explorer }: { data: TipsResponse | null; explorer: st
                       : t.status === "SLASHED" ? <span className="muted">−{usdc(t.stakeUsdc)}</span>
                       : <span className="muted">-</span>}
                   </td>
-                  <td><code>{t.submitter}</code>{t.demo && <span className="muted small"> demo</span>}</td>
+                  <td><code>{t.submitter}</code>{t.demo && <span className="muted small"> unstaked</span>}</td>
                 </tr>
               ))}
             </tbody>

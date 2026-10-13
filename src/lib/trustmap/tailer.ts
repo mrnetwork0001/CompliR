@@ -19,7 +19,6 @@ import { isRangeError, isRateLimited, lower, rpcGate, rpcRetry, toUsdc6, type Li
 import { screen as pipelineScreen, type ScreenOptions } from "../pipeline";
 import type { Address, ScreenRequest, Tier, Verdict } from "../types";
 import { trustmapEnv } from "./env";
-import { seedDemo } from "./seed";
 import {
   addInflow, allCandidateAddresses, allNodeAddresses, cachedIsContract, cachedIsContractMany, countCandidates, countNodes, deleteCandidates, getCursor, getNodes, inflow24h,
   insertEdges, insertTierChange, migrateTrustmap, pruneCandidateEdges, pruneCandidates, pruneInflow, rememberIsContract, setCursor, setLastTick,
@@ -215,11 +214,7 @@ export async function tailOnce(opts: TailOptions = {}): Promise<TailResult> {
   };
 
   await migrateTrustmap();
-  let seeded = false;
-  if (opts.seedDemo ?? env.seedDemo) {
-    const c = await countNodes();
-    if (c.graded === 0) seeded = (await seedDemo({ now })).seeded;
-  }
+  const seeded = false; // no synthetic seeding: the map only ever shows wallets observed on-chain
 
   const base: Omit<TailResult, "tookMs"> = {
     at: now, head: 0, fromBlock: null, toBlock: null, blocksScanned: 0, logs: 0, recipients: 0, candidates: 0, graded: 0, failed: 0,

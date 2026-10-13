@@ -1,0 +1,81 @@
+{
+  "0x000000000000000000000000000000000000dead": {
+    "note": "DEMO HIGH: direct sanctions hit + USDC blocklist. Synthetic — not a real SDN entry.",
+    "sanctions": [
+      {
+        "source": "opensanctions",
+        "entityId": "NK-DEMO-dead0001",
+        "caption": "Demo Sanctioned Wallet (synthetic)",
+        "datasets": ["us_ofac_sdn"],
+        "score": 1,
+        "matchedOn": "address"
+      }
+    ],
+    "usdcBlacklisted": true,
+    "firstSeen": 1757030400,
+    "txCount": 12
+  },
+  "0x000000000000000000000000000000000000beef": {
+    "note": "DEMO MEDIUM: fresh wallet, clean itself; hop-1 funder 0x…bad1 was funded by 0x…bad2 (synthetic sanctions hit).",
+    "firstSeen": 1760054400,
+    "txCount": 2,
+    "funders": [
+      {
+        "hop": 1,
+        "path": [
+          {
+            "from": "0x000000000000000000000000000000000000bad1",
+            "to": "0x000000000000000000000000000000000000beef",
+            "txHash": "0x7d3c1a9e4f52b8c06e1d2a7b93f4c5e8a1b2d3c4e5f60718293a4b5c6d7e8f90",
+            "amountUsdc": "150.000000",
+            "timestamp": 1760076000
+          }
+        ],
+        "facts": { "address": "0x000000000000000000000000000000000000bad1", "firstSeen": 1759300000, "txCount": 9 }
+      },
+      {
+        "hop": 2,
+        "path": [
+          {
+            "from": "0x000000000000000000000000000000000000bad2",
+            "to": "0x000000000000000000000000000000000000bad1",
+            "txHash": "0x2b9f0e6d4c3a1857f6e5d4c3b2a1908f7e6d5c4b3a29180f7e6d5c4b3a291807",
+            "amountUsdc": "12.000000",
+            "timestamp": 1759747200
+          },
+          {
+            "from": "0x000000000000000000000000000000000000bad1",
+            "to": "0x000000000000000000000000000000000000beef",
+            "txHash": "0x7d3c1a9e4f52b8c06e1d2a7b93f4c5e8a1b2d3c4e5f60718293a4b5c6d7e8f90",
+            "amountUsdc": "150.000000",
+            "timestamp": 1760076000
+          }
+        ],
+        "facts": {
+          "address": "0x000000000000000000000000000000000000bad2",
+          "firstSeen": 1740000000,
+          "txCount": 240,
+          "sanctions": [
+            {
+              "source": "opensanctions",
+              "entityId": "NK-DEMO-bad20002",
+              "caption": "Demo Sanctioned Funder (synthetic)",
+              "datasets": ["us_ofac_sdn", "eu_fsf"],
+              "score": 0.97,
+              "matchedOn": "address"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "0x000000000000000000000000000000000000cafe": {
+    "note": "DEMO LOW: two-year-old wallet, 400 txs, no hits, no funder signals.",
+    "firstSeen": 1728000000,
+    "txCount": 400,
+    "sanctions": [],
+    "usdcBlacklisted": false,
+    "protocolBlocklisted": false,
+    "funders": []
+  }
+}

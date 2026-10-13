@@ -7,7 +7,7 @@ Content-Type: application/json
 PAYMENT-SIGNATURE: <x402 payload>        # omitted on the first call; the 402 tells you what to sign
 
 {
-  "address":    "0x000000000000000000000000000000000000dead",   // required, EVM address (lower-cased)
+  "address":    "0x098b716b8aaf21512996dc57eb0615e2383e2f96",   // required, EVM address (lower-cased); this one is a real OFAC-listed wallet
   "name":       "Acme Supplies Ltd",                             // optional, 2–200 chars, name-based sanctions matching
   "amountUsdc": 120,                                             // optional, ≥ 0; ≥ 1,000 forces the second hop
   "payeeBook":  [{ "label": "Lela", "address": "0x12ab…9f3c" }], // optional, ≤ 500 entries; lookalike + payee-change detection

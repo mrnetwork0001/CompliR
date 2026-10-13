@@ -4,18 +4,23 @@ import type { DocPage } from "./types";
 
 const SHADOW_REQ = `POST /api/v1/shadow                         # free during the event
 {
-  "payeeBook": [
-    { "label": "Lela Design",               "address": "0x000000000000000000000000000000000000cafe" },
-    { "label": "Lela Design (new invoice)", "address": "0x0000a1b2c3d4e5f60718293a4b5c6d7e8f90cafe" }
+  "payeeBook": [                                   // the same book /shadow offers as its example - all real addresses
+    { "label": "Ronin Bridge exploiter (Lazarus Group - sanctioned)", "address": "0x098b716b8aaf21512996dc57eb0615e2383e2f96" },
+    { "label": "CompliR treasury wallet",                            "address": "0xc742ada2872a042dd36d2e706907b4036968960c" },
+    { "label": "GuardedTreasury contract",                           "address": "0x5465f31a6155e3ecccc35f4e5bdc0e287763b0ee" },
+    { "label": "CompliR treasury wallet (new invoice - lookalike)",  "address": "0xc7420000000000000000000000000000000a960c" }
   ],
-  "recentPayments": [{ "to": "0x0000a1b2c3d4e5f60718293a4b5c6d7e8f90cafe", "amountUsdc": 80, "txHash": "0x…" }]
+  "recentPayments": [
+    { "to": "0x098b716b8aaf21512996dc57eb0615e2383e2f96", "amountUsdc": 150 },
+    { "to": "0xc742ada2872a042dd36d2e706907b4036968960c", "amountUsdc": 10 }
+  ]
 }
 
 → 200
 {
-  "entries": [{ "label", "address", "score", "tier", "reasonCodes": ["LOOKALIKE_OF_KNOWN_PAYEE", …], "wouldHold", "wouldLimit" }, …],
-  "summary": { "screened": 2, "wouldHold": 0, "wouldLimit": 1, "lookalikes": 1 },
-  "paymentsAtRisk": [{ "to": "0x0000a1b2…cafe", "amountUsdc": 80, "txHash": "0x…" }]
+  "entries": [{ "label", "address", "score", "tier", "reasonCodes": ["SANCTIONS_DIRECT", "USDC_BLACKLISTED", …], "wouldHold", "wouldLimit" }, …],
+  "summary": { "screened": 4, "wouldHold": …, "wouldLimit": …, "lookalikes": … },   // whatever the live pipeline returns today
+  "paymentsAtRisk": [{ "to": "0x098b…2f96", "amountUsdc": 150 }]                      // the 150 USDC to the sanctioned wallet
 }`;
 
 const BADGE = `<!-- Markdown -->
@@ -49,7 +54,7 @@ export const shadowBadge: DocPage = {
               { k: "Targets", v: "book addresses first, then payment recipients not in the book; de-duplicated; at most 50 unique addresses screened, 4 in flight, depth 1" },
               { k: "wouldHold", v: "tier HIGH" },
               { k: "wouldLimit", v: "tier MEDIUM" },
-              { k: "lookalikes", v: "LOOKALIKE_OF_KNOWN_PAYEE hits against your own book (same first and last four hex characters, or ≥ 0.8 similarity)" },
+              { k: "lookalikes", v: "LOOKALIKE_OF_KNOWN_PAYEE hits against your own book (same first and last four hex characters, or ≥ 0.8 similarity); the example book carries one lookalike of our own treasury wallet" },
               { k: "paymentsAtRisk", v: "every recent payment whose recipient is not LOW" },
               { k: "Page", v: <><Link href="/shadow">/shadow</Link> accepts CSV <code>label,address</code> or JSON lines and has “Copy report as Markdown” for a Discord paste</> },
             ]}

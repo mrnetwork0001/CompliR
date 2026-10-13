@@ -95,7 +95,7 @@ Prompt: `pay_safely` (`address`, `amountUsdc?`, `name?`) — screen first, respe
 
 ## Example conversation
 
-> **User:** Pay 120 USDC to 0x000000000000000000000000000000000000beef for the October invoice from Lela Design.
+> **User:** Pay 120 USDC to 0x<payee> for the October invoice from Lela Design.
 >
 > **Agent:** Before sending I will screen the payee with CompliR.
 > *calls `screen_counterparty` { address: "0x…beef", amountUsdc: 120, name: "Lela Design", payeeBook: [...] }*

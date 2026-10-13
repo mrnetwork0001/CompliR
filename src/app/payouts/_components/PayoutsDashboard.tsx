@@ -164,7 +164,7 @@ function AddInvoice({ onAdded }: { onAdded: () => Promise<void> }) {
   return (
     <form onSubmit={submit}>
       <h2>Add invoice</h2>
-      <p className="muted small">Try <code>0x…cafe</code> (LOW), <code>0x…beef</code> (MEDIUM) or <code>0x…dead</code> (HIGH) - the demo payees - or any Arc address.</p>
+      <p className="muted small">Any Arc address. Try our own wallet <code>0xc742…960c</code> (LOW, pays out) or the sanctioned Ronin exploiter <code>0x098b…2f96</code> (HIGH, held).</p>
       <div className={styles.form}>
         <div className={styles.field}>
           <label htmlFor="payee">Payee address</label>

@@ -53,7 +53,7 @@ export const httpApi: DocPage = {
               [<code key="m">GET</code>, <code key="p">/api/v1/tips · /api/v1/tips/:id</code>, free, "Tip market totals, leaderboard, items (anonymised) · one tip."],
               [<code key="m">GET</code>, <code key="p">/api/v1/edd/:id</code>, free, "Public view of an EDD request: questions, status, re-screen outcome. Never the answers."],
               [<code key="m">POST</code>, <code key="p">/api/v1/edd/:id/answer</code>, free, "The counterparty answers once; answers stored privately, keccak logged, subject re-screened. Second submission → 409."],
-              [<code key="m">GET</code>, <code key="p">/api/v1/health</code>, free, "Liveness, chain id, explorer URL, USDC and registry addresses, x402 prices, signer mode, demo addresses."],
+              [<code key="m">GET</code>, <code key="p">/api/v1/health</code>, free, "Liveness, chain id, explorer URL, USDC and registry addresses, x402 prices, signer mode, example addresses (real wallets)."],
             ]}
           />
           <p>

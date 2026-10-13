@@ -125,7 +125,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "Mainnet or testnet?",
-    "Arc mainnet (chain id 5042). The hosted demo addresses (…dead, …beef, …cafe) are synthetic overrides on wallets we control; we never pay or test against a real sanctioned address.",
+    "Arc mainnet (chain id 5042). Nothing on this site is mocked: the example addresses are a real sanctioned wallet (the Ronin Bridge exploiter, on the OFAC SDN and JP MOF lists - read-only, we never pay it) and our own live attester / treasury wallet. The hero lattice, the timing readouts and the live verdict all come from the ledger and the Trust Map on Arc.",
   ],
 ];
 
@@ -206,9 +206,7 @@ export default function Landing() {
         <h2 className={styles.h2}>
           Evidence in. <em className="grad">Signed</em> verdict out.
         </h2>
-        <Fig n="02" label="Pipeline timing" meta="one screen · 6 sources in parallel · re-screen HIGH 1 h · MEDIUM 24 h · LOW 7 d">
-          <TimingDiagram />
-        </Fig>
+        <TimingDiagram fig={{ n: "02", label: "Pipeline timing" }} />
         <ol className={`rail ${styles.steps}`}>
           {STEPS.map((s) => (
             <li key={s.n} className={styles.step}>
@@ -257,12 +255,12 @@ export default function Landing() {
 
       {/* 4. Live demo */}
       <section className={`${styles.section} reveal`}>
-        <SecBar n="03" label="Live verdict" meta="demo MEDIUM · real pipeline" />
+        <SecBar n="03" label="Live verdict" meta="sanctioned wallet · real pipeline" />
         <h2 className={styles.h2}>
           Screened <em className="grad">seconds</em> ago.
         </h2>
         <p className={styles.lead}>
-          This page just screened the MEDIUM demo address through the real pipeline. Dial, reasons with evidence, 2-hop funder graph, analyst rationale, signed
+          This page just screened a real sanctioned wallet (the Ronin Bridge exploiter, OFAC SDN) through the real pipeline. Dial, reasons with evidence, 2-hop funder graph, analyst rationale, signed
           attestation.
         </p>
         <Fig n="03" label="Live verdict" live meta="verdict · live · clientId web-landing · depth 2 · x402" className={styles.sheet}>
