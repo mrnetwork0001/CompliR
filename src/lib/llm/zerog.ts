@@ -163,7 +163,7 @@ export function zeroGProvider(opts: ZeroGProviderOptions): LlmProvider {
         res = await f(base + path, { method: "POST", headers, body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs) });
       } catch (e) {
         const timedOut = e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
-        const err = new ZeroGError(timedOut ? `0g timeout after ${timeoutMs} ms (${path})` : `0g network error: ${e instanceof Error ? e.message : String(e)}`, { code: timedOut ? "timeout" : "network", retryable: !timedOut });
+        const err = new ZeroGError(timedOut ? `0g timeout after ${timeoutMs} ms (${path})` : `0g network error: ${e instanceof Error ? e.message : String(e)}${(e as { cause?: { message?: string; code?: string } })?.cause ? ` (cause: ${(e as { cause?: { code?: string; message?: string } }).cause?.code ?? ""} ${(e as { cause?: { code?: string; message?: string } }).cause?.message ?? ""})` : ""}`, { code: timedOut ? "timeout" : "network", retryable: !timedOut });
         if (err.retryable && attempt < maxRetries) { attempt++; continue; }
         throw err;
       }
