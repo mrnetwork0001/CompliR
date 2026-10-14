@@ -533,3 +533,10 @@
 .brandWord { display: block; height: 14px; width: auto; }
 :root[data-theme="light"] .brand { background: #0a0b0d; padding: 5px 10px; border-radius: var(--radius); }
 @media (prefers-color-scheme: light) { :root:not([data-theme]) .brand { background: #0a0b0d; padding: 5px 10px; border-radius: var(--radius); } }
+
+/* landing header on phones: links move into the menu sheet, burger sits at the right */
+.landingNav { margin-left: auto; }
+@media (max-width: 760px) {
+  .landingLink { display: none; }
+  .landingNav .burger { display: inline-flex; }
+}

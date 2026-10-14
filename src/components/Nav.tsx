@@ -345,6 +345,8 @@ function Sheet({ pathname, onClose, returnTo }: { pathname: string; onClose: () 
           );
         })}
         <div className={styles.sheetFoot}>
+          <Link href="/check" onClick={onClose}>Check an address</Link>
+          <Link href="/docs" onClick={onClose}>Docs</Link>
           <Link href="/" onClick={onClose}>About CompliR</Link>
           <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
@@ -402,11 +404,25 @@ export function Nav() {
         <div className={styles.inner}>
           <Brand href="/" />
           <nav className={styles.landingNav} aria-label="Primary">
-            <Link href="/check" className={styles.link}>Check an address</Link>
-            <Link href="/docs" className={styles.link}>Docs</Link>
+            <Link href="/check" className={`${styles.link} ${styles.landingLink}`}>Check an address</Link>
+            <Link href="/docs" className={`${styles.link} ${styles.landingLink}`}>Docs</Link>
             <ThemeToggle className={styles.theme} />
+            <button
+              ref={burgerRef}
+              type="button"
+              className={styles.burger}
+              aria-label="Open menu"
+              aria-haspopup="dialog"
+              aria-expanded={sheet}
+              onClick={() => setSheet(true)}
+            >
+              <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                <path d="M3 5h14M3 10h14M3 15h14" />
+              </svg>
+            </button>
           </nav>
         </div>
+        {sheet && <Sheet pathname={pathname} onClose={closeSheet} returnTo={burgerRef} />}
       </header>
     );
   }
