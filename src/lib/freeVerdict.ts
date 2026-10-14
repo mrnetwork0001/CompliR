@@ -84,6 +84,8 @@ export interface ScreeningPending {
 export const PENDING_RETRY_AFTER_S = 5;
 
 export interface FreeVerdictDeps {
+  /** called before starting a NEW first-sight screen (not when joining one already running); throw to refuse (rate limit) */
+  admitFirstSight?: () => void;
   /** first sight only: give up waiting after this long and return ScreeningPending; the screen continues server-side */
   maxWaitMs?: number;
   /** schedule work after the response is sent (Next's `after`); defaults to fire-and-forget */
@@ -105,6 +107,7 @@ export async function freeVerdict(address: Address, deps: FreeVerdictDeps = {}):
     }
     return enrich(stored, "store", refreshing);
   }
+  if (!isScreening(address)) deps.admitFirstSight?.();
   const job = screenOnce(address, deps.run);
   let v: Verdict;
   if (deps.maxWaitMs !== undefined) {

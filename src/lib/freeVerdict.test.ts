@@ -114,4 +114,14 @@ describe("freeVerdict", () => {
     const out = await freeVerdict(A, { run, maxWaitMs: 1000 });
     expect(out).toMatchObject({ source: "fresh", decisionId: "dec_fast" });
   });
+
+  it("admitFirstSight runs only for a new first-sight screen and can refuse it", async () => {
+    const admit = vi.fn(() => { throw new Error("limited"); });
+    await expect(freeVerdict(A, { run: vi.fn(), admitFirstSight: admit })).rejects.toThrow("limited");
+    expect(admit).toHaveBeenCalledTimes(1);
+    await seedStored();
+    const admit2 = vi.fn();
+    await freeVerdict(A, { run: vi.fn(), admitFirstSight: admit2 });   // stored read: not counted
+    expect(admit2).not.toHaveBeenCalled();
+  });
 });

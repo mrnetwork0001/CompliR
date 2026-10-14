@@ -43,7 +43,7 @@ export const POST = handle(async (req: Request) => {
   if (!isSameOriginBrowser(req)) {
     const t = bucket.take(clientIp(req));
     if (!t.ok) {
-      throw new ApiError("VALIDATION_ERROR", "Rate limit: 20 checks per minute per IP.", { retryAfterMs: t.retryAfterMs }, 429);
+      throw new ApiError("RATE_LIMITED", "Rate limit: 20 checks per minute per IP.", { retryAfterMs: t.retryAfterMs }, 429, { "Retry-After": String(Math.max(1, Math.ceil(t.retryAfterMs / 1000))) });
     }
   }
   const body = await parseJson(req, CheckRequestSchema);

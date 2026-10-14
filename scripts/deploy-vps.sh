@@ -6,7 +6,7 @@ set -euo pipefail
 HOST="${DEPLOY_HOST:-root@38.49.213.208}"
 KEY="${DEPLOY_KEY:-$HOME/.ssh/id_ed25519}"
 rsync -az --delete --exclude-from=.dockerignore --exclude='.env.production' --exclude='PRESENTER_GUIDE.md' -e "ssh -i $KEY" ./ "$HOST:/opt/complir/"
-ssh -i "$KEY" "$HOST" 'set -e; cd /opt/complir && chown -R root:root .
+ssh -i "$KEY" "$HOST" 'set -eo pipefail; cd /opt/complir && chown -R root:root .
 C="docker compose -f deploy/vps/docker-compose.yml --env-file .env.production"
 wait_healthy() { for i in $(seq 1 60); do s=$(docker inspect -f "{{.State.Health.Status}}" "$1" 2>/dev/null || echo none); [ "$s" = healthy ] && return 0; sleep 2; done; echo "$1 not healthy" >&2; return 1; }
 nice -n 10 $C build app 2>&1 | tail -1

@@ -4,7 +4,7 @@ import type { DocPage } from "./types";
 
 const ERR = `{ "error": { "code": "VALIDATION_ERROR", "message": "…", "details": { … } } }
 
-INVALID_JSON 400 · VALIDATION_ERROR 400 · NOT_FOUND 404 · NOT_IMPLEMENTED 501 · SERVICE_PAUSED 503 · INTERNAL_ERROR 500
+INVALID_JSON 400 · VALIDATION_ERROR 400 · NOT_FOUND 404 · RATE_LIMITED 429 · NOT_IMPLEMENTED 501 · SERVICE_PAUSED 503 · SCREENING_IN_PROGRESS 503 · INTERNAL_ERROR 500
 x402: PAYMENT_MISCONFIGURED 503 · PAYMENT_VERIFY_UNAVAILABLE 502 · PAYMENT_SETTLE_UNAVAILABLE 502 · PAID_BUT_UNDELIVERED 502
 Every response carries X-CompliR-Version: v1 and Cache-Control: no-store (badge, map and company set their own max-age).`;
 
@@ -82,9 +82,10 @@ export const httpApi: DocPage = {
               { k: "source", v: "store = latest stored verdict; fresh = screened by this request." },
               { k: "attestation.registryTx", v: "Filled once the on-chain mirror lands (seconds after the screen). A fresh POST response returns null; read it later from the GET. Only on-chain callers (isAllowed) need to wait for it." },
               { k: "edd", v: "Present when the analyst opened Enhanced Due Diligence questions; MEDIUM mostly. A HIGH on a sanctions or blocklist hit has none, because answers cannot clear it." },
-              { k: "?wait=<s>", v: "Optional on the GET (1-120). On first sight, if the screen takes longer, returns 202 {status: \"screening\", retryAfterSeconds} with a Retry-After header instead of holding the connection; the screen keeps running. Recommended on hot paths with wait=8." },
-              { k: "timeouts", v: "Without ?wait use >= 90 s on the GET (first sight) and >= 120 s on the POST. A shorter client timeout looks like a dropped connection (curl status 000); the screen still finishes and the next GET returns it." },
-              { k: "retries", v: "On 202: wait Retry-After, then GET again. On 502/503/504, a network error or a timeout: retry up to 3 times with backoff (1 s, 2 s, 4 s) before treating CompliR as unreachable. Do not retry 400/404. There is no rate limit on these routes, so there is no 429." },
+              { k: "?wait=<s>", v: "Optional on the GET (1-120). On first sight, if the screen takes longer, returns 202 {status: \"screening\", retryAfterSeconds} with Retry-After; the screen keeps running. Recommended on hot paths with wait=8." },
+              { k: "default wait", v: "Without ?wait the GET waits up to 25 s, then returns 503 SCREENING_IN_PROGRESS with Retry-After: an error, so a client that ignores this API never reads a 2xx without a verdict as a pass. The retry gets the finished screen." },
+              { k: "rate limit", v: "Only new first-sight screens: 30 per minute per IP. Reads of known addresses are unlimited. Every response has RateLimit-Policy; first-sight responses add RateLimit-Limit / -Remaining / -Reset. Over the limit: 429 RATE_LIMITED + Retry-After. /api/v1/check: 20 per minute per IP, same 429 shape." },
+              { k: "retries", v: "On 202, 503 SCREENING_IN_PROGRESS or 429: wait Retry-After, then GET again. On 502/503/504 without Retry-After, a network error or a timeout: retry up to 3 times with backoff (1 s, 2 s, 4 s) before treating CompliR as unreachable. Do not retry 400/404." },
               { k: "fail mode", v: "Only after retries. Recommended default: closed for outbound payments (block or queue for review), open only for small inbound payments, and never silently." },
             ]}
           />

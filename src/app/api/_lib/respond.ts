@@ -11,6 +11,8 @@ export type ErrorCode =
   | "CONFLICT"
   | "NOT_IMPLEMENTED"
   | "SERVICE_PAUSED"
+  | "RATE_LIMITED"
+  | "SCREENING_IN_PROGRESS"
   | "INTERNAL_ERROR";
 
 export interface ErrorBody {
@@ -25,6 +27,8 @@ const STATUS_FOR: Record<ErrorCode, number> = {
   CONFLICT: 409,
   NOT_IMPLEMENTED: 501,
   SERVICE_PAUSED: 503,
+  RATE_LIMITED: 429,
+  SCREENING_IN_PROGRESS: 503,
   INTERNAL_ERROR: 500,
 };
 
@@ -33,12 +37,15 @@ export class ApiError extends Error {
   readonly code: ErrorCode;
   readonly status: number;
   readonly details?: unknown;
-  constructor(code: ErrorCode, message: string, details?: unknown, status?: number) {
+  /** extra response headers (e.g. Retry-After on 429/503) */
+  readonly headers?: Record<string, string>;
+  constructor(code: ErrorCode, message: string, details?: unknown, status?: number, headers?: Record<string, string>) {
     super(message);
     this.name = "ApiError";
     this.code = code;
     this.status = status ?? STATUS_FOR[code];
     this.details = details;
+    this.headers = headers;
   }
 }
 
@@ -80,7 +87,7 @@ export function handle<Ctx = unknown>(fn: Handler<Ctx>): Handler<Ctx> {
     try {
       return await fn(req, ctx);
     } catch (e) {
-      if (e instanceof ApiError) return error(e.code, e.message, e.details, { status: e.status });
+      if (e instanceof ApiError) return error(e.code, e.message, e.details, { status: e.status, headers: e.headers });
       const message = e instanceof Error ? e.message : String(e);
       console.error("[complir/api] unhandled error:", e);
       return error("INTERNAL_ERROR", process.env.NODE_ENV === "production" ? "Internal error" : message);

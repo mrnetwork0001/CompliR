@@ -43,10 +43,18 @@ export class TokenBucket {
   }
 }
 
-/** Best-effort client IP behind common proxies. Falls back to "local". */
+/**
+ * Client IP behind our nginx. X-Real-IP is set by nginx from $remote_addr and cannot be forged by the client;
+ * otherwise use the LAST X-Forwarded-For hop (the one our proxy appended), never the first (client-controlled).
+ */
 export function clientIp(req: Request): string {
   const h = req.headers;
+  const real = h.get("x-real-ip")?.trim();
+  if (real) return real;
   const xff = h.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim() || "local";
-  return h.get("x-real-ip") ?? h.get("cf-connecting-ip") ?? "local";
+  if (xff) {
+    const hops = xff.split(",").map((x) => x.trim()).filter(Boolean);
+    if (hops.length) return hops[hops.length - 1];
+  }
+  return h.get("cf-connecting-ip") ?? "local";
 }
