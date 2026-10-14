@@ -6,7 +6,7 @@ fallback. Nothing here needs credentials to run: without them every call reports
 
 | Role      | Purpose                                                                                     | Default type |
 |-----------|---------------------------------------------------------------------------------------------|--------------|
-| `revenue` | x402 `payTo` (set `X402_PAY_TO` to it); source wallet for the USYC sweep                     | SCA          |
+| `revenue` | x402 `payTo` (set `X402_PAY_TO` to it); source of the Circle Earn yield sweep              | SCA          |
 | `ops`     | gas-paying relayer for `AttestationRegistry.attest(...)` (and `anchorRoot` if it is attester) | SCA          |
 
 Code: `src/lib/circle/{client,wallets,execute}.ts`, signer switch in `src/lib/chain/registryWriter.ts` /
@@ -77,8 +77,9 @@ verdict ──signAttestation(ATTESTER_PRIVATE_KEY, EIP-712)──► attestatio
 6. `SIGNER_MODE=circle`. Keep `ATTESTER_PRIVATE_KEY` (signs EIP-712 off-chain) and `REGISTRY_ADDRESS`.
 7. Check `GET /api/internal/circle` (`Authorization: Bearer $CRON_SECRET`): `effectiveSigner: "circle"`, wallet
    addresses, live balances, policy, hints (e.g. "X402_PAY_TO should be the Circle revenue wallet …").
-8. Optional, USYC: the revenue wallet must be whitelisted for the USYC Teller (docs/USYC.md); `transferUsdc()` /
-   `executeContract({role:"revenue", …})` are available for a Circle-backed sweep (not yet wired into `usyc/sweep.ts`).
+8. Yield: the Circle Earn sweep (docs/YIELD.md) runs `executeContract({role:"revenue", …})` (USDC.approve →
+   vault.deposit / vault.redeem). Contract calls from the revenue wallet are pinned by `policy.contractAllowlist`
+   (`scripts/circle/allow-contracts.ts revenue <USDC> <vault>`); plain transfers (tips, refunds) are unaffected.
 
 ## Dry-run vs live
 

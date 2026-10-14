@@ -28,7 +28,7 @@ npx tsx --env-file=.env.local worker/events.ts      # blocklist reactor, EVENTS_
 npx tsx --env-file=.env.local worker/treasury.ts    # guarded payouts
 npx tsx --env-file=.env.local worker/operator.ts    # operator ticks on its own nextCheck interval
 npx tsx --env-file=.env.local worker/tips.ts        # verify + pay tips, 5 min
-npx tsx --env-file=.env.local worker/usyc.ts        # hourly sweep plan
+npx tsx --env-file=.env.local worker/usyc.ts        # hourly yield tick (Circle Earn)
 npx tsx --env-file=.env.local worker/report.ts      # 00:05 UTC report, back-fills on start, drains refunds every 5 min`;
 
 const YENTE = `docker compose -f docker/yente/docker-compose.yml up -d     # yente 5.5.0 + single-node Elasticsearch 9.4.2, 2 GB heap
@@ -128,7 +128,8 @@ export const selfHosting: DocPage = {
             rows={[
               { k: "TREASURY_*", v: "MODE (live), PRIVATE_KEY, GUARDED_TREASURY_ADDRESS, MAX_TIER (MEDIUM), PER_PAYOUT_CAP_USDC (25), DAILY_CAP_USDC (50), REQUIRE_ONCHAIN" },
               { k: "TRUSTMAP_*", v: "MIN_USDC (25), REGRADE_HOURS (24), MAX_PER_TICK (5), SEED_DEMO (1)" },
-              { k: "USYC_*", v: "MODE (dry), FLOAT_USDC (5), MIN_SWEEP_USDC (1); REVENUE_WALLET / REVENUE_PRIVATE_KEY; USYC_ADDRESS / TELLER / ENTITLEMENTS default to Arc mainnet" },
+              { k: "YIELD_*", v: "BACKEND (earn | usyc), MODE (dry), FLOAT_USDC (5), MIN_SWEEP_USDC (1), MAX_SWEEP_USDC (25), MIN_TVL_USDC (100000), REQUIRE_SENTINEL (1), LIQUIDITY_MULTIPLE (2), VAULT (pin); docs/YIELD.md" },
+              { k: "USYC_*", v: "(YIELD_BACKEND=usyc only) MODE (dry), FLOAT_USDC (5), MIN_SWEEP_USDC (1); REVENUE_WALLET / REVENUE_PRIVATE_KEY; USYC_ADDRESS / TELLER / ENTITLEMENTS default to Arc mainnet" },
               { k: "EVENTS_*", v: "TICK_MS (20000), MAX_BLOCKS (500), MAX_LAG (5000), RPC_BUDGET (12), SCREENED_DAYS (30)" },
               { k: "NETWORK_*", v: "WINDOW_DAYS (7), MIN_CONCENTRATION (3)" },
               { k: "OPERATOR_*", v: "RAISE_CALLS_24H (50), MAX_P95_MS (8000)" },
@@ -175,7 +176,7 @@ export const selfHosting: DocPage = {
               ["operator", "hourly :30", "own interval", "snapshot → candidates → model → execute → one OPERATOR entry"],
               ["tips", "15 min", "5 min", "verify submitted tips, pay bounties, drop stale stakes"],
               ["refunds", "10 min", "via report worker", "send queued refunds up to the daily cap"],
-              ["usyc", "hourly", "hourly", "plan DEPOSIT / REDEEM / NONE, log a NOOP · USYC_SWEEP entry, execute only when live"],
+              ["usyc", "hourly", "hourly", "plan DEPOSIT / REDEEM / NONE into a Circle Earn vault; NOOP · YIELD_PLAN, or OPERATOR · YIELD_SWEEP / YIELD_REDEEM when it moved funds (live only)"],
               ["report", "00:05 UTC", "00:05 UTC", "generate, hash, sign and ledger the previous day"],
             ]}
           />

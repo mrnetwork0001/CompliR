@@ -49,7 +49,7 @@ export const ledgerReports: DocPage = {
           <Code lang="pseudo" code={CHAIN} />
           <Kv
             rows={[
-              { k: "Kinds", v: "SCREEN · RESCREEN · TIER_CHANGE · EDD_RESPONSE · NOOP (USYC sweeps) · ANCHOR · PAYOUT · OPERATOR · TIP · REFUND · REPORT" },
+              { k: "Kinds", v: "SCREEN · RESCREEN · TIER_CHANGE · EDD_RESPONSE · NOOP (yield plans) · OPERATOR (operator ticks, executed YIELD_SWEEP / YIELD_REDEEM) · ANCHOR · PAYOUT · OPERATOR · TIP · REFUND · REPORT" },
               { k: "Append", v: "serialised in-process so seq is contiguous; id = dec_ + base36 time + seq + random" },
               { k: "Privacy", v: "payloads never include another client's book; EDD answers are logged only as keccak(answers); tip submitters are anonymised" },
               { k: "Anchoring today", v: "pending: anchorRoot needs the deployed registry and the attester key; entries accumulate with anchorTx null and anchor in one batch after the deploy" },

@@ -82,7 +82,7 @@ export const httpApi: DocPage = {
               { k: "events", v: "blocklist reactor tick · POST { simulate } = drill" },
               { k: "refunds", v: "process the refund queue · POST manual refund / requeue" },
               { k: "tips", v: "verify + pay tips · POST { review, decision } human override" },
-              { k: "usyc", v: "revenue sweep plan (dry-run unless USYC_MODE=live)" },
+              { k: "usyc", v: "revenue yield tick: Circle Earn vault sweep (dry-run unless YIELD_MODE=live; YIELD_BACKEND=usyc for the legacy USYC Teller)" },
               { k: "report", v: "generate + sign a daily report (?date=, &force=1)" },
               { k: "circle", v: "Circle wallet status · POST { provision: true }" },
             ]}

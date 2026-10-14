@@ -67,7 +67,7 @@ export const mainnetChecklist: DocPage = {
             ["Circle Developer-Controlled Wallets (revenue 0x9b0d…977e, ops 0xa494…7c69, SCA on ARC)", <Status key="s" kind="live">live</Status>, "provisioned; registry writes relay through the ops wallet with Gas Station sponsored gas (ERC-4337 EntryPoint); local attester key is the fallback"],
             ["x402 charging (0.01 USDC / screen, Circle Facilitator, eip155:5042)", <Status key="s" kind="live">live</Status>, "first real settlement landed in the revenue wallet"],
             ["Auto-refunds, tip bounties", <Status key="s" kind="live">live via Circle revenue wallet</Status>, "sent from the Circle revenue wallet; Gas Station policy active"],
-            ["USYC revenue sweep", <Status key="s" kind="dry-run">dry-run</Status>, "step 5 (needs Circle USYC onboarding)"],
+            ["Revenue yield sweep (Circle Earn · Steakhouse Prime USDC 0xbeef0016…7298)", <Status key="s" kind="live">live · moves only above the float</Status>, "YIELD_MODE=live; Circle revenue wallet approve → deposit / redeem; today 2.02 USDC < 5 float → NONE (step 5)"],
             ["ERC-8004 identity", <Status key="s" kind="pending">pending</Status>, "step 6"],
             ["Hosted URL, yente in production", <Status key="s" kind="pending">pending</Status>, "a host + libSQL URL; a yente container the host can reach"],
           ]}
@@ -137,26 +137,30 @@ export const mainnetChecklist: DocPage = {
     },
     {
       id: "usyc",
-      title: "5 · USYC whitelisting",
+      title: "5 · Revenue yield (Circle Earn)",
       body: (
         <>
           <p>
-            USYC is permissioned: the token and the Teller consult the Entitlements contract on every deposit, redeem and transfer, and revert for wallets that are not
-            allow-listed. Entitlement comes only from investor onboarding with Circle (questionnaire, KYC/AML, wallet screening, address whitelisting) and is not offered to U.S.
-            persons. Until the revenue wallet is entitled, <code>USYC_MODE=live</code> would only produce reverted <code>deposit</code> calls, logged and not retried blindly.
+            Idle revenue goes into a Circle Earn vault on Arc: Morpho USDC vaults (ERC-4626, Morpho Vault V2) with no allowlist and no minimum. The planner reads Circle&apos;s
+            Earn API (<code>GET api.circle.com/v1/earnKit/vaults/explore?chain=ARC</code>, keyless), refuses any vault Circle flags <code>low_liquidity</code>, any RED warning or
+            unlisted vault, requires Circle Sentinel coverage and TVL ≥ 100k, and only uses a vault whose available liquidity is at least 2× what we would need to redeem. The best
+            APY among the rest wins; today that is <strong>Steakhouse Prime USDC</strong> <code>0xbeef0016cb2fd5c352ea7ca08a9f54739dfa7298</code> (≈3.1%).
           </p>
           <ol>
-            <li>Complete Circle&apos;s USYC investor onboarding for the revenue wallet (<code>docs/USYC.md</code>); check with the public entitlement endpoint.</li>
             <li>
-              <code>REVENUE_PRIVATE_KEY</code> for the <code>X402_PAY_TO</code> wallet with a little USDC for gas (or a Circle-backed sweep once wired).
+              <code>YIELD_MODE=live</code> (default <code>YIELD_BACKEND=earn</code>); <code>REVENUE_WALLET</code>/<code>X402_PAY_TO</code> must be the Circle revenue wallet.
             </li>
             <li>
-              <code>USYC_MODE=live</code>; tune <code>USYC_FLOAT_USDC</code> to cover an hour of refunds and gas.
+              Pin the revenue wallet&apos;s contract calls to USDC + the vault:{" "}
+              <code>npx tsx --env-file=.env.local scripts/circle/allow-contracts.ts revenue 0x3600…0000 0xbeef0016…7298</code> (tips and refunds are plain transfers and stay unaffected).
+            </li>
+            <li>
+              Keep <code>YIELD_FLOAT_USDC</code> (5) + obligations due 48 h liquid; deposits are capped at <code>YIELD_MAX_SWEEP_USDC</code> (25 = the per-tx policy).
             </li>
           </ol>
           <p>
-            Contracts on Arc mainnet: USYC <code>0x8a5D…F490</code>, Teller <code>0x51A8…0f9b</code>, Entitlements <code>0xb69e…ca72</code>. Keep dry-run for the demo and show the
-            logged plans on <Link href="/ledger">/ledger</Link> (<code>NOOP · USYC_SWEEP</code>).
+            Each executed move is logged as <code>OPERATOR · YIELD_SWEEP</code> / <code>YIELD_REDEEM</code> with tx hashes on <Link href="/ledger">/ledger</Link>; plans that move nothing
+            are <code>NOOP · YIELD_PLAN</code>. USYC (permissioned, ~100k minimum) stays available as <code>YIELD_BACKEND=usyc</code>: see <code>docs/YIELD.md</code>.
           </p>
         </>
       ),
