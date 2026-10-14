@@ -89,7 +89,7 @@ export const welcome: DocPage = {
                 k: "GuardedTreasury",
                 v: (
                   <>
-                    <Addr note="GuardedTreasury · live · payouts gated by isAllowed(payee, MEDIUM)">0x5465f31a6155E3eCCcC35f4E5bDC0e287763B0ee</Addr>
+                    <Addr note="GuardedTreasury · live · payouts gated by isAllowed(payee, MEDIUM)">0x3B13186a1E4b1108eA5CB2f8853D84A2aeD71Cc5</Addr>
                   </>
                 ),
               },

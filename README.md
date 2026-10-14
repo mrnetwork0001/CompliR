@@ -10,7 +10,7 @@ CompliR **never holds client funds**. It screens; your wallet or contract pays.
 | Live | local: `npm run dev` → http://localhost:3000 · hosted: _pending_ |
 | Trust Map / Payouts | `/map` · `/payouts` |
 | Registry (Arc mainnet 5042) | [`0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d`](https://explorer.arc.io/address/0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d) · verified on Sourcify · first attestation [tx](https://explorer.arc.io/tx/0xb29418cfa4630ef52333947f9ddca2851948934dbe1720f02172f245d54a073e) · first Merkle anchor [tx](https://explorer.arc.io/tx/0x6df814a6085dc67003ca449291e6c7ec2554bbe808244054f205e5ad352eee84) |
-| GuardedTreasury (Arc mainnet) | [`0x5465f31a6155E3eCCcC35f4E5bDC0e287763B0ee`](https://explorer.arc.io/address/0x5465f31a6155E3eCCcC35f4E5bDC0e287763B0ee) · verified · first live payouts: [PAID 10 USDC](https://explorer.arc.io/tx/0x83732d7451aca960b7c446d099e6bc9a521b81a8e2f0fd231457bf9add7af930), [LIMITED to 10 USDC](https://explorer.arc.io/tx/0xeb2a6ba05f058a2e3a7c4ab6958f5e665b35be0f876251173ac8c59b4072a34c), HELD (sanctioned demo payee) |
+| GuardedTreasury v2 (Arc mainnet) | [`0x3B13186a1E4b1108eA5CB2f8853D84A2aeD71Cc5`](https://explorer.arc.io/address/0x3B13186a1E4b1108eA5CB2f8853D84A2aeD71Cc5) · verified · `releaseWithProof` emits the verdict's decision hash with every payment: [first proof payout](https://explorer.arc.io/tx/0x15ee6653154af48122eeb01297c0b707e7c23d5be2e7437022d06a7845923011) · v1 [`0x5465f31a…`](https://explorer.arc.io/address/0x5465f31a6155E3eCCcC35f4E5bDC0e287763B0ee) retired |
 | Numbers (honest, own wallets excluded) | `/numbers` |
 | Video | _pending_ |
 

@@ -7,7 +7,7 @@ const SHADOW_REQ = `POST /api/v1/shadow                         # free during th
   "payeeBook": [                                   // the same book /shadow offers as its example - all real addresses
     { "label": "Ronin Bridge exploiter (Lazarus Group - sanctioned)", "address": "0x098b716b8aaf21512996dc57eb0615e2383e2f96" },
     { "label": "CompliR treasury wallet",                            "address": "0xc742ada2872a042dd36d2e706907b4036968960c" },
-    { "label": "GuardedTreasury contract",                           "address": "0x5465f31a6155e3ecccc35f4e5bdc0e287763b0ee" },
+    { "label": "GuardedTreasury contract",                           "address": "0x3b13186a1e4b1108ea5cb2f8853d84a2aed71cc5" },
     { "label": "CompliR treasury wallet (new invoice - lookalike)",  "address": "0xc7420000000000000000000000000000000a960c" }
   ],
   "recentPayments": [
