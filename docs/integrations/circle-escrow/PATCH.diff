@@ -8,7 +8,7 @@ index 567b6cc..dd58303 100644
  GOOGLE_CLIENT_SECRET=
 +
 +# Optional: CompliR counterparty screening (https://github.com/mrnetwork0001/complir). Leave unset to disable.
-+# COMPLIR_URL=https://complir.example
++# COMPLIR_URL=https://trycomplir.xyz
 +# COMPLIR_REGISTRY=0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d
 diff --git a/README.md b/README.md
 index caa77c7..9b0fe2f 100644

@@ -1,7 +1,7 @@
 /** CompliR popup: flagged addresses on the current tab, quick check, host setting. */
 (async function () {
   const P = globalThis.ComplirParser;
-  const DEFAULT_URL = "https://complir.example";
+  const DEFAULT_URL = "https://trycomplir.xyz";
   const $ = (id) => document.getElementById(id);
   const { complirUrl } = await chrome.storage.local.get("complirUrl");
   const base = (complirUrl || DEFAULT_URL).replace(/\/+$/, "");

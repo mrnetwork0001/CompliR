@@ -28,4 +28,4 @@ Stack: Next.js App Router (eslint-config-next 16 flat config; React Compiler rul
 - When disabled, the only cost is one extra server-action round trip (auth check) per payment; `complirCheck` returns before any network call.
 - Not verified: no `npm ci`, `tsc`, `eslint` or vitest run in the clone (untrusted download). `tests/unit` does not cover `app/actions` or `wallet-tab.tsx`, so no existing test exercises the changed paths. Patch verified with `git apply --check` on a clean `499d1f5`.
 - No CONTRIBUTING.md, no CLA bot config, no CI workflow in the repo; `SECURITY.md` is HackerOne-only.
-- Hosted CompliR URL is a placeholder (`https://complir.example`).
+- Hosted CompliR URL is a placeholder (`https://trycomplir.xyz`).

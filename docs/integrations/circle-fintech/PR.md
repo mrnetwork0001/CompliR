@@ -23,7 +23,7 @@ The Compliance Engine screen runs in the browser and is advisory from the server
 
 ```
 # .env.local
-COMPLIR_URL=https://complir.example      # the hosted CompliR URL
+COMPLIR_URL=https://trycomplir.xyz      # the hosted CompliR URL
 ```
 
 ## Opt-in and non-breaking

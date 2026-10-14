@@ -34,4 +34,4 @@ Stack: Next.js 16.3.6 / React 19, TypeScript 5 strict, ESM, Supabase (service-ro
 - K1 (`serviceRequired`) is intentionally not extended to count CompliR as "the service"; that is a product decision for them.
 - `amountUsdc` sent to CompliR is the counterparty's baseline (or current) limit, which is the per-payment amount Vestiarion would allow; CompliR scales its recommended limits by tier regardless.
 - `compliance_checks.source` becomes `"complir"` only when CompliR produced the stricter verdict, otherwise the name-screening source stays; the notes always carry both.
-- Hosted CompliR URL pending (`https://complir.example` placeholder).
+- Hosted CompliR URL pending (`https://trycomplir.xyz` placeholder).

@@ -18,7 +18,7 @@ Load unpacked
    or download the zip from `/tools` on a CompliR host. Unzip it.
 2. Open `chrome://extensions` (or `brave://extensions`, `edge://extensions`) and switch on **Developer mode**.
 3. **Load unpacked** and choose the unzipped folder (the one containing `manifest.json`).
-4. Click the toolbar icon, set the CompliR host (default `https://complir.example`; `http://localhost:3000` for a dev server), Save.
+4. Click the toolbar icon, set the CompliR host (default `https://trycomplir.xyz`; `http://localhost:3000` for a dev server), Save.
 
 Files
 

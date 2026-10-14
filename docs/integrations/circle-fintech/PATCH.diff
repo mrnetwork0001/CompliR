@@ -10,7 +10,7 @@ index e55ee74..f65a5c0 100644
 +# Optional: CompliR counterparty screening (https://github.com/mrnetwork0001/complir).
 +# When set, /api/payout and /api/wallet/transfer refuse HIGH-risk recipients with
 +# a 403, beside the Compliance Engine check. Leave unset to disable.
-+# COMPLIR_URL=https://complir.example
++# COMPLIR_URL=https://trycomplir.xyz
 diff --git a/README.md b/README.md
 index f7e8f52..72fa745 100644
 --- a/README.md

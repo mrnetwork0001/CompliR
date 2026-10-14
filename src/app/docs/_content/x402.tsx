@@ -21,7 +21,7 @@ const REQUIRED = `// 402 body and PAYMENT-REQUIRED (base64 of the same object)
 {
   "x402Version": 2,
   "error": "PAYMENT-SIGNATURE header is required",
-  "resource": { "url": "https://complir.example/api/v1/screen", "description": "CompliR screen: one address", "mimeType": "application/json" },
+  "resource": { "url": "https://trycomplir.xyz/api/v1/screen", "description": "CompliR screen: one address", "mimeType": "application/json" },
   "accepts": [{
     "scheme": "exact", "network": "eip155:5042", "amount": "10000",            // 0.01 USDC in 6-dp atomic units
     "asset": "0x3600000000000000000000000000000000000000", "payTo": "0x…",    // X402_PAY_TO (the Circle revenue wallet)

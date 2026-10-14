@@ -26,7 +26,7 @@ The vendor registry proves the approver once accepted an address; it cannot see 
 
 ```
 # .env
-COMPLIR_URL=https://complir.example      # the hosted URL (ask us; mainnet 13 Oct)
+COMPLIR_URL=https://trycomplir.xyz      # the hosted URL (ask us; mainnet 13 Oct)
 COMPLIR_PAYER_PRIVATE_KEY=0x...          # small USDC purse that pays 0.01 USDC per screen over x402 (not the treasury wallet)
 ```
 ```

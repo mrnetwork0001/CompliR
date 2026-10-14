@@ -14,8 +14,8 @@ Every patch is additive and opt-in: with `COMPLIR_URL` unset (and `complir == ad
 
 ## Before submitting
 
-1. Replace the placeholder `https://complir.example` in each `PR.md` with the hosted URL once it exists
-   (`grep -n complir.example docs/integrations/*/PR.md`). For CeedeBooks also add the `AttestationRegistry` address after the mainnet deploy.
+1. Replace the placeholder `https://trycomplir.xyz` in each `PR.md` with the hosted URL once it exists
+   (`grep -n trycomplir.xyz docs/integrations/*/PR.md`). For CeedeBooks also add the `AttestationRegistry` address after the mainnet deploy.
 2. Decide whether to allowlist each team's agent address (free screenings during Tameion, `X402_DISABLED` per client is not
    implemented yet — today it is global), since every PR body promises it.
 3. Optional: run the targets' own test suites in your fork before opening the PR (they were deliberately not run here;
@@ -70,4 +70,4 @@ submit circlefin/arc-p2p-payments       circle-p2p-payments
 submit circlefin/arc-ecommerce-payments circle-ecommerce-payments
 ```
 
-Before submitting, replace `https://complir.example` in the four `PR.md` bodies (`grep -n complir.example docs/integrations/circle-*/PR.md`). For arc-escrow, decide whether to also recompile `RefundProtocol.sol` and refresh `REFUND_PROTOCOL_BYTECODE` / `REFUND_PROTOCOL_ABI_JSON` in `lib/constants.ts` in the same PR; the patch leaves them untouched and says so.
+Before submitting, replace `https://trycomplir.xyz` in the four `PR.md` bodies (`grep -n trycomplir.xyz docs/integrations/circle-*/PR.md`). For arc-escrow, decide whether to also recompile `RefundProtocol.sol` and refresh `REFUND_PROTOCOL_BYTECODE` / `REFUND_PROTOCOL_ABI_JSON` in `lib/constants.ts` in the same PR; the patch leaves them untouched and says so.

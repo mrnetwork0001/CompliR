@@ -35,7 +35,7 @@ Environment:
 Client config (full snippets for Claude Desktop, Cursor and HTTP in `packages/mcp/README.md`):
 
 ```sh
-claude mcp add complir -e COMPLIR_URL=https://complir.example -e COMPLIR_PAYER_PRIVATE_KEY=0x… -- node /abs/path/complir/packages/mcp/bin/complir-mcp.mjs
+claude mcp add complir -e COMPLIR_URL=https://trycomplir.xyz -e COMPLIR_PAYER_PRIVATE_KEY=0x… -- node /abs/path/complir/packages/mcp/bin/complir-mcp.mjs
 ```
 
 ## Tools

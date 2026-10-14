@@ -31,4 +31,4 @@ Stack: Next.js (App Router, `next: latest`), Supabase, Circle Developer-Controll
 - `encodeURIComponent(address)` guards the URL; the route validates addresses by regex earlier only in the deposit flow, not in validate-work.
 - Not verified: no `npm install`, build, lint or test was run in the clone (untrusted download). TS was read carefully against the existing imports and helpers; the patch was verified with `git apply --check` on a clean checkout of `d5006bc`.
 - Repo has no CONTRIBUTING.md and no CLA bot config; `SECURITY.md` only covers vulnerability reporting via HackerOne. The `.github/workflows/workflow.yml` is a traffic-stats cron, not CI.
-- Hosted CompliR URL is still a placeholder (`https://complir.example`); fill it in before submitting.
+- Hosted CompliR URL is still a placeholder (`https://trycomplir.xyz`); fill it in before submitting.

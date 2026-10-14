@@ -24,11 +24,11 @@ const SHADOW_REQ = `POST /api/v1/shadow                         # free during th
 }`;
 
 const BADGE = `<!-- Markdown -->
-[![Screened by CompliR](https://complir.example/api/v1/badge/0xPayee.svg)](https://complir.example/api/v1/attestation/0xPayee)
+[![Screened by CompliR](https://trycomplir.xyz/api/v1/badge/0xPayee.svg)](https://trycomplir.xyz/api/v1/attestation/0xPayee)
 
 <!-- HTML -->
-<a href="https://complir.example/api/v1/attestation/0xPayee">
-  <img src="https://complir.example/api/v1/badge/0xPayee.svg" alt="Screened by CompliR" height="20">
+<a href="https://trycomplir.xyz/api/v1/attestation/0xPayee">
+  <img src="https://trycomplir.xyz/api/v1/badge/0xPayee.svg" alt="Screened by CompliR" height="20">
 </a>`;
 
 export const shadowBadge: DocPage = {

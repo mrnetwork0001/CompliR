@@ -39,4 +39,4 @@ The brief asked for a TS/JS check before proposing a payment. CeedeBooks has no 
 - `BudgetFactory` deploys `new BudgetEnforcerV2(...)`, so the gate exists only in enforcers created by a *redeployed* factory. The deployed v1 enforcer (the live pool) cannot gain it. Stated in the PR.
 - The "Node tests check selectors against the compiled output" (CI comment) — only additive functions/events were introduced; no existing selector changed.
 - Patch is 265 lines, above the 150 target, because it carries two integrations (Python + Solidity) plus their tests and the vendored interface (44). Without tests/interface it is ~110.
-- Hosted CompliR URL and the registry address are pending (`https://complir.example` placeholder; registry deploys 13 Oct).
+- Hosted CompliR URL and the registry address are pending (`https://trycomplir.xyz` placeholder; registry deploys 13 Oct).

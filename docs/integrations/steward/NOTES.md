@@ -28,4 +28,4 @@ Stack: Python 3.11 agent (`agent/`, asyncio, httpx, web3 7, eth-account 0.13, un
 - x402 signing in Python mirrors `packages/sdk/src/index.ts` (scheme `exact`, `eip155:*`, `PAYMENT-REQUIRED` base64 header with JSON-body fallback, 1 USDC cap). Not executed here (`eth_account` not installed locally); `Account.sign_typed_data(key, domain, types, message)` is the eth-account ≥0.11 signature. Syntax-checked with `ast.parse`.
 - The agent's own signer may be a Circle wallet (`SIGNER=circle`); the x402 purse is a separate local key by design (0.01 USDC per call). Without it a 402 is logged and ignored.
 - Fail-open on outage (warn, continue) matches how they treat a stale signals cache; CompliR never loosens a decision.
-- Hosted CompliR URL is still pending (`https://complir.example` placeholder); the user should fill it into the PR body before submitting.
+- Hosted CompliR URL is still pending (`https://trycomplir.xyz` placeholder); the user should fill it into the PR body before submitting.

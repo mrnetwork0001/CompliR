@@ -25,7 +25,7 @@ const VERDICT = `{
   ],
   "rationale": "…written by the Risk Analyst, identifiers verified against the evidence…",
   "eddRequested": ["Please confirm the relationship with 0xB and the source of funds behind it."],
-  "edd": { "id": "edd_…", "url": "https://complir.example/edd/edd_…" },
+  "edd": { "id": "edd_…", "url": "https://trycomplir.xyz/edd/edd_…" },
   "nextRescreenAt": "2026-10-10T03:00:00Z",
   "attestation": {
     "typedData": { "domain": { "name": "CompliR", "version": "1", "chainId": 5042, "verifyingContract": "0x…" },

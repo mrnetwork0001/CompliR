@@ -3,7 +3,7 @@
  *
  *   import { CompliR } from "@complir/sdk";
  *   import { privateKeyToAccount } from "viem/accounts";
- *   const c = new CompliR({ baseUrl: "https://complir.example", account: privateKeyToAccount(PK) });
+ *   const c = new CompliR({ baseUrl: "https://trycomplir.xyz", account: privateKeyToAccount(PK) });
  *   const v = await c.screen("0xPayee", { amountUsdc: 120 });          // pays 0.01 USDC via x402 (exact / EIP-3009)
  *   if (v.tier === "HIGH") hold(); else pay(Math.min(amount, v.recommendedLimits.maxPerTxUsdc));
  *   await c.watch("0xPayee", { webhookUrl: "https://me/complir" });     // 0.05 USDC / 30 days
@@ -107,7 +107,7 @@ export interface PaymentReceipt {
 export type X402Signer = Pick<LocalAccount, "address" | "signTypedData">;
 
 export interface CompliROptions {
-  /** e.g. https://complir.example (no trailing slash needed) */
+  /** e.g. https://trycomplir.xyz (no trailing slash needed) */
   baseUrl: string;
   /** viem account that pays (privateKeyToAccount, Circle wallet adapter, ...). */
   account: X402Signer;

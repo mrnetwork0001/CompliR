@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 const CHAIN_ID = 5042;
 
-const CURL = `curl -s -X POST https://complir.example/api/v1/screen \\
+const CURL = `curl -s -X POST https://trycomplir.xyz/api/v1/screen \\
   -H 'Content-Type: application/json' \\
   -d '{ "address": "0xPayee", "amountUsdc": 120 }'
 # → 402 + x402 requirements; your client pays 0.01 USDC and retries

@@ -9,7 +9,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { CompliR, CompliRPaymentError, atomicToUsdc, readPaymentRequired, type PaymentRequired } from "../../sdk/src/index";
 
 export interface ApiOptions {
-  /** CompliR deployment, e.g. https://complir.example or http://localhost:3000. */
+  /** CompliR deployment, e.g. https://trycomplir.xyz or http://localhost:3000. */
   baseUrl: string;
   /** 0x-prefixed private key of a wallet holding USDC on Arc. Optional: only paid endpoints need it. */
   payerPrivateKey?: string;

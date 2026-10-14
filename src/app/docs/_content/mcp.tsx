@@ -6,7 +6,7 @@ const CLAUDE_CODE = `# Claude Code - free local deployment (X402_DISABLED=1)
 claude mcp add complir -e COMPLIR_URL=http://localhost:3000 -- node /abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs
 
 # with payments on an x402-enabled deployment
-claude mcp add complir -e COMPLIR_URL=https://complir.example -e COMPLIR_PAYER_PRIVATE_KEY=0x… \\
+claude mcp add complir -e COMPLIR_URL=https://trycomplir.xyz -e COMPLIR_PAYER_PRIVATE_KEY=0x… \\
   -- node /abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs`;
 
 const DESKTOP = `// Claude Desktop (claude_desktop_config.json) · Cursor (.cursor/mcp.json) - same shape
@@ -15,13 +15,13 @@ const DESKTOP = `// Claude Desktop (claude_desktop_config.json) · Cursor (.curs
     "complir": {
       "command": "node",
       "args": ["/abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs"],
-      "env": { "COMPLIR_URL": "https://complir.example", "COMPLIR_PAYER_PRIVATE_KEY": "0x…", "COMPLIR_MAX_PRICE_USDC": "0.1" }
+      "env": { "COMPLIR_URL": "https://trycomplir.xyz", "COMPLIR_PAYER_PRIVATE_KEY": "0x…", "COMPLIR_MAX_PRICE_USDC": "0.1" }
     }
   }
 }`;
 
 const HTTP = `# Streamable HTTP for remote agents / mcp-remote (stateless, endpoint /mcp; put your own auth in front before exposing it)
-COMPLIR_URL=https://complir.example node packages/mcp/bin/complir-mcp.mjs --http 3333
+COMPLIR_URL=https://trycomplir.xyz node packages/mcp/bin/complir-mcp.mjs --http 3333
 # → http://127.0.0.1:3333/mcp`;
 
 export const mcp: DocPage = {

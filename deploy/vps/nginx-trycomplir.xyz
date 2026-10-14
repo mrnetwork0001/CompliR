@@ -1,10 +1,10 @@
-# Host nginx site for complir.xyz -> /etc/nginx/sites-available/complir.xyz, linked into sites-enabled.
-# Plain HTTP first; `certbot --nginx -d complir.xyz -d www.complir.xyz` then adds HTTPS + redirect here.
+# Host nginx site for trycomplir.xyz -> /etc/nginx/sites-available/trycomplir.xyz, linked into sites-enabled.
+# Plain HTTP first; `certbot --nginx -d trycomplir.xyz -d www.trycomplir.xyz` then adds HTTPS + redirect here.
 # Always `nginx -t` before `systemctl reload nginx`.
 server {
     listen 80;
     listen [::]:80;
-    server_name complir.xyz www.complir.xyz;
+    server_name trycomplir.xyz www.trycomplir.xyz;
 
     client_max_body_size 6m;   # invoice PDFs up to 5 MB
 

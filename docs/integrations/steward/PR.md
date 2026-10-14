@@ -24,7 +24,7 @@ The README's "Wrong vendor" row is a denylist checked once per decision plus Arc
 
 ```
 # agent/.env
-COMPLIR_URL=https://complir.example          # the hosted URL (ask us; mainnet 13 Oct)
+COMPLIR_URL=https://trycomplir.xyz          # the hosted URL (ask us; mainnet 13 Oct)
 COMPLIR_PAYER_PRIVATE_KEY=0x...              # a small USDC purse on Arc that pays 0.01 USDC per screen over x402
 ```
 

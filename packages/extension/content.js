@@ -30,7 +30,7 @@
     for (const el of document.querySelectorAll("input")) guard(el);
   });
 
-  function reportUrl(address) { return (base || "https://complir.example") + "/a/" + address; }
+  function reportUrl(address) { return (base || "https://trycomplir.xyz") + "/a/" + address; }
 
   // ── chip ──
   function makeChip(address) {

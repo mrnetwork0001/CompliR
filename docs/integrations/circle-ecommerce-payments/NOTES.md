@@ -28,4 +28,4 @@ Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind v4, wagmi/viem/Rain
 - `server-only` is already a transitive import in every route, so the new `import "server-only"` adds no dependency.
 - Not verified: CI's `npm ci` / `tsc` / `lint` / `build` were deliberately not run in the clone (untrusted download; `--legacy-peer-deps` suggests a fragile install). The TS was read against the existing types and imports. Patch verified with `git apply --check` on a clean `be2017d`. CI on the fork will be the first real type-check.
 - No CONTRIBUTING.md, no CLA bot config; `SECURITY.md` is HackerOne-only. This is the only one of the four repos with a PR CI workflow.
-- Hosted CompliR URL is a placeholder (`https://complir.example`).
+- Hosted CompliR URL is a placeholder (`https://trycomplir.xyz`).

@@ -27,4 +27,4 @@ Stack: Next.js App Router (eslint-config-next 16 flat config, `core-web-vitals` 
 - `console.warn` is allowed by the eslint config (no `no-console` rule in `core-web-vitals`); the codebase already uses `console.error`/`console.log` in routes.
 - Not verified: no `npm ci`, `tsc`, `eslint` or `vitest` run in the clone (untrusted download; `@crcl-main/onramp-kit` also needs a private registry). The vitest suite under `tests/` does not cover `/api/payout` or `/api/wallet/transfer` by filename, so no existing test exercises the gated code paths. Patch verified with `git apply --check` on a clean `0b10d38`.
 - No CONTRIBUTING.md, no CLA bot config, no CI workflow in the repo; `SECURITY.md` is HackerOne-only.
-- Hosted CompliR URL is a placeholder (`https://complir.example`).
+- Hosted CompliR URL is a placeholder (`https://trycomplir.xyz`).

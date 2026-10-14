@@ -4,18 +4,18 @@ import type { DocPage } from "./types";
 
 const QUICK_CURL = `# Screen one payee. Over x402 the first call answers 402 + PAYMENT-REQUIRED; an x402 client
 # (the SDK, the MCP server) signs 0.01 USDC and retries. With X402_DISABLED=1 (local dev) it is free.
-curl -s -X POST https://complir.example/api/v1/screen \\
+curl -s -X POST https://trycomplir.xyz/api/v1/screen \\
   -H 'Content-Type: application/json' \\
   -d '{ "address": "0x098b716b8aaf21512996dc57eb0615e2383e2f96", "amountUsdc": 120 }' | jq '{tier, score, recommendedLimits}'
 # ↑ a real sanctioned wallet (Ronin Bridge exploiter, OFAC SDN + JP MOF): expect tier HIGH, score 100, limits 0/0
 
 # Free: the latest signed attestation for any address
-curl -s https://complir.example/api/v1/attestation/0x098b716b8aaf21512996dc57eb0615e2383e2f96`;
+curl -s https://trycomplir.xyz/api/v1/attestation/0x098b716b8aaf21512996dc57eb0615e2383e2f96`;
 
 const QUICK_SDK = `import { CompliR } from "@complir/sdk";
 import { privateKeyToAccount } from "viem/accounts";
 
-const c = new CompliR({ baseUrl: "https://complir.example", account: privateKeyToAccount(PAYER_KEY) });
+const c = new CompliR({ baseUrl: "https://trycomplir.xyz", account: privateKeyToAccount(PAYER_KEY) });
 
 const v = await c.screen("0xPayee", { amountUsdc: 120, payeeBook: myPayees }); // 0.01 USDC via x402
 if (v.tier === "HIGH") hold();
@@ -109,7 +109,7 @@ export const welcome: DocPage = {
       body: (
         <>
           <p>
-            The same verdict, three ways in. Replace <code>https://complir.example</code> with your deployment; the hosted URL is pending and a local <code>npm run dev</code> answers
+            The same verdict, three ways in. Replace <code>https://trycomplir.xyz</code> with your deployment; the hosted URL is pending and a local <code>npm run dev</code> answers
             on <code>http://localhost:3000</code> with x402 disabled.
           </p>
           <h3>curl</h3>

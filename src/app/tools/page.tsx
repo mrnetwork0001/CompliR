@@ -77,7 +77,7 @@ export default function ToolsPage() {
           </div>
           <div>
             <pre><code>{`TELEGRAM_BOT_TOKEN=123:abc \\
-COMPLIR_URL=${process.env.PUBLIC_BASE_URL ?? "https://complir.example"} \\
+COMPLIR_URL=${process.env.PUBLIC_BASE_URL ?? "https://trycomplir.xyz"} \\
 BOT_WEBHOOK_SECRET=change-me \\
 node packages/bot/bot.mjs`}</code></pre>
             <p className="small muted" style={{ marginTop: 10 }}>

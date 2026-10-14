@@ -128,7 +128,7 @@ index ed42f37..6410371 100644
  MIN_FEE_GWEI = 20                                    # Arc floor — never lower
  RESERVE_FLOOR = int(os.getenv("RESERVE_FLOOR", "100000000"))   # 100 USDC, 6 dp
  DENYLIST = {a.strip().lower() for a in os.getenv("DENYLIST", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8").split(",") if a.strip()}
-+COMPLIR_URL = os.getenv("COMPLIR_URL")                 # e.g. https://complir.example — unset = denylist only (complir.py)
++COMPLIR_URL = os.getenv("COMPLIR_URL")                 # e.g. https://trycomplir.xyz — unset = denylist only (complir.py)
 +COMPLIR_PAYER_PRIVATE_KEY = os.getenv("COMPLIR_PAYER_PRIVATE_KEY")   # small USDC purse that pays 0.01 USDC per screen over x402
 +COMPLIR_TIMEOUT = float(os.getenv("COMPLIR_TIMEOUT", "15"))
  LLM = os.getenv("LLM", "none")                       # anthropic (ANTHROPIC_API_KEY) | groq (GROQ_API_KEY) | none

@@ -21,7 +21,7 @@ The escrow releases to whatever wallet is on the agreement. Nothing today asks w
 
 ```
 # .env.local
-COMPLIR_URL=https://complir.example            # the hosted CompliR URL
+COMPLIR_URL=https://trycomplir.xyz            # the hosted CompliR URL
 COMPLIR_REGISTRY=0xA82EDb5e111c31C63E06EF0007f2fa1a9e7EB30d   # Arc mainnet registry, for setComplir
 ```
 

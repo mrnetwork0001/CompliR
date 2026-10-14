@@ -23,7 +23,7 @@ The operator submits every protocol op and sponsors its gas, so it is the party 
 
 ```
 # .env.local
-COMPLIR_URL=https://complir.example      # the hosted CompliR URL
+COMPLIR_URL=https://trycomplir.xyz      # the hosted CompliR URL
 ```
 
 ## Opt-in and non-breaking

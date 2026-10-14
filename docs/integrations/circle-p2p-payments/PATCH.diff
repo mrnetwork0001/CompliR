@@ -8,7 +8,7 @@ index 57766a4..e559eb4 100644
  # NEXT_PUBLIC_ONRAMP_POPUP=1
 +
 +# Optional: CompliR counterparty screening (https://github.com/mrnetwork0001/complir). Leave unset to disable.
-+# COMPLIR_URL=https://complir.example
++# COMPLIR_URL=https://trycomplir.xyz
 diff --git a/README.md b/README.md
 index a954cbb..64a216a 100644
 --- a/README.md

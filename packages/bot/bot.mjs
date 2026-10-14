@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * CompliR Telegram bot - dependency-free long polling.
- *   TELEGRAM_BOT_TOKEN=… COMPLIR_URL=https://complir.example BOT_WEBHOOK_SECRET=… node packages/bot/bot.mjs
+ *   TELEGRAM_BOT_TOKEN=… COMPLIR_URL=https://trycomplir.xyz BOT_WEBHOOK_SECRET=… node packages/bot/bot.mjs
  *
  * Env
  *   TELEGRAM_BOT_TOKEN          from @BotFather. Missing → prints usage and exits (dry mode).
@@ -127,7 +127,7 @@ if (isMain) {
     console.log(await reply(once, process.env.BOT_TEST_CHAT || "0"));
   } else if (!TOKEN) {
     console.log("CompliR Telegram bot (dry mode: TELEGRAM_BOT_TOKEN is not set)\n");
-    console.log("  TELEGRAM_BOT_TOKEN=123:abc COMPLIR_URL=https://complir.example BOT_WEBHOOK_SECRET=change-me node packages/bot/bot.mjs");
+    console.log("  TELEGRAM_BOT_TOKEN=123:abc COMPLIR_URL=https://trycomplir.xyz BOT_WEBHOOK_SECRET=change-me node packages/bot/bot.mjs");
     console.log("  node packages/bot/bot.mjs \"/check 0x…\"   # run one command offline against COMPLIR_URL and print the reply\n");
     console.log(usage(BASE));
   } else {

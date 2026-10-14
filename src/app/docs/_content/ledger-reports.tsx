@@ -25,7 +25,7 @@ const ENTRY = `GET /api/v1/decision/dec_…
 const VERIFY_REPORT = `import { keccak256, stringToHex, verifyMessage } from "viem";
 import { canonicalize } from "./src/lib/attest/canonical";      // or re-implement: sorted keys, no whitespace
 
-const { report, hash, signature, signer } = await (await fetch("https://complir.example/api/v1/report")).json();
+const { report, hash, signature, signer } = await (await fetch("https://trycomplir.xyz/api/v1/report")).json();
 const recomputed = keccak256(stringToHex(canonicalize(report)));
 console.log(recomputed === hash);                                                       // the hash is over the canonical JSON
 console.log(await verifyMessage({ address: signer, message: hash, signature }));       // EIP-191 personal_sign over the hash string`;

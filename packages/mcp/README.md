@@ -38,7 +38,7 @@ Replace `/abs/path/to/complir` with the repository path.
 ```sh
 claude mcp add complir -e COMPLIR_URL=http://localhost:3000 -- node /abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs
 # with payments:
-claude mcp add complir -e COMPLIR_URL=https://complir.example -e COMPLIR_PAYER_PRIVATE_KEY=0x… -- node /abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs
+claude mcp add complir -e COMPLIR_URL=https://trycomplir.xyz -e COMPLIR_PAYER_PRIVATE_KEY=0x… -- node /abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs
 ```
 
 **Claude Desktop** (`claude_desktop_config.json`)
@@ -49,7 +49,7 @@ claude mcp add complir -e COMPLIR_URL=https://complir.example -e COMPLIR_PAYER_P
     "complir": {
       "command": "node",
       "args": ["/abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs"],
-      "env": { "COMPLIR_URL": "https://complir.example", "COMPLIR_PAYER_PRIVATE_KEY": "0x…", "COMPLIR_MAX_PRICE_USDC": "0.1" }
+      "env": { "COMPLIR_URL": "https://trycomplir.xyz", "COMPLIR_PAYER_PRIVATE_KEY": "0x…", "COMPLIR_MAX_PRICE_USDC": "0.1" }
     }
   }
 }
@@ -63,7 +63,7 @@ claude mcp add complir -e COMPLIR_URL=https://complir.example -e COMPLIR_PAYER_P
     "complir": {
       "command": "node",
       "args": ["/abs/path/to/complir/packages/mcp/bin/complir-mcp.mjs"],
-      "env": { "COMPLIR_URL": "https://complir.example" }
+      "env": { "COMPLIR_URL": "https://trycomplir.xyz" }
     }
   }
 }
@@ -72,7 +72,7 @@ claude mcp add complir -e COMPLIR_URL=https://complir.example -e COMPLIR_PAYER_P
 **Streamable HTTP** (for remote agents / `mcp-remote`)
 
 ```sh
-COMPLIR_URL=https://complir.example node packages/mcp/bin/complir-mcp.mjs --http 3333
+COMPLIR_URL=https://trycomplir.xyz node packages/mcp/bin/complir-mcp.mjs --http 3333
 # MCP endpoint: http://127.0.0.1:3333/mcp   (bind it behind your own auth before exposing it)
 ```
 
@@ -101,7 +101,7 @@ Prompt: `pay_safely` (`address`, `amountUsdc?`, `name?`) — screen first, respe
 > *calls `screen_counterparty` { address: "0x…beef", amountUsdc: 120, name: "Lela Design", payeeBook: [...] }*
 >
 > CompliR graded 0x…beef **MEDIUM** (score 44, decision `dec_01J…`). Reasons: `FRESH_WALLET`, `NO_HISTORY`. Recommended limits:
-> 100 USDC per transaction, 300 USDC per day. An Enhanced Due Diligence request is open at `https://complir.example/edd/edd_…`.
+> 100 USDC per transaction, 300 USDC per day. An Enhanced Due Diligence request is open at `https://trycomplir.xyz/edd/edd_…`.
 >
 > *calls `verify_attestation` { attestation: …, expectedAttester: "0x…" }* → `valid: true`
 >

@@ -189,7 +189,7 @@ export const mainnetChecklist: DocPage = {
             <strong>Health:</strong> <code>/api/v1/health</code> should show the registry address, <code>x402.disabled: false</code> and <code>signer.mode: circle</code>.
           </li>
           <li>
-            <strong>Integrations:</strong> replace <code>https://complir.example</code> in <code>docs/integrations/*/PR.md</code> with the hosted URL, add the registry address to the
+            <strong>Integrations:</strong> replace <code>https://trycomplir.xyz</code> in <code>docs/integrations/*/PR.md</code> with the hosted URL, add the registry address to the
             CeedeBooks PR, then open the three prepared PRs (STEWARD, Vestiarion, CeedeBooks).
           </li>
           <li>

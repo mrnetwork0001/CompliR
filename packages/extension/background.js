@@ -5,7 +5,7 @@
  */
 importScripts("lib/parser.js");
 const P = self.ComplirParser;
-const DEFAULT_URL = "https://complir.example";
+const DEFAULT_URL = "https://trycomplir.xyz";
 const FETCH_TIMEOUT_MS = 12000;
 const CONCURRENCY = 4;
 

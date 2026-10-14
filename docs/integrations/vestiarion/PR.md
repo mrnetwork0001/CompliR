@@ -23,7 +23,7 @@ A sanctions-list match on a *name* misses the cases that matter on-chain: a vend
 ## How to enable
 
 ```
-COMPLIR_URL=https://complir.example      # the hosted URL (ask us; mainnet 13 Oct)
+COMPLIR_URL=https://trycomplir.xyz      # the hosted URL (ask us; mainnet 13 Oct)
 COMPLIR_PAYER_PRIVATE_KEY=0x...          # a small USDC purse on Arc that pays 0.01 USDC per screen over x402 (not the treasury)
 ```
 

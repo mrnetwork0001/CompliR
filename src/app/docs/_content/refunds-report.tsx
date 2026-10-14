@@ -10,7 +10,7 @@ PAYMENT-RESPONSE: <base64 settle receipt>
              "message": "Payment settled (0x…) but the response could not be delivered: handler error: … A refund of 0.01 USDC to 0x… has been queued; see /report." } }`;
 
 const MANUAL = `# Human-initiated refund (Bearer CRON_SECRET)
-curl -s -X POST https://complir.example/api/internal/refunds -H "Authorization: Bearer $CRON_SECRET" \\
+curl -s -X POST https://trycomplir.xyz/api/internal/refunds -H "Authorization: Bearer $CRON_SECRET" \\
   -H 'content-type: application/json' -d '{ "payer": "0x…", "amountUsdc": 0.01, "reason": "…", "originalTx": "0x…" }'
 # tick the queue + list everything          GET  /api/internal/refunds
 # retry a DRY_RUN / FAILED row              POST /api/internal/refunds { "requeue": "ref_…" }`;

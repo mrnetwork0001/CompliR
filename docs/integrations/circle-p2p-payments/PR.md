@@ -22,7 +22,7 @@ The Pay flow validates the address format and asks the user to confirm it, but n
 
 ```
 # .env.local
-COMPLIR_URL=https://complir.example      # the hosted CompliR URL
+COMPLIR_URL=https://trycomplir.xyz      # the hosted CompliR URL
 ```
 
 ## Opt-in and non-breaking

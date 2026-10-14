@@ -1,6 +1,6 @@
 # CompliR on a shared VPS. Project name "complir"; nothing binds a public port.
 #   cd /opt/complir && docker compose -f deploy/vps/docker-compose.yml --env-file .env.production up -d --build
-# nginx (host) proxies complir.xyz → 127.0.0.1:8960. The search index has NO host port (9200 belongs to another stack).
+# nginx (host) proxies trycomplir.xyz → 127.0.0.1:8960. The search index has NO host port (9200 belongs to another stack).
 name: complir
 services:
   app:

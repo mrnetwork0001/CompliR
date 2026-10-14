@@ -13,7 +13,7 @@ const CHECK = `POST /api/v1/check                       # free · same-origin un
   "limits": { "maxPerTxUsdc": 0, "maxPerDayUsdc": 0 },
   "reasons": ["SANCTIONS_DIRECT", "USDC_BLACKLISTED"],        // strongest first, CLEAN omitted
   "decisionId": "dec_…", "attestation": { … }, "screenedAt": "…",
-  "shareUrl": "https://complir.example/a/0x098b716b8aaf21512996dc57eb0615e2383e2f96"
+  "shareUrl": "https://trycomplir.xyz/a/0x098b716b8aaf21512996dc57eb0615e2383e2f96"
 }`;
 
 const HISTORY = `GET /api/v1/address/0x098b716b8aaf21512996dc57eb0615e2383e2f96        # free · never runs the pipeline

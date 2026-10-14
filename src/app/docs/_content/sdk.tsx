@@ -6,7 +6,7 @@ const USAGE = `import { CompliR, CompliRPaymentError } from "@complir/sdk";
 import { privateKeyToAccount } from "viem/accounts";
 
 const c = new CompliR({
-  baseUrl: "https://complir.example",
+  baseUrl: "https://trycomplir.xyz",
   account: privateKeyToAccount(process.env.PAYER_KEY as \`0x\${string}\`), // any viem LocalAccount: holds USDC on Arc
   maxPriceUsdc: 0.05,          // refuse to sign above this per call (default 1)
   network: "eip155:5042",      // only accept requirements on Arc mainnet (default: any eip155:*)
