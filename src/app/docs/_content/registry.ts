@@ -25,12 +25,13 @@ import { selfHosting } from "./self-hosting";
 import { mainnetChecklist } from "./mainnet-checklist";
 import { trustModel } from "./trust-model";
 import { ledgerReports } from "./ledger-reports";
+import { agentPrompt } from "./agent-prompt";
 
 export const DOC_GROUPS: DocGroup[] = [
   { id: "getting-started", label: "Getting started", pages: [welcome, howItWorks] },
   { id: "oracle", label: "Oracle", pages: [screening, checkPages, reasonCodes, attestations, rescreening, shadowBadge] },
   { id: "agent", label: "The agent", pages: [operator, guardedPayouts, riskAnalyst, tipMarket, refundsReport] },
-  { id: "integrate", label: "Integrate", pages: [httpApi, sdk, mcp, solidity, x402] },
+  { id: "integrate", label: "Integrate", pages: [agentPrompt, httpApi, sdk, mcp, solidity, x402] },
   { id: "operate", label: "Operate", pages: [selfHosting, mainnetChecklist] },
   { id: "trust", label: "Trust", pages: [trustModel, ledgerReports] },
 ];
