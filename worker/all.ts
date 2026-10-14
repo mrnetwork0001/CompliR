@@ -8,6 +8,9 @@ import { runTipsOnce } from "../src/lib/tips";
 import { runRevenueYieldOnce } from "../src/lib/earn";
 import { publishReport } from "../src/lib/reports";
 import { processRefunds, installRefundSink } from "../src/lib/refunds";
+import { tailCctpOnce } from "../src/lib/cctp/tailer";
+import { syncAgentIndex } from "../src/lib/erc8004/indexer";
+import { publishDailyStats, todayUtc } from "../src/lib/stats";
 
 type Job = { name: string; everyMs: number; run: () => Promise<unknown> };
 const jobs: Job[] = [
@@ -19,6 +22,9 @@ const jobs: Job[] = [
   { name: "tips", everyMs: 300_000, run: runTipsOnce },
   { name: "refunds", everyMs: 300_000, run: processRefunds },
   { name: "yield", everyMs: 3_600_000, run: () => runRevenueYieldOnce() },
+  { name: "cctp", everyMs: 60_000, run: () => tailCctpOnce() },
+  { name: "erc8004", everyMs: 900_000, run: () => syncAgentIndex() },
+  { name: "stats", everyMs: 3_600_000, run: () => publishDailyStats(todayUtc()) },
   { name: "report", everyMs: 3_600_000, run: () => publishReport(new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)) },
 ];
 installRefundSink();
