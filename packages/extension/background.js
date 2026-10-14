@@ -85,3 +85,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => tabResults.delete(tabId));
 chrome.tabs.onUpdated.addListener((tabId, info) => { if (info.status === "loading") tabResults.delete(tabId); });
+
+// v0.2.0: older builds defaulted to localhost / a placeholder host. On install or update, move those to the live service.
+chrome.runtime.onInstalled.addListener(async () => {
+  const { complirUrl } = await chrome.storage.local.get("complirUrl");
+  if (!complirUrl || /localhost|127\.0\.0\.1|complir\.example/i.test(complirUrl)) {
+    await chrome.storage.local.set({ complirUrl: DEFAULT_URL });
+    const all = await chrome.storage.local.get(null);
+    const stale = Object.keys(all).filter((k) => k !== "complirUrl");
+    if (stale.length) await chrome.storage.local.remove(stale);   // drop verdicts cached from the old host
+  }
+});
