@@ -112,6 +112,14 @@ export async function createEddRequest(input: { subject: Address | string; decis
   return { id, url: eddUrl(id) };
 }
 
+/** The EDD request opened for a given decision, if any (used by the free attestation endpoint to surface edd.url). */
+export async function eddForDecision(decisionId: string): Promise<{ id: string; url: string; status: EddStatus } | null> {
+  await migrate();
+  const r = await db().execute({ sql: `SELECT id, status FROM edd_requests WHERE decision_id = ? ORDER BY created_at DESC LIMIT 1`, args: [decisionId] });
+  const x = r.rows[0] as Record<string, unknown> | undefined;
+  return x ? { id: String(x.id), url: eddUrl(String(x.id)), status: String(x.status) as EddStatus } : null;
+}
+
 export async function getEddRequest(id: string): Promise<EddRequest | null> {
   await migrate();
   const r = await db().execute({ sql: `SELECT * FROM edd_requests WHERE id = ?`, args: [id] });

@@ -30,6 +30,51 @@ const REQUIRED = `// 402 body and PAYMENT-REQUIRED (base64 of the same object)
   }]
 }`;
 
+const ENVELOPE = `// PAYMENT-SIGNATURE = base64( JSON below ). x402 v2 PaymentPayload, scheme exact on EVM.
+{
+  "x402Version": 2,
+  "resource": { "url": "https://trycomplir.xyz/api/v1/screen", "description": "CompliR screen: one address", "mimeType": "application/json" },
+  "accepted": {                                   // copy accepts[0] from the 402 response, unchanged
+    "scheme": "exact", "network": "eip155:5042", "amount": "8100",
+    "asset": "0x3600000000000000000000000000000000000000", "payTo": "0x…",
+    "maxTimeoutSeconds": 60, "extra": { "assetTransferMethod": "eip3009", "name": "USDC", "version": "2" }
+  },
+  "payload": {
+    "signature": "0x…",                           // EIP-712 TransferWithAuthorization signature by "from"
+    "authorization": { "from": "0xPayer", "to": "0x…payTo", "value": "8100",
+                       "validAfter": "0", "validBefore": "<now + 300>", "nonce": "0x<32 random bytes>" }
+  }
+}
+// Also accepted: the flat v1 layout { x402Version, scheme, network, payload } with no "accepted";
+// the server fills "accepted" from its own requirements. "to" and "value" are still checked.`;
+
+const SIGN = `// Node + viem: pay for one screen, then retry with the header (any x402 v2 client does the same)
+import { privateKeyToAccount } from "viem/accounts";
+import { toHex } from "viem";
+
+const URL = "https://trycomplir.xyz/api/v1/screen";
+const body = JSON.stringify({ address: "0x098b716b8aaf21512996dc57eb0615e2383e2f96", clientId: "my-app" });
+const payer = privateKeyToAccount(process.env.PAYER_KEY);
+
+const first = await fetch(URL, { method: "POST", headers: { "content-type": "application/json" }, body });
+const required = await first.json();                       // 402
+const req = required.accepts[0];
+const authorization = {
+  from: payer.address, to: req.payTo, value: req.amount, validAfter: "0",
+  validBefore: String(Math.floor(Date.now() / 1000) + 300), nonce: toHex(crypto.getRandomValues(new Uint8Array(32))),
+};
+const signature = await payer.signTypedData({
+  domain: { name: req.extra.name, version: req.extra.version, chainId: 5042, verifyingContract: req.asset },
+  types: { TransferWithAuthorization: [
+    { name: "from", type: "address" }, { name: "to", type: "address" }, { name: "value", type: "uint256" },
+    { name: "validAfter", type: "uint256" }, { name: "validBefore", type: "uint256" }, { name: "nonce", type: "bytes32" } ] },
+  primaryType: "TransferWithAuthorization",
+  message: { ...authorization, value: BigInt(authorization.value), validAfter: 0n, validBefore: BigInt(authorization.validBefore) },
+});
+const header = Buffer.from(JSON.stringify({ x402Version: 2, resource: required.resource, accepted: req, payload: { signature, authorization } })).toString("base64");
+const paid = await fetch(URL, { method: "POST", headers: { "content-type": "application/json", "PAYMENT-SIGNATURE": header }, body });
+console.log(paid.status, paid.headers.get("PAYMENT-RESPONSE"), await paid.json());`;
+
 export const x402: DocPage = {
   slug: "x402",
   title: "x402 payments",
@@ -54,6 +99,21 @@ export const x402: DocPage = {
             <Link href="/docs/sdk">SDK</Link> and <Link href="/docs/mcp">MCP server</Link> implement the client side; the header and status reference is on{" "}
             <Link href="/docs/http-api#x402-headers">HTTP API</Link>.
           </p>
+        </>
+      ),
+    },
+    {
+      id: "payload",
+      title: "The PAYMENT-SIGNATURE payload",
+      body: (
+        <>
+          <p>
+            The header is base64 of a JSON <code>PaymentPayload</code>. Copy <code>accepts[0]</code> from the 402 into <code>accepted</code>, sign an EIP-3009{" "}
+            <code>TransferWithAuthorization</code> for exactly <code>amount</code> to <code>payTo</code>, and put both under <code>payload</code>. If the shape is wrong, the
+            402&apos;s <code>error</code> names the field (for example <code>accepted: expected object, received undefined</code>).
+          </p>
+          <Code lang="json" code={ENVELOPE} />
+          <Code lang="ts" code={SIGN} />
         </>
       ),
     },

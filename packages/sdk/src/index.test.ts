@@ -101,6 +101,14 @@ describe("CompliR SDK x402 flow", () => {
     const c = new CompliR({ baseUrl: "https://complir.test", account: buyer, fetch: fetchMock as unknown as typeof fetch });
     expect(await c.attestation("0xabc")).toBeNull();
   });
+
+  it("verdict() returns the full free verdict and attestation() unwraps the signed attestation", async () => {
+    const body = { address: "0xabc", tier: "HIGH", score: 100, reasons: [{ code: "SANCTIONS_DIRECT", weight: 100, evidence: {} }], recommendedLimits: { maxPerTxUsdc: 0, maxPerDayUsdc: 0 }, attestation: { signature: "0x1", validUntil: 1 }, source: "store", expired: false, refreshing: false };
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(body), { status: 200 }));
+    const c = new CompliR({ baseUrl: "https://complir.test", account: buyer, fetch: fetchMock as unknown as typeof fetch });
+    expect(await c.verdict("0xabc")).toEqual(body);
+    expect(await c.attestation("0xabc")).toEqual(body.attestation);
+  });
 });
 
 describe("CompliR.verifyAttestation (offline)", () => {

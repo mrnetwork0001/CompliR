@@ -144,6 +144,37 @@ describe("withX402: 402 challenge", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("names the offending field when the payload JSON has the wrong shape", async () => {
+    const bad = { x402Version: 2, payload: { signature: "0xab" } };
+    const req = new Request("https://complir.test/api/v1/screen", { method: "POST", headers: { "PAYMENT-SIGNATURE": encodeHeader(bad) } });
+    const res = await wrapped()(req, {});
+    expect(res.status).toBe(402);
+    const err = ((await res.json()) as PaymentRequired).error!;
+    expect(err).toMatch(/invalid payment payload: .*accepted/);
+    expect(err).toMatch(/docs\/x402/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts the flat v1-style layout (top-level scheme/network, no accepted) by filling accepted from our requirements", async () => {
+    facilitatorOk();
+    const p = payload();
+    const flat = { x402Version: 2, scheme: "exact", network: "eip155:5042002", payload: p.payload };
+    const req = new Request("https://complir.test/api/v1/screen", { method: "POST", headers: { "PAYMENT-SIGNATURE": encodeHeader(flat) } });
+    const res = await wrapped()(req, {});
+    expect(res.status).toBe(200);
+    expect(settleBody().accepted).toMatchObject({ scheme: "exact", network: "eip155:5042002", payTo: PAY_TO, amount: "10000" });
+  });
+
+  it("still rejects a flat payload whose signed authorization pays someone else", async () => {
+    const p = payload({ to: PAYER });
+    const flat = { x402Version: 2, scheme: "exact", network: "eip155:5042002", payload: p.payload };
+    const req = new Request("https://complir.test/api/v1/screen", { method: "POST", headers: { "PAYMENT-SIGNATURE": encodeHeader(flat) } });
+    const res = await wrapped()(req, {});
+    expect(res.status).toBe(402);
+    expect(((await res.json()) as PaymentRequired).error).toMatch(/authorization.to/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("rejects a payload that does not meet the requirements before verifying", async () => {
     const res = await wrapped()(request(payload({ value: "5000" }, { amount: "5000" })), {});
     expect(res.status).toBe(402);

@@ -52,6 +52,25 @@ export interface Verdict {
   screenedAt: string;
   evidence: unknown;
 }
+/** GET /api/v1/attestation/:address - the free verdict (always answers; never-seen addresses are screened on demand). */
+export interface FreeVerdict {
+  address: Address;
+  score: number;
+  tier: Tier;
+  reasons: Reason[];
+  recommendedLimits: { maxPerTxUsdc: number; maxPerDayUsdc: number } | null;
+  rationale: string | null;
+  eddRequested: string[];
+  edd: { id: string; url: string; status: string } | null;
+  nextRescreenAt: string | null;
+  attestation: Attestation;
+  decisionId: string;
+  screenedAt: string;
+  /** now > attestation.validUntil: signature lapsed, a re-screen is due (started in the background) */
+  expired: boolean;
+  refreshing: boolean;
+  source: "store" | "fresh";
+}
 export interface Watch {
   id: string;
   address: Address;
@@ -186,11 +205,19 @@ export class CompliR {
     return this.postJson<Watch>("/api/v1/watch", { address, ...opts });
   }
 
-  /** GET /api/v1/attestation/:address (free). Returns null on 404. */
-  async attestation(address: string): Promise<Attestation | null> {
+  /**
+   * GET /api/v1/attestation/:address (free). The full verdict: tier, score, reasons, recommendedLimits, rationale,
+   * EDD, nextRescreenAt and the signed attestation. Never-seen addresses are screened on demand (allow ~90 s on first sight).
+   */
+  async verdict(address: string): Promise<FreeVerdict | null> {
     const res = await this.paidFetch(`/api/v1/attestation/${address}`, { method: "GET" });
     if (res.status === 404) return null;
-    return (await this.unwrap(res)) as Attestation;
+    return (await this.unwrap(res)) as FreeVerdict;
+  }
+
+  /** The signed attestation only, from the free verdict (see verdict()). */
+  async attestation(address: string): Promise<Attestation | null> {
+    return (await this.verdict(address))?.attestation ?? null;
   }
 
   /** Offline attestation check (domain, types, expiry, signature). Never throws. */

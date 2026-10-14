@@ -35,7 +35,7 @@ export const httpApi: DocPage = {
               [<code key="m">POST</code>, <code key="p">/api/v1/watch</code>, price("0.05 USDC / 30 d"), "Register address + webhookUrl (+ clientId, payeeBook). Adaptive re-screening; tier.changed webhooks. Header X-CompliR-Watch-Id. Settled after the handler succeeds."],
               [<code key="m">POST</code>, <code key="p">/api/v1/tips</code>, price("0.05 USDC stake"), "Submit a staked tip about an address. Settled first; same-origin creates a demo tip."],
               [<code key="m">POST</code>, <code key="p">/api/v1/shadow</code>, free, "Payee book + recent payments → wouldHold / wouldLimit / lookalikes / paymentsAtRisk. ≤ 50 addresses, 4 in flight, depth 1."],
-              [<code key="m">GET</code>, <code key="p">/api/v1/attestation/:address</code>, free, "Latest stored verdict + attestation (source: store); screens once if never seen (source: fresh)."],
+              [<code key="m">GET</code>, <code key="p">/api/v1/attestation/:address</code>, free, "The full verdict, always: tier, score, reasons, recommendedLimits, rationale, eddRequested, edd, nextRescreenAt, attestation. Never-seen addresses are screened on demand (source: fresh, ~20-60 s); expired ones are returned at once with expired: true while a background re-screen runs."],
               [<code key="m">GET</code>, <code key="p">/api/v1/badge/:address.svg</code>, free, "Screened-by-CompliR SVG from the store; grey unknown / expired; Cache-Control max-age=60."],
               [<code key="m">GET</code>, <code key="p">/api/v1/decision/:id</code>, free, "One replayable decision-log entry: payload, prevHash, hash, anchorTx."],
               [<code key="m">GET</code>, <code key="p">/api/v1/ledger?limit=50</code>, free, "Most recent ledger entries, newest first."],
@@ -60,6 +60,31 @@ export const httpApi: DocPage = {
             Prices are the operator&apos;s current prices (<Link href="/docs/operator">bounds</Link>), read per request; <code>/api/v1/health</code> reports the config defaults.
             With <code>X402_DISABLED=1</code> (this deployment today) every endpoint is free and responses carry <code>X-CompliR-Payment: disabled</code>.
           </p>
+        </>
+      ),
+    },
+    {
+      id: "free-vs-paid",
+      title: "Free verdict vs paid screen",
+      body: (
+        <>
+          <p>
+            <strong>The free <code>GET /api/v1/attestation/:address</code> always returns a verdict</strong> and runs the same pipeline as the paid screen: sanctions,
+            Circle&apos;s USDC blocklist, the two-hop funder trace and the analyst. It returns the same fields: <code>reasons[]</code>, <code>recommendedLimits</code>,{" "}
+            <code>rationale</code>, <code>eddRequested</code>, <code>edd</code>, <code>nextRescreenAt</code>. Most integrations need no payer key.
+          </p>
+          <Kv
+            rows={[
+              { k: "free GET", v: "Latest verdict for the address. First sight of an address screens it on demand (allow ~90 s); later reads take < 1 s. Concurrent requests share one screen." },
+              { k: "paid POST /screen", v: "Forces a new screen now and adds context the GET cannot take: amountUsdc (sizes limits and a LOW-verdict guarantee bond), payeeBook (lookalike / address-poisoning checks), name (sanctions name match), clientId attribution." },
+              { k: "attestation.validUntil", v: "When the signature lapses: HIGH 1 h, MEDIUM 24 h, LOW 7 d. After it, ICompliR.isAllowed() returns false and the free GET returns the verdict with expired: true, refreshing: true while it re-screens in the background. The next read gets the fresh verdict." },
+              { k: "nextRescreenAt", v: "When CompliR plans to re-grade (inside the same tier window). Cache a verdict until min(validUntil, nextRescreenAt); you never need to pay to refresh it." },
+              { k: "source", v: "store = latest stored verdict; fresh = screened by this request." },
+              { k: "attestation.registryTx", v: "Filled once the on-chain mirror lands (seconds after the screen). A fresh POST response returns null; read it later from the GET. Only on-chain callers (isAllowed) need to wait for it." },
+              { k: "edd", v: "Present when the analyst opened Enhanced Due Diligence questions; MEDIUM mostly. A HIGH on a sanctions or blocklist hit has none, because answers cannot clear it." },
+              { k: "timeouts", v: "Use >= 90 s on the GET (first sight) and >= 120 s on the POST. A shorter client timeout looks like a dropped connection (curl status 000). There is no rate limit on these routes." },
+            ]}
+          />
         </>
       ),
     },

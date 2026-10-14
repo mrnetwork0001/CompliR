@@ -173,7 +173,7 @@ curl -s -X POST https://trycomplir.xyz/api/v1/screen \
   -H 'content-type: application/json' \
   -d '{"address":"0x098b716b8aaf21512996dc57eb0615e2383e2f96","amountUsdc":120}'
 # → 402 with x402 v2 payment requirements; an x402 client pays ~0.01 USDC and retries.
-curl -s https://trycomplir.xyz/api/v1/attestation/0x098b716b8aaf21512996dc57eb0615e2383e2f96   # free: latest signed verdict
+curl -s https://trycomplir.xyz/api/v1/attestation/0x098b716b8aaf21512996dc57eb0615e2383e2f96   # free: full verdict, always answers (first sight ~20-60 s)
 ```
 
 **TypeScript SDK** (`packages/sdk`, x402 built in)
@@ -221,9 +221,9 @@ Base URL `https://trycomplir.xyz`. Paid routes use x402 v2 on `eip155:5042` (USD
 
 | Method & path | Price | Purpose |
 |---|---|---|
-| `POST /api/v1/screen` | x402 | Full verdict for one address (`address`, optional `name`, `amountUsdc`, `payeeBook`, `clientId`) |
+| `POST /api/v1/screen` | x402 | Forced fresh screen with context the free GET can't take: `amountUsdc`, `payeeBook`, `name`, `clientId` |
 | `POST /api/v1/watch` | x402 | Re-grade an address for 30 days and push `tier.changed` webhooks |
-| `GET /api/v1/attestation/:address` | free | Latest stored signed verdict (404 if never screened) |
+| `GET /api/v1/attestation/:address` | free | Full verdict with reasons, limits, EDD and `nextRescreenAt`; screens never-seen addresses on demand; expired verdicts refresh in the background |
 | `POST /api/v1/check` | free, rate-limited | Plain-language verdict for people (`headline`, `advice`, `shareUrl`) |
 | `POST /api/v1/check/invoice` | free | Extract wallet addresses, vendor and amount from an invoice PDF |
 | `GET /api/v1/address/:address` | free | Public verdict history, tier changes, open EDD |

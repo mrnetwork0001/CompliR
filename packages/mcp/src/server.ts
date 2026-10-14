@@ -175,9 +175,9 @@ export function createServer(api: Api): McpServer {
     {
       title: "Latest attestation for an address",
       description:
-        "Free. Returns the latest stored CompliR verdict for an address: tier, score, decisionId, screenedAt and the signed EIP-712 attestation (with validUntil and registryTx). " +
-        "If the address was never screened the pipeline runs once (source: \"fresh\"). The signature is verified offline before returning (signatureValid). " +
-        "Use when you only need the current tier and do not want to pay for a fresh screen; note the attestation may be close to expiry.",
+        "Free, always answers. Returns the CompliR verdict for an address: tier, score, reasons, recommendedLimits, rationale, eddRequested, edd, nextRescreenAt, decisionId and the signed EIP-712 attestation (validUntil, registryTx). " +
+        "A never-seen address is screened on demand (source: \"fresh\", ~20-60 s); an expired verdict is returned with expired: true while CompliR re-screens it in the background. " +
+        "The signature is verified offline before returning (signatureValid). Prefer this over screen_counterparty unless you need amount-aware limits or a payee-book lookalike check.",
       inputSchema: { address: AddressSchema },
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
     },

@@ -205,15 +205,17 @@ export function withX402<Ctx = unknown>(handler: Handler<Ctx>, opts: X402Options
     const raw = req.headers.get(HEADERS.paymentSignature) ?? req.headers.get(HEADERS.v1Payment);
     if (!raw) return required(`${HEADERS.paymentSignature} header is required`);
 
-    let payload: PaymentPayload;
+    let decoded: unknown;
     try {
-      const decoded = decodeHeader(raw);
-      const v = (decoded as { x402Version?: unknown })?.x402Version;
-      if (v !== undefined && v !== X402_VERSION) return required(`unsupported x402Version ${String(v)}; this server speaks x402 v2`);
-      payload = PaymentPayloadSchema.parse(decoded);
+      decoded = decodeHeader(raw);
     } catch {
-      return required("invalid payment payload: expected base64 JSON PaymentPayload (exact/EVM)");
+      return required(`invalid payment payload: ${HEADERS.paymentSignature} must be base64-encoded JSON (see ${PAYLOAD_DOCS})`);
     }
+    const v = (decoded as { x402Version?: unknown })?.x402Version;
+    if (v !== undefined && v !== X402_VERSION) return required(`unsupported x402Version ${String(v)}; this server speaks x402 v2`);
+    const parsed = PaymentPayloadSchema.safeParse(normalizeFlatPayload(decoded, requirements.req, resource));
+    if (!parsed.success) return required(`invalid payment payload: ${describeIssues(parsed.error.issues)} (see ${PAYLOAD_DOCS})`);
+    const payload: PaymentPayload = parsed.data;
 
     const mismatch = matchRequirements(payload, requirements.req);
     if (mismatch) return required(`payment does not match requirements: ${mismatch}`);
@@ -413,6 +415,35 @@ function buildRequirements(pc: PaymentConfig, opts: X402Options, url: URL): { re
     extra: { assetTransferMethod: "eip3009", name: pc.assetName, version: pc.assetVersion },
   };
   return { req, resourceUrl };
+}
+
+/** Where the accepted PAYMENT-SIGNATURE envelope is documented (named in every payload error). */
+export const PAYLOAD_DOCS = "https://trycomplir.xyz/docs/x402";
+
+/**
+ * Accept the flat shape some clients send (x402 v1 layout with `scheme`/`network` at the top level and no
+ * `accepted` object) by filling `accepted` from this route's own requirements. Safe: the signed EIP-3009
+ * authorization is still checked against our payTo and amount in matchRequirements and by the facilitator.
+ * Spec-shaped v2 payloads (with `accepted`) pass through untouched.
+ */
+export function normalizeFlatPayload(decoded: unknown, req: PaymentRequirements, resource: { url: string; description?: string; mimeType?: string }): unknown {
+  if (!decoded || typeof decoded !== "object") return decoded;
+  const d = decoded as Record<string, unknown>;
+  if (d.accepted !== undefined || d.payload === undefined) return decoded;
+  if (typeof d.scheme !== "string" && typeof d.network !== "string") return decoded;
+  const { scheme, network, ...rest } = d;
+  return {
+    ...rest,
+    x402Version: d.x402Version ?? X402_VERSION,
+    resource: d.resource ?? resource,
+    accepted: { ...req, scheme: typeof scheme === "string" ? scheme : req.scheme, network: typeof network === "string" ? network : req.network },
+  };
+}
+
+/** Turn zod issues into "accepted.payTo: expected string, received undefined; ..." (first 4). */
+export function describeIssues(issues: readonly { path: PropertyKey[]; message: string }[]): string {
+  const parts = issues.slice(0, 4).map((i) => `${i.path.length ? i.path.map(String).join(".") : "(root)"}: ${i.message}`);
+  return parts.join("; ") + (issues.length > 4 ? `; +${issues.length - 4} more` : "");
 }
 
 /** Returns a reason string if the client's accepted requirements / authorization don't satisfy ours. */

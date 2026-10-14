@@ -60,16 +60,8 @@ export interface PublicStats {
   ownWalletsExcluded: true;
 }
 
-export interface AttestationResponse {
-  address: string;
-  score: number;
-  tier: Tier;
-  attestation: Attestation;
-  decisionId: string;
-  screenedAt: string;
-  /** "store" = served from the latest persisted attestation; "fresh" = no history, pipeline ran now */
-  source: "store" | "fresh";
-}
+/** GET /api/v1/attestation/:address (src/lib/freeVerdict). */
+export type AttestationResponse = import("@/lib/freeVerdict").FreeVerdict;
 
 export interface LedgerListResponse {
   entries: (DecisionLogEntry & { registryTx?: string | null })[];
