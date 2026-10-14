@@ -267,6 +267,40 @@ function GroupMenu({
   );
 }
 
+/** Landing-page phone menu: only what the landing header offers. */
+function LandingSheet({ onClose, returnTo }: { onClose: () => void; returnTo: React.RefObject<HTMLButtonElement | null> }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    closeRef.current?.focus();
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const back = returnTo.current;
+    return () => { document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); back?.focus(); };
+  }, [onClose, returnTo]);
+  return (
+    <div className={styles.sheetRoot}>
+      <button type="button" className={styles.backdrop} aria-label="Close menu" onClick={onClose} tabIndex={-1} />
+      <div className={styles.sheet} role="dialog" aria-modal="true" aria-label="Menu">
+        <div className={styles.sheetHead}>
+          <span className={styles.sheetTools}>
+            <ThemeToggle />
+            <button ref={closeRef} type="button" className={styles.close} onClick={onClose} aria-label="Close menu">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                <path d="M3 3l10 10M13 3 3 13" />
+              </svg>
+            </button>
+          </span>
+        </div>
+        <Link href="/check" className={styles.sheetLink} onClick={onClose}>Check an address</Link>
+        <Link href="/docs" className={styles.sheetLink} onClick={onClose}>Docs</Link>
+        <Link href="/app" className={`btn btnPrimary ${styles.sheetCta}`} onClick={onClose}>Launch App</Link>
+      </div>
+    </div>
+  );
+}
+
 /** Phone slide-over with the same groups as an accordion. */
 function Sheet({ pathname, onClose, returnTo }: { pathname: string; onClose: () => void; returnTo: React.RefObject<HTMLButtonElement | null> }) {
   const initial = NAV_GROUPS.find((g) => groupActive(g, pathname))?.id ?? "company";
@@ -345,8 +379,6 @@ function Sheet({ pathname, onClose, returnTo }: { pathname: string; onClose: () 
           );
         })}
         <div className={styles.sheetFoot}>
-          <Link href="/check" onClick={onClose}>Check an address</Link>
-          <Link href="/docs" onClick={onClose}>Docs</Link>
           <Link href="/" onClick={onClose}>About CompliR</Link>
           <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
@@ -422,7 +454,7 @@ export function Nav() {
             </button>
           </nav>
         </div>
-        {sheet && <Sheet pathname={pathname} onClose={closeSheet} returnTo={burgerRef} />}
+        {sheet && <LandingSheet onClose={closeSheet} returnTo={burgerRef} />}
       </header>
     );
   }

@@ -540,3 +540,5 @@
   .landingLink { display: none; }
   .landingNav .burger { display: inline-flex; }
 }
+
+.sheetCta { display: flex; justify-content: center; margin: 14px 12px 0; }
