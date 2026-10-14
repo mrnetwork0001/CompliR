@@ -7,3 +7,4 @@ process.env.COMPLIR_PAUSED = "0";
 delete process.env.ANTHROPIC_API_KEY;
 delete process.env.REGISTRY_ADDRESS;
 delete process.env.ATTESTER_PRIVATE_KEY;
+process.env.YIELD_EARN_API_URL = "https://earn.example.invalid"; // never hit Circle Earn from tests

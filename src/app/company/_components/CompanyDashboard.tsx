@@ -31,11 +31,14 @@ function usdc(n: number | null | undefined, dp = 2): string {
   if (n == null || !Number.isFinite(n)) return "-";
   return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: dp });
 }
+const pct = (x: number) => `${(x * 100).toFixed(2)}%`;
 function errMsg(e: unknown): string {
   return e instanceof HttpError ? `${e.code}: ${e.message}` : e instanceof Error ? e.message : String(e);
 }
-const ACTION_LABEL: Record<OperatorAction["type"], string> = {
-  SWEEP_TO_USYC: "Park in USYC", REDEEM_FROM_USYC: "Redeem from USYC", RUN_PAYOUTS: "Run payouts", ADJUST_PRICE: "Adjust price", HOLD: "Hold",
+const ACTION_LABEL: Record<string, string> = {
+  SWEEP_TO_YIELD: "Park in yield", REDEEM_FROM_YIELD: "Redeem from yield",
+  SWEEP_TO_USYC: "Park in USYC", REDEEM_FROM_USYC: "Redeem from USYC", // legacy ledger entries
+  RUN_PAYOUTS: "Run payouts", ADJUST_PRICE: "Adjust price", HOLD: "Hold",
 };
 
 function ModeBadge({ label, live, title }: { label: string; live: boolean; title?: string }) {
@@ -75,14 +78,14 @@ export function CompanyDashboard() {
           <p className="kicker">company · operator · Arc 5042</p>
           <h1>CompliR is run by an agent. Here is its company.</h1>
           <p className="muted">
-            It earns (x402), holds (Circle wallets, USYC), pays (contributors via GuardedTreasury), screens (its own product) and accounts (a signed ledger).
+            It earns (x402), holds (Circle wallets, Circle Earn vaults), pays (contributors via GuardedTreasury), screens (its own product) and accounts (a signed ledger).
             Every tick below is one hash-chained decision you can replay.
           </p>
         </div>
         {s?.mode && (
           <div className={styles.modes}>
             <ModeBadge label="Treasury" live={s.mode.treasury === "live"} title="GuardedTreasury payouts" />
-            <ModeBadge label="USYC" live={s.mode.usyc === "live"} title="USYC sweep via the Teller" />
+            <ModeBadge label="Yield" live={s.mode.yield === "live"} title={s.mode.yieldBackend === "usyc" ? "USYC sweep via the Teller" : "Revenue sweep into a Circle Earn (Morpho) USDC vault"} />
             <ModeBadge label="Circle" live={s.mode.circle === "live"} title="Circle Developer-Controlled Wallets" />
             <ModeBadge label="x402" live={s.mode.x402 === "enabled"} title="x402 payments on /v1/screen and /v1/watch" />
           </div>
@@ -163,7 +166,7 @@ export function CompanyDashboard() {
         <ol className={styles.steps}>
           <li><strong>Earn via x402.</strong> Every <code>POST /v1/screen</code> and <code>/v1/watch</code> from an outside caller is paid in USDC on Arc through the Circle facilitator; a non-2xx is never charged. The operator sets the price inside hard bounds.</li>
           <li><strong>Hold in Circle wallets.</strong> Revenue lands in a Circle Developer-Controlled Wallet (the x402 <code>payTo</code>); a second Gas-Station-sponsored ops wallet relays registry writes. Each wallet carries an app-enforced spending policy.</li>
-          <li><strong>Park in USYC.</strong> Idle USDC above the float (obligations due within 48 h + a fixed cushion) is subscribed into USYC through the Teller; a shortfall is redeemed. Dry-run until the wallet is entitled.</li>
+          <li><strong>Park in yield.</strong> Idle USDC above the float (obligations due within 48 h + a fixed cushion) is deposited into the best Circle Earn vault on Arc (Morpho USDC, ERC-4626) that Circle does not flag as illiquid and that could pay the position back twice over today; a shortfall is redeemed.</li>
           <li><strong>Pay via GuardedTreasury, guarded by its own oracle.</strong> Every contributor invoice is screened by CompliR; <code>GuardedTreasury.release</code> re-checks the on-chain attestation, so neither the operator nor the owner can pay a HIGH-tier address.</li>
           <li><strong>Sign everything.</strong> Each operator tick, payout, sweep and verdict is one entry in a hash-chained ledger, Merkle-anchored on Arc. The reasoning above is the company&apos;s minutes.</li>
         </ol>
@@ -178,12 +181,12 @@ export function CompanyDashboard() {
 function describeAction(c: OperatorPayload["chosen"][number]): string {
   const r = (c.result ?? {}) as Record<string, unknown>;
   if (c.error) return c.error;
-  switch (c.type) {
+  switch ((c.type as string) === "SWEEP_TO_USYC" || (c.type as string) === "REDEEM_FROM_USYC" ? "SWEEP_TO_YIELD" : c.type) {
     case "RUN_PAYOUTS": return `${r.processed ?? 0} invoice(s): ${r.paid ?? 0} paid, ${r.limited ?? 0} limited, ${r.held ?? 0} held${r.failed ? `, ${r.failed} failed` : ""} (${r.mode ?? "dry-run"})`;
-    case "SWEEP_TO_USYC":
-    case "REDEEM_FROM_USYC": {
-      const plan = r.plan as { action?: string; amount?: number } | undefined;
-      return `${plan?.action ?? "NONE"} ${plan?.amount ?? c.params.amountUsdc ?? 0} USDC · ${r.mode ?? "dry"}${r.executed ? " · executed" : " · simulated"}${r.skipped ? ` · ${r.skipped}` : ""}`;
+    case "SWEEP_TO_YIELD":
+    case "REDEEM_FROM_YIELD": {
+      const plan = r.plan as { action?: string; amount?: number; vault?: { name?: string } | null } | undefined;
+      return `${plan?.action ?? "NONE"} ${plan?.amount ?? c.params.amountUsdc ?? 0} USDC${plan?.vault?.name ? ` · ${plan.vault.name}` : ""} · ${r.mode ?? "dry"}${r.executed ? " · executed" : " · simulated"}${r.skipped ? ` · ${r.skipped}` : ""}`;
     }
     case "ADJUST_PRICE": return `${c.params.key}: ${c.params.fromUsdc} → ${c.params.toUsdc} USDC`;
     default: return "nothing moved this tick";
@@ -192,10 +195,10 @@ function describeAction(c: OperatorPayload["chosen"][number]): string {
 
 function Strips({ s }: { s: CompanySnapshot | null }) {
   const rev = s?.revenue, res = s?.reserves, ob = s?.obligations;
-  const held = res && (res.floatUsdc != null || res.usycUsdc != null) ? (res.floatUsdc ?? 0) + (res.usycUsdc ?? 0) : null;
+  const held = res && (res.floatUsdc != null || res.yieldUsdc != null) ? (res.floatUsdc ?? 0) + (res.yieldUsdc ?? 0) : null;
   const items = [
     { label: "Earned", value: rev ? `${usdc(rev.totalUsdc, 4)} USDC` : null, sub: rev ? `${rev.callsPaid} paid calls · ${rev.payers} payers · ${usdc(rev.last24hUsdc, 4)} last 24 h` : "" },
-    { label: "Held", value: s ? (held == null ? "-" : `${usdc(held)} USDC`) : null, sub: res ? `${res.floatUsdc == null ? "float unknown" : `${usdc(res.floatUsdc)} float`} · ${res.usycUsdc == null ? "USYC unknown" : `${usdc(res.usycUsdc)} USYC`}` : "" },
+    { label: "Held", value: s ? (held == null ? "-" : `${usdc(held)} USDC`) : null, sub: res ? `${res.floatUsdc == null ? "float unknown" : `${usdc(res.floatUsdc)} float`} · ${res.yieldUsdc == null ? "yield unknown" : `${usdc(res.yieldUsdc)} in yield`}` : "" },
     { label: "Paid out", value: ob ? `${usdc(ob.paidUsdc)} USDC` : null, sub: ob ? `${ob.paidInvoices} invoice(s) · ${usdc(ob.spentTodayUsdc)} today` : "" },
     { label: "Refused", value: ob ? `${usdc(ob.heldUsdc)} USDC` : null, sub: ob ? `${ob.heldInvoices} invoice(s) held by the oracle${rev?.refunds ? ` · ${rev.refunds} refund(s)` : ""}` : "" },
   ];
@@ -216,12 +219,49 @@ function ReservesCard({ s, explorer }: { s: CompanySnapshot | null; explorer: st
   const r = s?.reserves;
   return (
     <section className="card">
-      <div className={styles.cardHead}><h2>Reserves</h2>{r && <span className={`badge ${r.usycMode === "live" ? "badgeLOW" : "badgeNeutral"}`}>USYC {r.usycMode === "live" ? "live" : "dry-run"}</span>}</div>
+      <div className={styles.cardHead}><h2>Reserves</h2>{r && <span className={`badge ${r.yieldMode === "live" ? "badgeLOW" : "badgeNeutral"}`}>{r.yieldBackend === "usyc" ? "USYC" : "Earn"} {r.yieldMode === "live" ? "live" : "dry-run"}</span>}</div>
       {!s ? <span className="skeleton" /> : !r ? <p className="muted small">unavailable</p> : (
         <dl className={styles.kv}>
           <dt>Float (USDC)</dt><dd>{r.floatUsdc == null ? <span className="muted">unknown{r.error ? ` - ${r.error}` : ""}</span> : usdc(r.floatUsdc, 4)}</dd>
-          <dt>USYC</dt><dd>{r.usycUsdc == null ? <span className="muted">unknown</span> : `${usdc(r.usycUsdc, 4)} USDC (${usdc(r.usycShares, 4)} shares)`}</dd>
-          <dt>Keep liquid</dt><dd>{usdc(r.usycFloatUsdc)} cushion + obligations due 48 h · min sweep {usdc(r.usycMinSweepUsdc)}</dd>
+          <dt>In yield</dt>
+          <dd>
+            {r.yieldUsdc == null ? <span className="muted">unknown</span> : `${usdc(r.yieldUsdc, 4)} USDC`}
+            {r.positions.length > 0 && (
+              <ul className={styles.wallets}>
+                {r.positions.map((p) => {
+                  const v = r.vaults?.find((x) => x.address.toLowerCase() === p.vault.toLowerCase());
+                  return (
+                    <li key={p.vault} className="small">
+                      <strong>{p.name}</strong> <a className="mono" href={addressUrl(explorer, p.vault) ?? "#"} target="_blank" rel="noopener noreferrer">{short(p.vault)}</a>
+                      {` · ${usdc(p.shares, 6)} shares · ${usdc(p.assetsUsdc, 4)} USDC`}
+                      {v && ` · ${pct(v.apy)} APY · ${usdc(v.availableUsdc, 0)} USDC liquid`}{v?.illiquid && <span className="badge badgeHIGH"> illiquid</span>}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </dd>
+          {r.yieldBackend === "earn" && (
+            <>
+              <dt>Target vault</dt>
+              <dd>
+                {r.preferredVault ? (
+                  <>
+                    <strong>{r.preferredVault.name}</strong>{" "}
+                    <a className="mono" href={addressUrl(explorer, r.preferredVault.address) ?? "#"} target="_blank" rel="noopener noreferrer">{short(r.preferredVault.address)}</a>
+                    <span className="small"> · {pct(r.preferredVault.apy)} APY · {usdc(r.preferredVault.availableUsdc, 0)} USDC liquid · TVL {usdc(r.preferredVault.tvlUsdc, 0)}</span>
+                  </>
+                ) : <span className="muted">{r.vaultsError ? `Earn API unavailable - ${r.vaultsError}` : r.vaults ? "no vault passes the rules" : "unknown"}</span>}
+                {r.vaults && r.yieldPolicy && (
+                  <div className="muted small">
+                    Circle Earn lists {r.vaults.length} USDC vault(s) on Arc; {r.vaults.filter((v) => v.illiquid).length} flagged illiquid and refused · rules: not illiquid, no RED warning,
+                    {r.yieldPolicy.requireSentinel ? " Circle Sentinel," : ""} TVL ≥ {usdc(r.yieldPolicy.minTvlUsdc, 0)}, liquidity ≥ {r.yieldPolicy.liquidityMultiple}× position, best APY
+                  </div>
+                )}
+              </dd>
+            </>
+          )}
+          <dt>Keep liquid</dt><dd>{usdc(r.yieldFloatUsdc)} cushion + obligations due 48 h · min sweep {usdc(r.yieldMinSweepUsdc)}{r.yieldMaxSweepUsdc ? ` · max ${usdc(r.yieldMaxSweepUsdc)}/sweep` : ""}</dd>
           <dt>Revenue wallet</dt><dd className="mono">{r.revenueWallet ? <a href={addressUrl(explorer, r.revenueWallet) ?? "#"} target="_blank" rel="noopener noreferrer">{short(r.revenueWallet)}</a> : <span className="muted">unset</span>}</dd>
           <dt>Circle wallets</dt>
           <dd>
@@ -231,7 +271,7 @@ function ReservesCard({ s, explorer }: { s: CompanySnapshot | null; explorer: st
               {r.circle.wallets.map((w) => (
                 <li key={w.role}>
                   <strong>{w.role}</strong> <span className="mono small">{w.address ? short(w.address) : "not provisioned"}</span>{w.accountType && <span className="muted small"> · {w.accountType}</span>}
-                  {w.policy && <span className="muted small"> · policy {w.policy.perTxUsdc}/tx, {w.policy.dailyUsdc}/day{w.policy.allowlist.length ? `, ${w.policy.allowlist.length} allowed target(s)` : ""}</span>}
+                  {w.policy && <span className="muted small"> · policy {w.policy.perTxUsdc}/tx, {w.policy.dailyUsdc}/day{w.policy.allowlist.length ? `, ${w.policy.allowlist.length} allowed target(s)` : ""}{w.policy.contractAllowlist?.length ? `, ${w.policy.contractAllowlist.length} allowed contract(s)` : ""}</span>}
                   {w.balances.length > 0 && <span className="small"> · {w.balances.map((b) => `${b.amount} ${b.symbol}`).join(", ")}</span>}
                 </li>
               ))}

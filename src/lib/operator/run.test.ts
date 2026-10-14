@@ -5,13 +5,13 @@ vi.mock("../treasury", async (importOriginal) => {
   const mod = await importOriginal<typeof import("../treasury")>();
   return { ...mod, runTreasuryOnce: vi.fn(async () => ({ mode: "dry-run", processed: 2, paid: 1, limited: 0, held: 1, failed: 0, results: [] })) };
 });
-vi.mock("../usyc", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("../usyc")>();
-  return { ...mod, runSweepOnce: vi.fn(async () => ({ mode: "dry", executed: false, wallet: null, balances: null, plan: { action: "DEPOSIT", amount: 7, reason: "env float " + process.env.USYC_FLOAT_USDC }, txs: {}, decisionId: "dec_sweep" })) };
+vi.mock("../earn", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("../earn")>();
+  return { ...mod, runRevenueYieldOnce: vi.fn(async (o: { floatUsdc?: number } = {}) => ({ backend: "earn", mode: "dry", executed: false, wallet: null, balances: null, plan: { action: "DEPOSIT", amount: 7, vault: null, excluded: [], reason: "float " + o.floatUsdc }, txs: {}, decisionId: "dec_sweep", ledgerKind: "NOOP", floatUsdc: o.floatUsdc ?? 5 })) };
 });
 
 import { runTreasuryOnce } from "../treasury";
-import { runSweepOnce } from "../usyc";
+import { runRevenueYieldOnce } from "../earn";
 import { getDecision, listDecisions, verifyChain } from "../ledger";
 import { runOperatorOnce } from "./run";
 import { NOW, snap } from "./fixtures";
@@ -23,13 +23,13 @@ describe("runOperatorOnce", () => {
     const t = await runOperatorOnce({ now: NOW, snapshotFn: async () => snap(), client: null });
     expect(t.entry.kind).toBe("OPERATOR");
     expect(t.entry.clientId).toBe("operator");
-    expect(t.results.map((r) => r.action.type)).toEqual(["RUN_PAYOUTS", "SWEEP_TO_USYC"]); // execution order
+    expect(t.results.map((r) => r.action.type)).toEqual(["RUN_PAYOUTS", "SWEEP_TO_YIELD"]); // execution order
     expect(t.results.every((r) => r.ok && r.revalidated.ok)).toBe(true);
     expect(runTreasuryOnce).toHaveBeenCalledTimes(1);
-    expect(runSweepOnce).toHaveBeenCalledTimes(1);
-    // the sweep ran with the operator's effective float (cushion 5 + 8 due) and the env was restored afterwards
-    expect((t.results[1].result as { plan: { reason: string } }).plan.reason).toBe("env float 13");
-    expect(process.env.USYC_FLOAT_USDC).toBeUndefined();
+    expect(runRevenueYieldOnce).toHaveBeenCalledTimes(1);
+    // the sweep ran with the operator's effective float (cushion 5 + 8 due)
+    expect((t.results[1].result as { plan: { reason: string } }).plan.reason).toBe("float 13");
+    expect(vi.mocked(runRevenueYieldOnce).mock.calls[0][0]).toEqual({ floatUsdc: 13 });
 
     const stored = await getDecision(t.entry.id);
     expect(stored?.kind).toBe("OPERATOR");
@@ -37,7 +37,7 @@ describe("runOperatorOnce", () => {
     expect(p.type).toBe("OPERATOR");
     expect(p.snapshot.revenue).toBeTruthy();
     expect(p.candidates.length).toBeGreaterThanOrEqual(3);
-    expect(p.chosen.map((c) => c.type)).toEqual(["RUN_PAYOUTS", "SWEEP_TO_USYC"]);
+    expect(p.chosen.map((c) => c.type)).toEqual(["RUN_PAYOUTS", "SWEEP_TO_YIELD"]);
     expect(p.rationale.length).toBeGreaterThan(20);
     expect(p.nextCheckAt).toBe(NOW + t.plan.nextCheckInSeconds);
     expect(p.meta).toMatchObject({ fallback: true, model: "fallback" });
@@ -52,7 +52,7 @@ describe("runOperatorOnce", () => {
     const client = { messages: { create: async () => ({ content: [{ type: "tool_use", id: "t", name: "submit_plan", input: { actionIds: ["c1", "c2", "c3", "c4", "c5", "nope"], rationale: "Do everything.", nextCheckInSeconds: 900 } }] }) } } as unknown as AnalystClient;
     let calls = 0;
     const t = await runOperatorOnce({ now: NOW, client, snapshotFn: async () => s, executors: { payouts: async () => { calls++; return { processed: 0 }; } } });
-    expect(t.results.map((r) => r.action.type)).toEqual(["RUN_PAYOUTS", "SWEEP_TO_USYC"]);
+    expect(t.results.map((r) => r.action.type)).toEqual(["RUN_PAYOUTS", "SWEEP_TO_YIELD"]);
     for (const r of t.results) expect(r.revalidated.ok).toBe(true);
     expect(calls).toBe(1);
     const p = t.entry.payload as { chosen: { type: string; ok: boolean }[]; meta: { fallback: boolean; guardNotes: string[] } };
@@ -64,11 +64,11 @@ describe("runOperatorOnce", () => {
 
   it("an executor that throws is recorded as a failed action, the ledger entry is still written", async () => {
     const t = await runOperatorOnce({ now: NOW, snapshotFn: async () => snap(), client: null, executors: { sweep: async () => { throw new Error("teller reverted"); } } });
-    const sweep = t.results.find((r) => r.action.type === "SWEEP_TO_USYC")!;
+    const sweep = t.results.find((r) => r.action.type === "SWEEP_TO_YIELD")!;
     expect(sweep.ok).toBe(false);
     expect(sweep.error).toBe("teller reverted");
     const p = (await getDecision(t.entry.id))!.payload as { chosen: { type: string; ok: boolean; error: string | null }[] };
-    expect(p.chosen.find((c) => c.type === "SWEEP_TO_USYC")).toMatchObject({ ok: false, error: "teller reverted" });
+    expect(p.chosen.find((c) => c.type === "SWEEP_TO_YIELD")).toMatchObject({ ok: false, error: "teller reverted" });
   });
 
   it("price changes go through setPrice's own guard (a refused change is a failed action)", async () => {

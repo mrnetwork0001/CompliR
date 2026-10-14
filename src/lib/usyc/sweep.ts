@@ -183,7 +183,7 @@ export async function runSweepOnce(): Promise<SweepResult> {
       }
       result.executed = true;
     } catch (e) {
-      result.error = `live sweep failed (is the wallet entitled? see docs/USYC.md): ${(e as Error)?.message ?? e}`;
+      result.error = `live sweep failed (is the wallet entitled? see docs/YIELD.md): ${(e as Error)?.message ?? e}`;
     }
   }
 

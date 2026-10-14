@@ -27,8 +27,10 @@ const asOperator = (e: DecisionLogEntry | null | undefined): OperatorPayload | n
   const p = e?.payload as Partial<OperatorPayload> | null | undefined;
   return p && p.type === "OPERATOR" ? (p as OperatorPayload) : null;
 };
-const ACTION_LABEL: Record<OperatorAction["type"], string> = {
-  SWEEP_TO_USYC: "Park in USYC",
+const ACTION_LABEL: Record<OperatorAction["type"] | "SWEEP_TO_USYC" | "REDEEM_FROM_USYC", string> = {
+  SWEEP_TO_YIELD: "Park in yield",
+  REDEEM_FROM_YIELD: "Redeem from yield",
+  SWEEP_TO_USYC: "Park in USYC", // legacy ledger entries
   REDEEM_FROM_USYC: "Redeem from USYC",
   RUN_PAYOUTS: "Run payouts",
   ADJUST_PRICE: "Adjust price",
@@ -322,7 +324,7 @@ function OperatorCard({ d }: { d: ConsoleData }) {
           <ul className={styles.actions} aria-label="Chosen actions">
             {op.chosen.map((c) => (
               <li key={c.id}>
-                <span className={`badge ${c.type === "HOLD" ? "badgeNeutral" : c.ok ? "badgeLOW" : "badgeHIGH"}`}>{ACTION_LABEL[c.type] ?? c.type}</span>
+                <span className={`badge ${c.type === "HOLD" ? "badgeNeutral" : c.ok ? "badgeLOW" : "badgeHIGH"}`}>{ACTION_LABEL[c.type as keyof typeof ACTION_LABEL] ?? c.type}</span>
                 {c.error && <span className="muted small"> {c.error}</span>}
               </li>
             ))}

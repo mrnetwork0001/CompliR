@@ -1,11 +1,11 @@
-/** Runs every CompliR worker loop in one process (for a VM/container): watcher, trustmap, treasury, operator, events, tips, usyc, report. */
+/** Runs every CompliR worker loop in one process (for a VM/container): watcher, trustmap, treasury, operator, events, tips, yield (Circle Earn), report. */
 import { runWatcherOnce } from "../src/lib/watcher";
 import { tailOnce } from "../src/lib/trustmap/tailer";
 import { runTreasuryOnce } from "../src/lib/treasury/agent";
 import { runOperatorOnce } from "../src/lib/operator/run";
 import { pollBlocklistEvents } from "../src/lib/events/blocklist";
 import { runTipsOnce } from "../src/lib/tips";
-import { runSweepOnce } from "../src/lib/usyc/sweep";
+import { runRevenueYieldOnce } from "../src/lib/earn";
 import { publishReport } from "../src/lib/reports";
 import { processRefunds, installRefundSink } from "../src/lib/refunds";
 
@@ -18,7 +18,7 @@ const jobs: Job[] = [
   { name: "operator", everyMs: 3_600_000, run: runOperatorOnce },
   { name: "tips", everyMs: 300_000, run: runTipsOnce },
   { name: "refunds", everyMs: 300_000, run: processRefunds },
-  { name: "usyc", everyMs: 3_600_000, run: runSweepOnce },
+  { name: "yield", everyMs: 3_600_000, run: () => runRevenueYieldOnce() },
   { name: "report", everyMs: 3_600_000, run: () => publishReport(new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)) },
 ];
 installRefundSink();

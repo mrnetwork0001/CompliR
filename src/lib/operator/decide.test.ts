@@ -1,38 +1,53 @@
 import "../__tests__/setup";
 import { describe, it, expect } from "vitest";
 import { applyPlanGuards, candidateActions, decideOperations, fallbackChoice, validateAction, NEXT_CHECK_MAX_S, NEXT_CHECK_MIN_S } from "./decide";
-import { NOW, snap } from "./fixtures";
+import { NOW, POLICY, VAULT_A, VAULT_B, VAULT_ILLIQUID, snap, vault } from "./fixtures";
 import type { AnalystClient } from "../analyst/client";
 
 const types = (s: ReturnType<typeof snap>, opts = {}) => candidateActions(s, { now: NOW, ...opts }).candidates.map((c) => c.type);
 const rejectedFor = (s: ReturnType<typeof snap>, type: string, opts = {}) => candidateActions(s, { now: NOW, ...opts }).rejected.filter((r) => r.type === type).map((r) => r.reason).join(" | ");
 
 describe("candidateActions - liquidity guards", () => {
-  it("sweeps only the excess above USYC float + obligations due in 48 h", () => {
+  it("sweeps only the excess above YIELD float + obligations due in 48 h, into the best liquid vault", () => {
     const s = snap(); // float 20, cushion 5, due 8 → effective float 13 → deposit 7
     const { candidates } = candidateActions(s, { now: NOW });
-    const sweep = candidates.find((c) => c.type === "SWEEP_TO_USYC")!;
-    expect(sweep.params).toMatchObject({ amountUsdc: 7, effectiveFloatUsdc: 13 });
+    const sweep = candidates.find((c) => c.type === "SWEEP_TO_YIELD")!;
+    // VAULT_ILLIQUID has the best APY but Circle flags it illiquid → VAULT_A (3.06%) beats VAULT_B (2%)
+    expect(sweep.params).toMatchObject({ amountUsdc: 7, effectiveFloatUsdc: 13, vault: VAULT_A.address });
+    expect(sweep.reason).toMatch(/Steakhouse Prime USDC/);
+  });
+  it("no sweep when Earn metadata is unavailable or no vault passes the rules", () => {
+    const blind = snap({ reserves: { ...snap().reserves!, vaults: null, vaultsError: "HTTP 503" } });
+    expect(types(blind)).not.toContain("SWEEP_TO_YIELD");
+    expect(rejectedFor(blind, "SWEEP_TO_YIELD")).toMatch(/never deposit blind.*HTTP 503/);
+    const thin = snap({ reserves: { ...snap().reserves!, positions: [], vaults: [vault({ address: "0x00000000000000000000000000000000000000d4", availableUsdc: 10 }), VAULT_ILLIQUID], yieldPolicy: POLICY } });
+    expect(types(thin)).not.toContain("SWEEP_TO_YIELD"); // 10 < 2 × 7
+    expect(rejectedFor(thin, "SWEEP_TO_YIELD")).toMatch(/no eligible Earn vault/);
+  });
+  it("legacy USYC backend still plans without vault metadata", () => {
+    const s = snap({ reserves: { ...snap().reserves!, yieldBackend: "usyc", vaults: null, positions: [] } });
+    const sweep = candidateActions(s, { now: NOW }).candidates.find((c) => c.type === "SWEEP_TO_YIELD")!;
+    expect(sweep.params).toEqual({ amountUsdc: 7, effectiveFloatUsdc: 13 });
   });
   it("no sweep when obligations eat the excess", () => {
     const s = snap({ obligations: { ...snap().obligations!, due48hUsdc: 16 } }); // effective float 21 > 20 → shortfall 1 → redeem 1 (≥ min 1)
-    expect(types(s)).toContain("REDEEM_FROM_USYC");
+    expect(types(s)).toContain("REDEEM_FROM_YIELD");
     const s2 = snap({ obligations: { ...snap().obligations!, due48hUsdc: 15 } }); // effective float 20 == balance → nothing
-    expect(types(s2)).not.toContain("SWEEP_TO_USYC");
-    expect(types(s2)).not.toContain("REDEEM_FROM_USYC");
+    expect(types(s2)).not.toContain("SWEEP_TO_YIELD");
+    expect(types(s2)).not.toContain("REDEEM_FROM_YIELD");
   });
   it("never sweeps when the float or the obligations are unknown", () => {
     const noFloat = snap({ reserves: { ...snap().reserves!, floatUsdc: null } });
-    expect(types(noFloat)).not.toContain("SWEEP_TO_USYC");
-    expect(rejectedFor(noFloat, "SWEEP_TO_USYC")).toMatch(/float unknown/);
+    expect(types(noFloat)).not.toContain("SWEEP_TO_YIELD");
+    expect(rejectedFor(noFloat, "SWEEP_TO_YIELD")).toMatch(/float unknown/);
     const noObl = snap({ obligations: null, errors: { obligations: "boom" } });
-    expect(types(noObl)).not.toContain("SWEEP_TO_USYC");
-    expect(rejectedFor(noObl, "SWEEP_TO_USYC")).toMatch(/never sweep blind/);
+    expect(types(noObl)).not.toContain("SWEEP_TO_YIELD");
+    expect(rejectedFor(noObl, "SWEEP_TO_YIELD")).toMatch(/never sweep blind/);
   });
-  it("redeems a shortfall from USYC, capped at the holding", () => {
-    const s = snap({ reserves: { ...snap().reserves!, floatUsdc: 2, usycUsdc: 4 } }); // need 13, have 2 → shortfall 11, only 4 available
-    const c = candidateActions(s, { now: NOW }).candidates.find((x) => x.type === "REDEEM_FROM_USYC")!;
-    expect(c.params.amountUsdc).toBe(4);
+  it("redeems a shortfall from the held vault, capped at the holding", () => {
+    const s = snap({ reserves: { ...snap().reserves!, floatUsdc: 2, yieldUsdc: 4, positions: [{ vault: VAULT_B.address, name: VAULT_B.name, shares: 3.9, assetsUsdc: 4 }] } }); // need 13, have 2 → shortfall 11, only 4 held
+    const c = candidateActions(s, { now: NOW }).candidates.find((x) => x.type === "REDEEM_FROM_YIELD")!;
+    expect(c.params).toMatchObject({ amountUsdc: 4, vault: VAULT_B.address });
   });
 });
 
@@ -101,7 +116,7 @@ describe("validateAction", () => {
     const s = snap();
     const { candidates } = candidateActions(s, { now: NOW });
     for (const c of candidates) expect(validateAction(c, s, { now: NOW }).ok).toBe(true);
-    expect(validateAction({ type: "SWEEP_TO_USYC", params: { amountUsdc: 20, effectiveFloatUsdc: 0 } }, s, { now: NOW }).ok).toBe(false);
+    expect(validateAction({ type: "SWEEP_TO_YIELD", params: { amountUsdc: 20, effectiveFloatUsdc: 0 } }, s, { now: NOW }).ok).toBe(false);
     expect(validateAction({ type: "ADJUST_PRICE", params: { key: "screen", fromUsdc: 0.01, toUsdc: 0.05 } }, s, { now: NOW }).ok).toBe(false);
     expect(validateAction({ type: "WITHDRAW_EVERYTHING" as never, params: {} }, s, { now: NOW }).ok).toBe(false);
   });
@@ -112,7 +127,7 @@ describe("applyPlanGuards / model step", () => {
     const s = snap();
     const { candidates } = candidateActions(s, { now: NOW });
     const hold = candidates.find((c) => c.type === "HOLD")!;
-    const sweep = candidates.find((c) => c.type === "SWEEP_TO_USYC")!;
+    const sweep = candidates.find((c) => c.type === "SWEEP_TO_YIELD")!;
     const g = applyPlanGuards({ actionIds: ["zz9", sweep.id, hold.id], rationale: Array(300).fill("word").join(" "), nextCheckInSeconds: 5 }, candidates, s);
     expect(g.chosen.map((c) => c.id)).toEqual([sweep.id]);
     expect(g.nextCheckInSeconds).toBe(NEXT_CHECK_MIN_S);
@@ -165,7 +180,7 @@ describe("applyPlanGuards / model step", () => {
   it("no client → fallback picks every non-HOLD candidate, HOLD alone when nothing is allowed", () => {
     const s = snap();
     const fb = fallbackChoice(candidateActions(s, { now: NOW }).candidates, s);
-    expect(fb.chosen.map((c) => c.type).sort()).toEqual(["RUN_PAYOUTS", "SWEEP_TO_USYC"]);
+    expect(fb.chosen.map((c) => c.type).sort()).toEqual(["RUN_PAYOUTS", "SWEEP_TO_YIELD"]);
     const quiet = snap({ obligations: { ...snap().obligations!, pendingInvoices: 0, pendingUsdc: 0, due48hUsdc: 0 }, reserves: { ...snap().reserves!, floatUsdc: 5 } });
     const fb2 = fallbackChoice(candidateActions(quiet, { now: NOW }).candidates, quiet);
     expect(fb2.chosen.map((c) => c.type)).toEqual(["HOLD"]);

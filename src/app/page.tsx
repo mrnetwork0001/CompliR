@@ -386,7 +386,7 @@ export default function Landing() {
             <dl className="dl">
               <div><dt>custody</dt><dd className="mono">developer-controlled wallets</dd></div>
               <div><dt>policy</dt><dd className="mono">per-tx · daily · allowlist</dd></div>
-              <div><dt>idle</dt><dd className="mono">USYC sweep (operator decides)</dd></div>
+              <div><dt>idle</dt><dd className="mono">Circle Earn vault sweep (operator decides)</dd></div>
               <div><dt>books</dt><dd className="mono">public · <Link href="/company">/company</Link></dd></div>
             </dl>
           </div>

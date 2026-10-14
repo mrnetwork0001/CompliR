@@ -35,6 +35,6 @@ describe("companySnapshot never throws", () => {
     // DB-backed sections that did not fail are populated
     expect(s.revenue).toMatchObject({ totalUsdc: 0, callsPaid: 0, payers: 0 });
     expect(s.screening).toMatchObject({ screenings24h: 0, watchesActive: 0, p95LatencyMs: null });
-    expect(s.mode).toMatchObject({ treasury: "dry-run", usyc: "dry", x402: "disabled", paused: false });
+    expect(s.mode).toMatchObject({ treasury: "dry-run", yield: "dry", yieldBackend: "earn", x402: "disabled", paused: false });
   }, 30_000);
 });

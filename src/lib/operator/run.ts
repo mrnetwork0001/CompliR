@@ -5,7 +5,7 @@
  */
 import { appendDecision } from "../ledger";
 import { runTreasuryOnce } from "../treasury";
-import { runSweepOnce } from "../usyc";
+import { runRevenueYieldOnce } from "../earn";
 import { config } from "../config";
 import type { DecisionLogEntry } from "../types";
 import { decideOperations, validateAction, type DecideOptions, type OperatorAction, type OperatorPlan } from "./decide";
@@ -40,17 +40,10 @@ export interface Executors {
   price: (key: "screen" | "watch", to: number, reason: string, now: number) => Promise<unknown>;
 }
 
-/** runSweepOnce() reads USYC_FLOAT_USDC from env; the operator's float includes obligations due in 48 h, so the env
- *  is raised for the duration of the call (more conservative, never less) and restored afterwards. */
+/** One yield tick with the operator's effective float (cushion + obligations due in 48 h - never less than the env float). */
 async function sweepWithFloat(effectiveFloatUsdc: number | undefined): Promise<unknown> {
-  const prev = process.env.USYC_FLOAT_USDC;
-  if (effectiveFloatUsdc != null) process.env.USYC_FLOAT_USDC = String(effectiveFloatUsdc);
-  try {
-    const r = await runSweepOnce();
-    return { mode: r.mode, executed: r.executed, plan: r.plan, balances: r.balances, txs: r.txs, decisionId: r.decisionId, skipped: r.skipped, error: r.error, floatUsdc: effectiveFloatUsdc };
-  } finally {
-    if (prev === undefined) delete process.env.USYC_FLOAT_USDC; else process.env.USYC_FLOAT_USDC = prev;
-  }
+  const r = await runRevenueYieldOnce({ floatUsdc: effectiveFloatUsdc });
+  return { backend: r.backend, mode: r.mode, executed: r.executed, plan: r.plan, balances: r.balances, txs: r.txs, decisionId: r.decisionId, skipped: r.skipped, error: r.error, floatUsdc: effectiveFloatUsdc };
 }
 
 const defaultExecutors: Executors = {
@@ -63,7 +56,7 @@ const defaultExecutors: Executors = {
 };
 
 /** Order of execution: payouts (treasury funds) → prices → liquidity sweep (revenue wallet). */
-const ORDER: Record<OperatorAction["type"], number> = { RUN_PAYOUTS: 0, ADJUST_PRICE: 1, SWEEP_TO_USYC: 2, REDEEM_FROM_USYC: 2, HOLD: 3 };
+const ORDER: Record<OperatorAction["type"], number> = { RUN_PAYOUTS: 0, ADJUST_PRICE: 1, SWEEP_TO_YIELD: 2, REDEEM_FROM_YIELD: 2, HOLD: 3 };
 
 function snapshotSummary(s: CompanySnapshot) {
   return {
@@ -71,7 +64,8 @@ function snapshotSummary(s: CompanySnapshot) {
     revenue: s.revenue, obligations: s.obligations, screening: s.screening, mode: s.mode,
     pricing: s.pricing ? { screenUsdc: s.pricing.screenUsdc, watchUsdc: s.pricing.watchUsdc, lastChangeAt: s.pricing.lastChangeAt, reason: s.pricing.reason } : null,
     reserves: s.reserves ? {
-      floatUsdc: s.reserves.floatUsdc, usycUsdc: s.reserves.usycUsdc, revenueWallet: s.reserves.revenueWallet, usycMode: s.reserves.usycMode, usycFloatUsdc: s.reserves.usycFloatUsdc,
+      floatUsdc: s.reserves.floatUsdc, yieldUsdc: s.reserves.yieldUsdc, positions: s.reserves.positions, revenueWallet: s.reserves.revenueWallet, yieldBackend: s.reserves.yieldBackend, yieldMode: s.reserves.yieldMode, yieldFloatUsdc: s.reserves.yieldFloatUsdc,
+      preferredVault: s.reserves.preferredVault,
       circle: { enabled: s.reserves.circle.enabled, wallets: s.reserves.circle.wallets.map((w) => ({ role: w.role, address: w.address, status: w.status, balances: w.balances })) },
     } : null,
   };
@@ -93,8 +87,8 @@ export async function runOperatorOnce(opts: RunOptions = {}): Promise<OperatorTi
       let result: unknown = null;
       switch (action.type) {
         case "RUN_PAYOUTS": result = await ex.payouts(); break;
-        case "SWEEP_TO_USYC":
-        case "REDEEM_FROM_USYC": result = await ex.sweep(action.params.effectiveFloatUsdc); break;
+        case "SWEEP_TO_YIELD":
+        case "REDEEM_FROM_YIELD": result = await ex.sweep(action.params.effectiveFloatUsdc); break;
         case "ADJUST_PRICE": result = await ex.price(action.params.key!, action.params.toUsdc!, action.reason, now); break;
         case "HOLD": result = { held: true }; break;
       }

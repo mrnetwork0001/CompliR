@@ -18,7 +18,8 @@ function rowToDecision(r: Record<string, unknown>): DecisionLogEntry {
 export async function recentOperatorDecisions(limit = 10): Promise<DecisionLogEntry[]> {
   try {
     await migrate();
-    const r = await db().execute({ sql: `SELECT * FROM decisions WHERE kind = 'OPERATOR' ORDER BY seq DESC LIMIT ?`, args: [Math.min(Math.max(limit, 1), 100)] });
+    // kind OPERATOR also carries executed yield moves (payload.type YIELD_SWEEP / YIELD_REDEEM); only ticks here.
+    const r = await db().execute({ sql: `SELECT * FROM decisions WHERE kind = 'OPERATOR' AND COALESCE(json_extract(payload, '$.type'), 'OPERATOR') = 'OPERATOR' ORDER BY seq DESC LIMIT ?`, args: [Math.min(Math.max(limit, 1), 100)] });
     return r.rows.map((x) => rowToDecision(x as Record<string, unknown>));
   } catch (e) {
     console.warn("[operator/log] read failed:", (e as Error)?.message ?? e);

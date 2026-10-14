@@ -1,7 +1,8 @@
 /**
  * Company snapshot - everything the operator agent (and the /company page) needs to see in one object.
  *
- * Reads only: revenue from the `payments` table, reserves from the revenue wallet on Arc (+ USYC) and the Circle
+ * Reads only: revenue from the `payments` table, reserves from the revenue wallet on Arc (+ Circle Earn vault
+ * positions, or USYC when YIELD_BACKEND=usyc) and the Circle
  * wallets, obligations from the treasury invoices, screening volume from `screenings`, prices from operator_pricing.
  * Every section is fetched independently and degrades to nulls when its source fails: this function never throws.
  */
@@ -12,6 +13,7 @@ import { config } from "../config";
 import { db, migrate } from "../store/db";
 import { invoiceTotals, pendingInvoices, policyFromEnv, spentToday, treasuryStatus, type TreasuryMode, type TreasuryPolicy } from "../treasury";
 import { tellerAbi, usycEnv } from "../usyc";
+import { chooseDepositVault, readYieldState, yieldBackend, yieldContext, yieldEnv, type YieldBackend, type YieldPolicy, type YieldPosition, type YieldVault } from "../earn";
 import { priceState, type PriceState } from "./pricing";
 
 export interface RevenueSnapshot {
@@ -40,13 +42,23 @@ export interface CircleWalletView {
 export interface ReservesSnapshot {
   /** spendable USDC in the revenue wallet (x402 payTo) */
   floatUsdc: number | null;
-  /** USYC holding valued in USDC */
-  usycUsdc: number | null;
-  usycShares: number | null;
+  /** all yield positions valued in USDC (Earn vault shares via convertToAssets, or USYC) */
+  yieldUsdc: number | null;
+  /** per-vault positions (Earn: one per Morpho vault held; USYC: the USYC token) */
+  positions: YieldPosition[];
   revenueWallet: string | null;
-  usycMode: "dry" | "live";
-  usycFloatUsdc: number;
-  usycMinSweepUsdc: number;
+  yieldBackend: YieldBackend;
+  yieldMode: "dry" | "live";
+  /** fixed cushion (YIELD_FLOAT_USDC, or USYC_FLOAT_USDC on the usyc backend) */
+  yieldFloatUsdc: number;
+  yieldMinSweepUsdc: number;
+  yieldMaxSweepUsdc: number;
+  /** USDC Circle Earn vaults on this chain (null = Earn API unreachable or usyc backend) */
+  vaults: YieldVault[] | null;
+  yieldPolicy: YieldPolicy | null;
+  /** where a deposit would go right now (planner preview at min sweep) */
+  preferredVault: { address: string; name: string; apy: number; availableUsdc: number; tvlUsdc: number } | null;
+  vaultsError?: string;
   circle: { enabled: boolean; reason?: string; blockchain: string | null; wallets: CircleWalletView[] };
   error?: string;
 }
@@ -85,7 +97,8 @@ export interface PricingSnapshot {
 }
 export interface ModeSnapshot {
   treasury: TreasuryMode;
-  usyc: "dry" | "live";
+  yield: "dry" | "live";
+  yieldBackend: YieldBackend;
   signer: "local" | "circle";
   circle: "live" | "dry-run";
   x402: "enabled" | "disabled";
@@ -144,8 +157,8 @@ export async function revenueSnapshot(at = now()): Promise<RevenueSnapshot> {
   };
 }
 
-/** Revenue-wallet USDC + USYC straight from Arc (read-only; 6 s timeout). */
-async function chainReserves(env: ReturnType<typeof usycEnv>): Promise<{ floatUsdc: number; usycUsdc: number; usycShares: number } | null> {
+/** Revenue-wallet USDC + USYC straight from Arc (legacy backend; read-only; 6 s timeout). */
+async function usycReserves(env: ReturnType<typeof usycEnv>): Promise<{ floatUsdc: number; yieldUsdc: number; positions: YieldPosition[] } | null> {
   if (!env.wallet) return null;
   const cfg = config();
   const pub = createPublicClient({ chain: arcChain(), transport: http(cfg.ARC_RPC_URL, { timeout: 6_000, retryCount: 0 }) });
@@ -156,35 +169,57 @@ async function chainReserves(env: ReturnType<typeof usycEnv>): Promise<{ floatUs
     usycRaw = await pub.readContract({ address: env.usyc, abi: erc20Abi, functionName: "balanceOf", args: [env.wallet] }).catch(() => 0n);
     usycUsdcRaw = usycRaw === 0n || !env.teller ? usycRaw : await pub.readContract({ address: env.teller, abi: tellerAbi, functionName: "convertToAssets", args: [usycRaw] }).catch(() => usycRaw);
   }
-  return { floatUsdc: Number(formatUnits(usdcRaw, 6)), usycUsdc: Number(formatUnits(usycUsdcRaw, 6)), usycShares: Number(formatUnits(usycRaw, 6)) };
+  const yieldUsdc = Number(formatUnits(usycUsdcRaw, 6));
+  const positions: YieldPosition[] = usycRaw > 0n && env.usyc ? [{ vault: env.usyc, name: "USYC", shares: Number(formatUnits(usycRaw, 6)), assetsUsdc: yieldUsdc }] : [];
+  return { floatUsdc: Number(formatUnits(usdcRaw, 6)), yieldUsdc, positions };
+}
+
+/** Circle wallets view (balances from Circle when live). */
+async function circleView(): Promise<ReservesSnapshot["circle"]> {
+  const status = circleStatus();
+  const stored = await listStoredWallets();
+  const wallets: CircleWalletView[] = [];
+  for (const role of ["revenue", "ops"] as const) {
+    const w = stored.find((x) => x.role === role) ?? null;
+    try {
+      const b = status.enabled ? await circleBalances(role) : null;
+      wallets.push({ role, address: w?.address ?? null, accountType: w?.accountType ?? null, policy: w?.policy ?? null, balances: b?.balances ?? [], status: b?.status ?? (w ? "dry-run" : "not-provisioned"), reason: b?.reason ?? status.reason });
+    } catch (e) {
+      wallets.push({ role, address: w?.address ?? null, accountType: w?.accountType ?? null, policy: w?.policy ?? null, balances: [], status: "error", reason: (e as Error)?.message ?? String(e) });
+    }
+  }
+  return { enabled: status.enabled, reason: status.reason, blockchain: status.blockchain, wallets };
 }
 
 export async function reservesSnapshot(): Promise<ReservesSnapshot> {
-  const env = usycEnv();
+  const backend = yieldBackend();
+  const yenv = yieldEnv();
+  const uenv = usycEnv();
   const base: ReservesSnapshot = {
-    floatUsdc: null, usycUsdc: null, usycShares: null, revenueWallet: env.wallet, usycMode: env.mode, usycFloatUsdc: env.floatUsdc, usycMinSweepUsdc: env.minSweepUsdc,
+    floatUsdc: null, yieldUsdc: null, positions: [], revenueWallet: backend === "earn" ? yenv.wallet : uenv.wallet,
+    yieldBackend: backend, yieldMode: backend === "earn" ? yenv.mode : uenv.mode,
+    yieldFloatUsdc: backend === "earn" ? yenv.floatUsdc : uenv.floatUsdc, yieldMinSweepUsdc: backend === "earn" ? yenv.minSweepUsdc : uenv.minSweepUsdc,
+    yieldMaxSweepUsdc: backend === "earn" ? yenv.maxSweepUsdc : 0,
+    vaults: null, yieldPolicy: null, preferredVault: null,
     circle: { enabled: false, blockchain: null, wallets: [] },
   };
-  const [chain, circle] = await Promise.allSettled([
-    chainReserves(env),
-    (async () => {
-      const status = circleStatus();
-      const stored = await listStoredWallets();
-      const wallets: CircleWalletView[] = [];
-      for (const role of ["revenue", "ops"] as const) {
-        const w = stored.find((x) => x.role === role) ?? null;
-        try {
-          const b = status.enabled ? await circleBalances(role) : null;
-          wallets.push({ role, address: w?.address ?? null, accountType: w?.accountType ?? null, policy: w?.policy ?? null, balances: b?.balances ?? [], status: b?.status ?? (w ? "dry-run" : "not-provisioned"), reason: b?.reason ?? status.reason });
-        } catch (e) {
-          wallets.push({ role, address: w?.address ?? null, accountType: w?.accountType ?? null, policy: w?.policy ?? null, balances: [], status: "error", reason: (e as Error)?.message ?? String(e) });
-        }
-      }
-      return { enabled: status.enabled, reason: status.reason, blockchain: status.blockchain, wallets };
-    })(),
-  ]);
-  if (chain.status === "fulfilled" && chain.value) Object.assign(base, chain.value);
-  else if (chain.status === "rejected") base.error = `chain read failed: ${(chain.reason as Error)?.message ?? chain.reason}`;
+  const chain = (async () => {
+    if (backend === "usyc") return usycReserves(uenv);
+    const ctx = await yieldContext(yenv);
+    base.vaults = ctx.vaults; base.yieldPolicy = ctx.policy;
+    if (ctx.error) base.vaultsError = ctx.error;
+    if (!yenv.wallet) return null;
+    const st = await readYieldState(yenv.wallet, ctx.vaults, yenv.policy.pinnedVault ? [yenv.policy.pinnedVault] : []);
+    const positions = st.positions.map(({ sharesRaw: _s, ...p }) => p);
+    if (ctx.vaults) {
+      const v = chooseDepositVault(ctx.vaults, Math.max(yenv.minSweepUsdc, 0.000001), positions, ctx.policy).vault;
+      base.preferredVault = v ? { address: v.address, name: v.name, apy: v.apy, availableUsdc: v.availableUsdc, tvlUsdc: v.tvlUsdc } : null;
+    }
+    return { floatUsdc: st.balanceUsdc, yieldUsdc: r6(positions.reduce((s, p) => s + p.assetsUsdc, 0)), positions };
+  })();
+  const [c, circle] = await Promise.allSettled([chain, circleView()]);
+  if (c.status === "fulfilled" && c.value) Object.assign(base, c.value);
+  else if (c.status === "rejected") base.error = `chain read failed: ${(c.reason as Error)?.message ?? c.reason}`;
   if (circle.status === "fulfilled") base.circle = circle.value;
   else base.circle = { enabled: false, reason: (circle.reason as Error)?.message ?? String(circle.reason), blockchain: null, wallets: [] };
   return base;
@@ -227,7 +262,7 @@ export function modeSnapshot(): ModeSnapshot {
   const ts = treasuryStatus();
   const c = config();
   return {
-    treasury: ts.mode, usyc: usycEnv().mode, signer: signerMode(), circle: circleStatus().enabled ? "live" : "dry-run",
+    treasury: ts.mode, yield: yieldBackend() === "earn" ? yieldEnv().mode : usycEnv().mode, yieldBackend: yieldBackend(), signer: signerMode(), circle: circleStatus().enabled ? "live" : "dry-run",
     x402: c.X402_DISABLED ? "disabled" : "enabled", paused: c.COMPLIR_PAUSED, chainId: c.ARC_CHAIN_ID, explorerUrl: c.ARC_EXPLORER_URL, treasuryAddress: ts.treasuryAddress,
   };
 }

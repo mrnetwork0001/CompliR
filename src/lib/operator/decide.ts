@@ -12,18 +12,21 @@
 import { resolveProvider, type AnalystModel } from "../analyst/client";
 import { modelLabel } from "../llm";
 import { planSweep } from "../usyc/sweep";
+import { planYield } from "../earn/planner";
 import { z } from "zod";
 import { PRICE_BOUNDS, steppedPrice, validatePriceChange, type PriceKey } from "./pricing";
 import type { CompanySnapshot } from "./state";
 
-export type OperatorActionType = "SWEEP_TO_USYC" | "REDEEM_FROM_USYC" | "RUN_PAYOUTS" | "ADJUST_PRICE" | "HOLD";
-export const OPERATOR_ACTIONS: readonly OperatorActionType[] = ["SWEEP_TO_USYC", "REDEEM_FROM_USYC", "RUN_PAYOUTS", "ADJUST_PRICE", "HOLD"] as const;
+export type OperatorActionType = "SWEEP_TO_YIELD" | "REDEEM_FROM_YIELD" | "RUN_PAYOUTS" | "ADJUST_PRICE" | "HOLD";
+export const OPERATOR_ACTIONS: readonly OperatorActionType[] = ["SWEEP_TO_YIELD", "REDEEM_FROM_YIELD", "RUN_PAYOUTS", "ADJUST_PRICE", "HOLD"] as const;
+/** Pre-2026-10-14 ledger entries used these names (USYC backend); kept for display only. */
+export const LEGACY_ACTION_NAMES: Record<string, OperatorActionType> = { SWEEP_TO_USYC: "SWEEP_TO_YIELD", REDEEM_FROM_USYC: "REDEEM_FROM_YIELD" };
 
 export interface OperatorAction {
   /** stable id inside one plan (c1, c2, …); what the model refers to */
   id: string;
   type: OperatorActionType;
-  params: { amountUsdc?: number; key?: PriceKey; fromUsdc?: number; toUsdc?: number; pendingInvoices?: number; effectiveFloatUsdc?: number };
+  params: { amountUsdc?: number; key?: PriceKey; fromUsdc?: number; toUsdc?: number; pendingInvoices?: number; effectiveFloatUsdc?: number; vault?: string };
   reason: string;
 }
 export interface RejectedAction { type: OperatorActionType; reason: string }
@@ -71,24 +74,35 @@ export function candidateActions(s: CompanySnapshot, opts: DecideOptions = {}): 
   const add = (type: OperatorActionType, params: OperatorAction["params"], reason: string) => candidates.push({ id: `c${++n}`, type, params, reason });
 
   if (s.mode?.paused) {
-    rejected.push({ type: "RUN_PAYOUTS", reason: "COMPLIR_PAUSED" }, { type: "SWEEP_TO_USYC", reason: "COMPLIR_PAUSED" }, { type: "ADJUST_PRICE", reason: "COMPLIR_PAUSED" });
+    rejected.push({ type: "RUN_PAYOUTS", reason: "COMPLIR_PAUSED" }, { type: "SWEEP_TO_YIELD", reason: "COMPLIR_PAUSED" }, { type: "ADJUST_PRICE", reason: "COMPLIR_PAUSED" });
     add("HOLD", {}, "service paused; nothing moves");
     return { candidates, rejected };
   }
 
-  // ── liquidity: keep float ≥ obligations due in 48 h + USYC_FLOAT_USDC, park the rest, redeem a shortfall ──
+  // ── liquidity: keep float ≥ obligations due in 48 h + YIELD_FLOAT_USDC, park the rest in yield, redeem a shortfall ──
   const res = s.reserves;
   const due48h = s.obligations?.due48hUsdc ?? null;
   if (!res || res.floatUsdc == null) {
-    rejected.push({ type: "SWEEP_TO_USYC", reason: `float unknown (${res?.error ?? s.errors.reserves ?? "no revenue wallet"})` });
+    rejected.push({ type: "SWEEP_TO_YIELD", reason: `float unknown (${res?.error ?? s.errors.reserves ?? "no revenue wallet"})` });
   } else if (due48h == null) {
-    rejected.push({ type: "SWEEP_TO_USYC", reason: `obligations unknown (${s.errors.obligations ?? "treasury unreadable"}) - never sweep blind` });
+    rejected.push({ type: "SWEEP_TO_YIELD", reason: `obligations unknown (${s.errors.obligations ?? "treasury unreadable"}) - never sweep blind` });
   } else {
-    const effectiveFloat = r6(res.usycFloatUsdc + due48h);
-    const plan = planSweep({ balanceUsdc: res.floatUsdc, floatUsdc: effectiveFloat, minSweepUsdc: res.usycMinSweepUsdc, usycUsdc: res.usycUsdc ?? 0 });
-    if (plan.action === "DEPOSIT") add("SWEEP_TO_USYC", { amountUsdc: plan.amount, effectiveFloatUsdc: effectiveFloat }, `${plan.reason}; float keeps ${res.usycFloatUsdc} + ${due48h} due within 48 h`);
-    else if (plan.action === "REDEEM") add("REDEEM_FROM_USYC", { amountUsdc: plan.amount, effectiveFloatUsdc: effectiveFloat }, plan.reason);
-    else rejected.push({ type: "SWEEP_TO_USYC", reason: `${plan.reason} (effective float ${effectiveFloat} = ${res.usycFloatUsdc} USYC float + ${due48h} due 48 h)` });
+    const effectiveFloat = r6(res.yieldFloatUsdc + due48h);
+    const floatNote = `effective float ${effectiveFloat} = ${res.yieldFloatUsdc} cushion + ${due48h} due 48 h`;
+    if (res.yieldBackend === "usyc") {
+      const plan = planSweep({ balanceUsdc: res.floatUsdc, floatUsdc: effectiveFloat, minSweepUsdc: res.yieldMinSweepUsdc, usycUsdc: res.yieldUsdc ?? 0 });
+      if (plan.action === "DEPOSIT") add("SWEEP_TO_YIELD", { amountUsdc: plan.amount, effectiveFloatUsdc: effectiveFloat }, `${plan.reason} into USYC; ${floatNote}`);
+      else if (plan.action === "REDEEM") add("REDEEM_FROM_YIELD", { amountUsdc: plan.amount, effectiveFloatUsdc: effectiveFloat }, plan.reason);
+      else rejected.push({ type: "SWEEP_TO_YIELD", reason: `${plan.reason} (${floatNote})` });
+    } else {
+      const plan = planYield({
+        balanceUsdc: res.floatUsdc, floatUsdc: effectiveFloat, minSweepUsdc: res.yieldMinSweepUsdc, maxSweepUsdc: res.yieldMaxSweepUsdc,
+        positions: res.positions ?? [], vaults: res.vaults, policy: res.yieldPolicy ?? { usdcAddress: "", minTvlUsdc: Infinity, requireSentinel: true, liquidityMultiple: 2, pinnedVault: null, contractAllowlist: [] },
+      });
+      if (plan.action === "DEPOSIT" && plan.vault) add("SWEEP_TO_YIELD", { amountUsdc: plan.amount, effectiveFloatUsdc: effectiveFloat, vault: plan.vault.address }, `${plan.reason}; ${floatNote}`);
+      else if (plan.action === "REDEEM" && plan.vault) add("REDEEM_FROM_YIELD", { amountUsdc: plan.amount, effectiveFloatUsdc: effectiveFloat, vault: plan.vault.address }, plan.reason);
+      else rejected.push({ type: "SWEEP_TO_YIELD", reason: `${plan.reason} (${floatNote})${res.vaultsError ? ` [earn: ${res.vaultsError}]` : ""}` });
+    }
   }
 
   // ── payouts: only when there is something pending and the daily cap still has room ──
@@ -96,7 +110,7 @@ export function candidateActions(s: CompanySnapshot, opts: DecideOptions = {}): 
   if (!ob) rejected.push({ type: "RUN_PAYOUTS", reason: `obligations unknown (${s.errors.obligations ?? "treasury unreadable"})` });
   else if (ob.pendingInvoices === 0) rejected.push({ type: "RUN_PAYOUTS", reason: "no pending invoices" });
   else if (ob.dailyHeadroomUsdc <= 0) rejected.push({ type: "RUN_PAYOUTS", reason: `daily cap exhausted (${ob.spentTodayUsdc} of ${ob.policy?.dailyCapUsdc ?? "?"} USDC spent today)` });
-  else if (s.mode?.treasury === "live" && res?.floatUsdc != null && res.floatUsdc <= 0 && (res.usycUsdc ?? 0) <= 0) rejected.push({ type: "RUN_PAYOUTS", reason: "live treasury with zero reserves - refill before paying" });
+  else if (s.mode?.treasury === "live" && res?.floatUsdc != null && res.floatUsdc <= 0 && (res.yieldUsdc ?? 0) <= 0) rejected.push({ type: "RUN_PAYOUTS", reason: "live treasury with zero reserves - refill before paying" });
   else add("RUN_PAYOUTS", { pendingInvoices: ob.pendingInvoices, amountUsdc: ob.dueTodayUsdc }, `${ob.pendingInvoices} pending invoice(s) totalling ${ob.pendingUsdc} USDC; ${ob.dailyHeadroomUsdc} USDC daily headroom (${s.mode?.treasury ?? "dry-run"}); every payee is screened and GuardedTreasury re-checks the tier on-chain`);
 
   // ── pricing: raise on demand, lower on silence, always within bounds / step / cooldown ──
@@ -149,7 +163,7 @@ export function fallbackChoice(candidates: OperatorAction[], s: CompanySnapshot)
   const chosen = acts.length ? acts : candidates.filter((c) => c.type === "HOLD").slice(0, 1);
   const rev = s.revenue, ob = s.obligations, res = s.reserves;
   const lines = [
-    `Revenue ${rev ? `${rev.totalUsdc} USDC all-time (${rev.last24hUsdc} last 24 h, ${rev.callsPaid24h} paid calls)` : "unknown"}; reserves ${res?.floatUsdc != null ? `${res.floatUsdc} USDC float + ${res.usycUsdc ?? 0} in USYC` : "unknown"}; obligations ${ob ? `${ob.pendingInvoices} pending (${ob.pendingUsdc} USDC), ${ob.heldInvoices} held` : "unknown"}.`,
+    `Revenue ${rev ? `${rev.totalUsdc} USDC all-time (${rev.last24hUsdc} last 24 h, ${rev.callsPaid24h} paid calls)` : "unknown"}; reserves ${res?.floatUsdc != null ? `${res.floatUsdc} USDC float + ${res.yieldUsdc ?? 0} in yield (${res.yieldBackend === "usyc" ? "USYC" : "Circle Earn"})` : "unknown"}; obligations ${ob ? `${ob.pendingInvoices} pending (${ob.pendingUsdc} USDC), ${ob.heldInvoices} held` : "unknown"}.`,
     acts.length ? `Acting: ${acts.map((a) => `${a.type} - ${a.reason}`).join(" · ")}.` : `Holding: ${candidates.find((c) => c.type === "HOLD")?.reason ?? "no allowed action"}.`,
   ];
   return { chosen, rationale: lines.join(" "), nextCheckInSeconds: acts.length ? NEXT_CHECK_MIN_S * 2 : NEXT_CHECK_DEFAULT_S };
@@ -174,11 +188,11 @@ const TOOL = {
     required: ["actionIds", "rationale", "nextCheckInSeconds"],
   },
 };
-export const OPERATOR_SYSTEM_PROMPT = `You are the operator of CompliR, a company on the Arc blockchain that sells risk screening (x402-paid API calls), holds its USDC in Circle wallets and USYC, and pays contributors through a GuardedTreasury that only releases to payees its own oracle cleared.
+export const OPERATOR_SYSTEM_PROMPT = `You are the operator of CompliR, a company on the Arc blockchain that sells risk screening (x402-paid API calls), holds its USDC in Circle wallets and parks idle revenue in Circle Earn (Morpho USDC vaults on Arc), and pays contributors through a GuardedTreasury that only releases to payees its own oracle cleared.
 Code has already decided which actions are allowed this tick; you cannot add, alter or parameterise actions. Choose among the listed candidate ids, explain the choice to a human reader in plain English using the numbers in the snapshot, and set when to look again (900–21600 s). Prefer acting on allowed liquidity and payout candidates unless the snapshot shows a reason to wait; prefer shorter intervals when something is pending or just changed. Be concrete and honest; never invent numbers.`;
 
 export function buildOperatorMessage(s: CompanySnapshot, candidates: OperatorAction[], rejected: RejectedAction[]): string {
-  const slim = { ...s, reserves: s.reserves ? { ...s.reserves, circle: { enabled: s.reserves.circle.enabled, wallets: s.reserves.circle.wallets.map((w) => ({ role: w.role, status: w.status, balances: w.balances })) } } : null };
+  const slim = { ...s, reserves: s.reserves ? { ...s.reserves, vaults: undefined, yieldPolicy: undefined, circle: { enabled: s.reserves.circle.enabled, wallets: s.reserves.circle.wallets.map((w) => ({ role: w.role, status: w.status, balances: w.balances })) } } : null };
   return [
     "COMPANY SNAPSHOT (JSON):", JSON.stringify(slim),
     "", "ALLOWED CANDIDATES (choose by id):", ...candidates.map((c) => `${c.id}: ${c.type}${Object.keys(c.params).length ? " " + JSON.stringify(c.params) : ""} - ${c.reason}`),
