@@ -36,6 +36,7 @@ STEP 3 - POLICY TO IMPLEMENT
 - Calling the GET: send ?wait=8 (seconds) on hot paths. If the address is new and its screen takes longer, you get HTTP 202 {status:"screening", retryAfterSeconds} with a Retry-After header; the screen keeps running server-side. Without ?wait the server waits up to 25 s and then answers 503 SCREENING_IN_PROGRESS with Retry-After (never a 2xx without a verdict). Set your client timeout above the wait (e.g. 15 s with ?wait=8, 35 s without). Use 120 s for the POST.
 - Rate limit: only new first-sight screens are limited (30 per minute per IP); reads of known addresses are unlimited. Every response carries RateLimit-Policy; first-sight responses add RateLimit-Limit / RateLimit-Remaining / RateLimit-Reset. Over the limit you get 429 RATE_LIMITED with Retry-After.
 - RETRY CONTRACT (required): a check is "unreachable" only after retries. On 202, 503 SCREENING_IN_PROGRESS or 429: wait the Retry-After seconds, then GET again (up to ~60 s in total); do not use fast backoff on these. On 502/503/504 without Retry-After, a network error or a client timeout: retry up to 3 times with backoff (1 s, 2 s, 4 s); transient failures usually clear in under a second, and a retry after a timeout returns the finished screen. Do not retry 400/404.
+  IMPORTANT, because the recommended fail mode is closed: 202, 429 and 503 SCREENING_IN_PROGRESS are NOT oracle failures. Implement the wait-and-retry for them before (or together with) fail-closed; otherwise a rate limit or a slow first sight becomes a blocked legitimate payment. Cap the total wait (e.g. 20-30 s) so a payment request cannot hang, and only then apply the fail mode. Retrying the same address while its screen runs costs no rate-limit budget (only starting a new first-sight screen does).
 - If CompliR is still unreachable after retries: follow env COMPLIR_FAIL_MODE. Default "closed" for outbound payments (block or queue for manual review, and log it loudly); "open" (allow and log a warning) only where blocking would do more harm, such as small inbound payments. Never fail open silently: record decisionId=null and the error with the payment.
 
 STEP 4 - IMPLEMENTATION RULES
@@ -43,7 +44,7 @@ STEP 4 - IMPLEMENTATION RULES
 - Config via env: COMPLIR_URL (default ${COMPLIR_BASE_URL}; empty = disabled → checkAddress returns allowed:true), COMPLIR_FAIL_MODE, COMPLIR_CLIENT_ID, and COMPLIR_PAYER_PRIVATE_KEY only if you add paid screens (most integrations do not). Add them to .env.example with comments.
 - Match the codebase's language, style, lint rules and error-handling patterns. Lowercase addresses before calling. Never log private keys.
 - Store decisionId alongside the payment/withdrawal record so the decision can be replayed at ${COMPLIR_BASE_URL}/log/<decisionId>.
-- Add tests with the HTTP calls mocked: HIGH blocks, MEDIUM caps, LOW passes, disabled = no-op, 202 then 200 is retried and succeeds, a 502 then 200 is retried and succeeds, persistent failure follows fail mode.
+- Add tests with the HTTP calls mocked: HIGH blocks, MEDIUM caps, LOW passes, disabled = no-op, 202 then 200, 429 then 200 and 503 SCREENING_IN_PROGRESS then 200 each wait Retry-After and succeed (the payment is screened, not blocked), two 502s then 200 succeeds, persistent failure follows fail mode.
 - Add a short README section "Counterparty screening (CompliR)".
 
 STEP 5 - VERIFY
