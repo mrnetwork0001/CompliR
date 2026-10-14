@@ -50,3 +50,4 @@ scripts/erc8004/agent.built.json
 
 # extension zip build output
 packages/extension/dist/
+PRESENTER_GUIDE.md
