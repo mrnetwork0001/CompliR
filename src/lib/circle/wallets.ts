@@ -30,6 +30,12 @@ export interface SpendingPolicy {
   dailyUsdc: number;
   /** Contract / recipient allowlist (lower-case). Empty = any target. */
   allowlist: Address[];
+  /**
+   * Contract-call targets (lower-case) for `executeContract`. Empty/absent = no extra restriction. Separate from
+   * `allowlist` so the revenue wallet can be pinned to USDC + the chosen yield vault for contract calls while
+   * tips/refunds (plain USDC transfers to arbitrary payees) keep working.
+   */
+  contractAllowlist?: Address[];
   /** How the policy is enforced - app-side here; Circle-side only for Agent Wallets. */
   enforcement: "app" | "circle-agent-wallet";
 }
@@ -92,6 +98,7 @@ export function defaultPolicy(role: WalletRole): SpendingPolicy {
     perTxUsdc: c.CIRCLE_REVENUE_POLICY_PER_TX_USDC,
     dailyUsdc: c.CIRCLE_REVENUE_POLICY_DAILY_USDC,
     allowlist: parseAllowlist(c.CIRCLE_REVENUE_POLICY_ALLOWLIST),
+    contractAllowlist: parseAllowlist(process.env.CIRCLE_REVENUE_POLICY_CONTRACT_ALLOWLIST),
     enforcement: "app",
   };
 }
@@ -233,7 +240,13 @@ export async function balances(role: WalletRole): Promise<BalancesResult> {
  * `circle wallet limit set --chain ARC --policy-type stablecoin --per-tx … --daily …` (returned as `cliHint`).
  */
 export async function applySpendingPolicy(role: WalletRole, policy: Partial<Omit<SpendingPolicy, "enforcement">>): Promise<{ policy: SpendingPolicy; stored: boolean; cliHint: string }> {
-  const merged: SpendingPolicy = { ...defaultPolicy(role), ...policy, allowlist: (policy.allowlist ?? defaultPolicy(role).allowlist).map((a) => a.toLowerCase() as Address), enforcement: "app" };
+  const current = (await walletByRole(role))?.policy ?? defaultPolicy(role);
+  const merged: SpendingPolicy = {
+    ...defaultPolicy(role), ...policy,
+    allowlist: (policy.allowlist ?? defaultPolicy(role).allowlist).map((a) => a.toLowerCase() as Address),
+    contractAllowlist: (policy.contractAllowlist ?? current.contractAllowlist ?? []).map((a) => a.toLowerCase() as Address),
+    enforcement: "app",
+  };
   if (merged.perTxUsdc > merged.dailyUsdc) throw new Error("policy: perTxUsdc must be ≤ dailyUsdc");
   const w = await walletByRole(role);
   if (w) await db().execute({ sql: `UPDATE circle_wallets SET policy = ?, updated_at = ? WHERE role = ? AND blockchain = ?`, args: [JSON.stringify(merged), now(), role, w.blockchain] });
@@ -242,8 +255,17 @@ export async function applySpendingPolicy(role: WalletRole, policy: Partial<Omit
 
 export function policyCliHint(address: string, p: SpendingPolicy): string {
   const parts = [`circle wallet limit set --address ${address} --chain ARC --policy-type stablecoin --per-tx ${p.perTxUsdc} --daily ${p.dailyUsdc}`];
-  if (p.allowlist.length) parts.push(`circle wallet limit set --address ${address} --chain ARC --rule-type contract-allowlist --targets "[${p.allowlist.join(",")}]"`);
+  const targets = [...new Set([...p.allowlist, ...(p.contractAllowlist ?? [])])];
+  if (targets.length) parts.push(`circle wallet limit set --address ${address} --chain ARC --rule-type contract-allowlist --targets "[${targets.join(",")}]"`);
   return parts.join("\n");
+}
+
+/** Add contract-call targets to a role's stored contract allowlist (idempotent). Returns the resulting list. */
+export async function allowContracts(role: WalletRole, targets: string[]): Promise<Address[]> {
+  const current = await policyFor(role);
+  const next = [...new Set([...(current.contractAllowlist ?? []), ...targets.map((t) => t.toLowerCase())])].filter((t) => /^0x[0-9a-f]{40}$/.test(t)) as Address[];
+  await applySpendingPolicy(role, { perTxUsdc: current.perTxUsdc, dailyUsdc: current.dailyUsdc, allowlist: current.allowlist, contractAllowlist: next });
+  return next;
 }
 
 export async function policyFor(role: WalletRole): Promise<SpendingPolicy> {
@@ -266,11 +288,16 @@ export async function spentLast24h(role: WalletRole): Promise<number> {
   return Number((res.rows[0] as unknown as { s: unknown })?.s ?? 0);
 }
 
-/** Throws SpendingPolicyError when a target/amount violates the stored policy. amountUsdc=0 for pure contract calls. */
-export async function checkSpend(role: WalletRole, input: { target: string; amountUsdc: number }): Promise<SpendingPolicy> {
+/**
+ * Throws SpendingPolicyError when a target/amount violates the stored policy. `amountUsdc` is the USDC value the call
+ * moves out (native value attached, or e.g. a vault deposit's assets); 0 for pure contract calls. `kind: "contract"`
+ * additionally enforces `contractAllowlist` when it is non-empty.
+ */
+export async function checkSpend(role: WalletRole, input: { target: string; amountUsdc: number; kind?: "contract" | "transfer" }): Promise<SpendingPolicy> {
   const p = await policyFor(role);
   const target = input.target.toLowerCase();
   if (p.allowlist.length && !p.allowlist.includes(target as Address)) throw new SpendingPolicyError(role, "allowlist", `${role}: target ${target} not in allowlist`);
+  if (input.kind === "contract" && p.contractAllowlist?.length && !p.contractAllowlist.includes(target as Address)) throw new SpendingPolicyError(role, "allowlist", `${role}: contract ${target} not in contract allowlist`);
   if (input.amountUsdc > 0) {
     if (input.amountUsdc > p.perTxUsdc) throw new SpendingPolicyError(role, "per-tx", `${role}: ${input.amountUsdc} USDC exceeds per-tx cap ${p.perTxUsdc}`);
     const spent = await spentLast24h(role);

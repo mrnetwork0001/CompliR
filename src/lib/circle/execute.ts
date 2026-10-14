@@ -28,6 +28,9 @@ export interface ExecuteContractInput {
   args: readonly unknown[];
   /** Native value (USDC on Arc) to attach, in decimal units. Counts against the spending policy. */
   amountUsdc?: number;
+  /** USDC the call moves out without attaching value (e.g. ERC-4626 deposit assets); counted against the spending
+   *  policy's per-tx/daily caps but NOT sent as native value. Defaults to amountUsdc. */
+  policyAmountUsdc?: number;
   refId?: string;
   pollMs?: number;
   timeoutMs?: number;
@@ -83,7 +86,8 @@ export async function executeContract(input: ExecuteContractInput): Promise<Exec
   if (!status.enabled) return { status: "dry-run", role: input.role, reason: status.reason!, to: input.address, calldata, functionName: input.functionName };
   const w = await requireWallet(input.role);
   const amount = input.amountUsdc ?? 0;
-  await checkSpend(input.role, { target: input.address, amountUsdc: amount });
+  const policyAmount = Math.max(amount, input.policyAmountUsdc ?? 0);
+  await checkSpend(input.role, { target: input.address, amountUsdc: policyAmount, kind: "contract" });
   const client = circleClient();
   const created = await client.createContractExecutionTransaction({
     walletId: w.walletId,
@@ -96,7 +100,7 @@ export async function executeContract(input: ExecuteContractInput): Promise<Exec
   });
   const txId = created.data?.id;
   if (!txId) throw new Error("circle: createContractExecutionTransaction returned no id");
-  await recordSpend(input.role, { kind: "contract", target: input.address, amountUsdc: amount, txId });
+  await recordSpend(input.role, { kind: "contract", target: input.address, amountUsdc: policyAmount, txId });
   const { txHash, state } = await waitForTxHash(sdkFetcher(), txId, { pollMs: input.pollMs, timeoutMs: input.timeoutMs });
   return { status: "sent", role: input.role, txId, txHash, state, to: input.address, calldata, walletId: w.walletId, from: w.address, feeLevel: status.feeLevel, accountType: w.accountType };
 }

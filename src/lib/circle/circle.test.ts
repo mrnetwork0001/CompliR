@@ -22,7 +22,7 @@ import { __resetDb } from "../store/db";
 import type { Verdict } from "../types";
 import { __resetCircleClient, circleBlockchainFor, circleStatus } from "./client";
 import { executeContract, signTypedDataWithCircle, waitForTxHash } from "./execute";
-import { SpendingPolicyError, __resetCircleSchema, applySpendingPolicy, balances, checkSpend, ensureWallets, recordSpend, walletByRole } from "./wallets";
+import { SpendingPolicyError, __resetCircleSchema, allowContracts, applySpendingPolicy, balances, checkSpend, ensureWallets, recordSpend, walletByRole } from "./wallets";
 
 const REGISTRY = "0x1111111111111111111111111111111111111111";
 const OPS_ADDR = "0xAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAa";
@@ -164,6 +164,32 @@ describe("spending policy", () => {
     await expect(checkSpend("revenue", { target: REGISTRY, amountUsdc: 4 })).resolves.toBeTruthy();
     await expect(checkSpend("revenue", { target: REGISTRY, amountUsdc: 5 })).rejects.toMatchObject({ rule: "daily" });
     await expect(applySpendingPolicy("ops", { perTxUsdc: 9, dailyUsdc: 1 })).rejects.toThrow(/perTxUsdc must be/);
+  });
+});
+
+describe("revenue contract allowlist (yield sweep)", () => {
+  const VAULT = "0x4444444444444444444444444444444444444444";
+  const USDC = "0x0000000000000000000000000000000000000001";
+  it("pins contract calls to USDC + the vault while plain transfers stay unrestricted; deposit assets count against the caps", async () => {
+    live(); __resetConfig(); programProvisioning();
+    await ensureWallets();
+    expect(await allowContracts("revenue", [USDC, VAULT.toUpperCase().replace("0X", "0x")])).toEqual([USDC, VAULT]);
+    expect(await allowContracts("revenue", [VAULT])).toEqual([USDC, VAULT]); // idempotent
+    await expect(checkSpend("revenue", { target: REGISTRY, amountUsdc: 0, kind: "contract" })).rejects.toMatchObject({ rule: "allowlist" });
+    await expect(checkSpend("revenue", { target: REGISTRY, amountUsdc: 1, kind: "transfer" })).resolves.toBeTruthy(); // refunds/tips unaffected
+    await expect(checkSpend("revenue", { target: VAULT, amountUsdc: 0, kind: "contract" })).resolves.toBeTruthy();
+
+    sdk.createContractExecutionTransaction.mockResolvedValue({ data: { id: "tx-d" } });
+    sdk.getTransaction.mockResolvedValue({ data: { transaction: { state: "CONFIRMED", txHash: "0x" + "cd".repeat(32) } } });
+    const abi = [{ type: "function", name: "deposit", stateMutability: "nonpayable", inputs: [{ name: "assets", type: "uint256" }, { name: "receiver", type: "address" }], outputs: [{ type: "uint256" }] }] as const;
+    await expect(executeContract({ role: "revenue", address: VAULT, abi, functionName: "deposit", args: [26_000_000n, REV_ADDR.toLowerCase()], policyAmountUsdc: 26, pollMs: 1 }))
+      .rejects.toMatchObject({ rule: "per-tx" }); // default per-tx cap 25
+    const r = await executeContract({ role: "revenue", address: VAULT, abi, functionName: "deposit", args: [7_000_000n, REV_ADDR.toLowerCase()], policyAmountUsdc: 7, pollMs: 1 });
+    expect(r.status).toBe("sent");
+    const req = sdk.createContractExecutionTransaction.mock.calls[0][0] as Record<string, unknown>;
+    expect(req.amount).toBeUndefined(); // no native value attached to a non-payable deposit
+    await expect(executeContract({ role: "revenue", address: "0x2222222222222222222222222222222222222222", abi, functionName: "deposit", args: [1n, REV_ADDR.toLowerCase()] }))
+      .rejects.toBeInstanceOf(SpendingPolicyError);
   });
 });
 
