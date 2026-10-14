@@ -56,3 +56,5 @@
     align-items: flex-start;
   }
 }
+
+.lockup { display: block; height: 44px; width: auto; border-radius: var(--radius); }

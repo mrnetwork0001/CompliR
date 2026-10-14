@@ -12,6 +12,8 @@ export function Footer() {
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/lockup.png" alt="CompliR - the risk layer money on Arc runs on" width={180} height={44} className={styles.lockup} />
         <p className={styles.claims}>
           <span>Never holds funds</span>
           <span className={styles.sep} aria-hidden="true" />

@@ -462,7 +462,8 @@ export default function Landing() {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
-            <span className={styles.footerName}>CompliR</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/lockup.png" alt="CompliR - the risk layer money on Arc runs on" width={320} height={79} className={styles.footerLockup} />
             <p className={styles.footerLine}>
               Counterparty risk oracle for money moving on Arc. One call grades any recipient from on-chain
               history and sanctions data, signs the verdict so a contract can check it, and re-grades it as

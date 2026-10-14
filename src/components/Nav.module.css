@@ -526,3 +526,10 @@
     transition: none;
   }
 }
+
+/* brand images (cropped from the CompliR header artwork; dark artwork, so give it a dark plate in light theme) */
+.brand { gap: 10px; }
+.brandMark { display: block; height: 26px; width: auto; }
+.brandWord { display: block; height: 14px; width: auto; }
+:root[data-theme="light"] .brand { background: #0a0b0d; padding: 5px 10px; border-radius: var(--radius); }
+@media (prefers-color-scheme: light) { :root:not([data-theme]) .brand { background: #0a0b0d; padding: 5px 10px; border-radius: var(--radius); } }

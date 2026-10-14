@@ -82,10 +82,10 @@ function groupActive(group: NavGroup, pathname: string): boolean {
 function Brand({ href }: { href: string }) {
   return (
     <Link href={href} className={styles.brand} aria-label="CompliR home">
-      <span className={styles.mark} aria-hidden="true">
-        <i /><i /><i /><i />
-      </span>
-      <span className={styles.name}>CompliR</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/brand/mark.png" alt="" width={24} height={27} className={styles.brandMark} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/brand/wordmark.png" alt="CompliR" width={92} height={14} className={styles.brandWord} />
     </Link>
   );
 }
