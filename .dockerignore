@@ -1,0 +1,12 @@
+.data/
+!.data/overrides.json
+.next/
+node_modules/
+.git/
+contracts/lib/
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+packages/extension/dist/
+.env*
+!.env.example

@@ -1,0 +1,66 @@
+# CompliR on a shared VPS. Project name "complir"; nothing binds a public port.
+#   cd /opt/complir && docker compose -f deploy/vps/docker-compose.yml --env-file .env.production up -d --build
+# nginx (host) proxies complir.xyz → 127.0.0.1:8960. The search index has NO host port (9200 belongs to another stack).
+name: complir
+services:
+  app:
+    build: { context: ../.., dockerfile: deploy/vps/Dockerfile.app }
+    image: complir-app:latest
+    container_name: complir-app
+    env_file: ../../.env.production
+    environment:
+      - DATABASE_URL=file:/app/.data/complir.db
+      - YENTE_URL=http://complir-yente:8000
+      - OVERRIDES_PATH=/app/.data/overrides.json
+    volumes: [ "complir-data:/app/.data" ]
+    ports: [ "127.0.0.1:8960:3000" ]
+    mem_limit: 1g
+    restart: unless-stopped
+    depends_on: [ yente ]
+
+  workers:
+    build: { context: ../.., dockerfile: Dockerfile.workers }
+    image: complir-workers:latest
+    container_name: complir-workers
+    env_file: ../../.env.production
+    environment:
+      - DATABASE_URL=file:/app/.data/complir.db
+      - YENTE_URL=http://complir-yente:8000
+      - OVERRIDES_PATH=/app/.data/overrides.json
+    volumes: [ "complir-data:/app/.data" ]
+    mem_limit: 768m
+    restart: unless-stopped
+    depends_on: [ app ]
+    profiles: [ "workers" ]        # started explicitly at cutover, so two sets of workers never act on mainnet at once
+
+  index:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.2
+    container_name: complir-index
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    volumes: [ "complir-index:/usr/share/elasticsearch/data" ]
+    mem_limit: 1800m
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  yente:
+    image: ghcr.io/opensanctions/yente:5.5.0
+    container_name: complir-yente
+    depends_on: { index: { condition: service_healthy } }
+    environment:
+      YENTE_INDEX_TYPE: elasticsearch
+      YENTE_INDEX_URL: http://complir-index:9200
+      YENTE_MANIFEST: /app/manifests/complir.yml
+    volumes: [ "../../docker/yente/manifest.yml:/app/manifests/complir.yml:ro" ]
+    mem_limit: 768m
+    restart: unless-stopped
+
+volumes:
+  complir-data:
+  complir-index:

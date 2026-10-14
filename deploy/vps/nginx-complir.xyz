@@ -1,0 +1,21 @@
+# Host nginx site for complir.xyz -> /etc/nginx/sites-available/complir.xyz, linked into sites-enabled.
+# Plain HTTP first; `certbot --nginx -d complir.xyz -d www.complir.xyz` then adds HTTPS + redirect here.
+# Always `nginx -t` before `systemctl reload nginx`.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name complir.xyz www.complir.xyz;
+
+    client_max_body_size 6m;   # invoice PDFs up to 5 MB
+
+    location / {
+        proxy_pass http://127.0.0.1:8960;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 180s;   # a fresh screen (evidence + analyst) can take ~60-90 s
+    }
+}
