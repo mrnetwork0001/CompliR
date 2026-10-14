@@ -5,15 +5,20 @@ import styles from "../docs.module.css";
 /** Code listing in mono with a copy button. `lang` is shown as a mono tag in the corner. */
 export function Code({ code, lang }: { code: string; lang?: string }) {
   return (
-    <div className={styles.code}>
-      <div className={styles.codeTools}>
-        {lang && <span className={styles.codeLang}>{lang}</span>}
-        <CopyButton text={code} />
+    <figure className={`fig ${styles.code}`}>
+      <div className="fig-head">
+        <span className="fig-label">
+          <span className={styles.codeDot} aria-hidden="true" />
+          {lang ? <b>{lang}</b> : <b>listing</b>}
+        </span>
+        <span className={styles.codeTools}>
+          <CopyButton text={code} />
+        </span>
       </div>
-      <pre>
+      <pre className="fig-body">
         <code>{code}</code>
       </pre>
-    </div>
+    </figure>
   );
 }
 
