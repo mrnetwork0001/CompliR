@@ -40,7 +40,6 @@
 15. [Build log](#15-build-log)
 16. [Honest status](#16-honest-status)
 17. [Roadmap](#17-roadmap)
-18. [How this maps to the judging criteria](#18-how-this-maps-to-the-judging-criteria)
 
 ---
 
@@ -366,15 +365,6 @@ npx tsx --env-file=.env.local worker/all.ts               # all background loops
 - Commercial OpenSanctions delivery and additional evidence sources; per-client policy profiles.
 - Circle-side spending policies (Agent Wallets) instead of app-enforced ones.
 - Merge the prepared integration PRs with partner teams; npm releases of the SDK and MCP server.
-
-## 18. How this maps to the judging criteria
-
-| Criterion | Where to look |
-|---|---|
-| **Agentic sophistication (30%)** | The operator decides sweep / payout / price with written reasons and rejected alternatives ([/company](https://trycomplir.xyz/company)); the analyst decides limits, EDD and cadence under code guards; tranche schedules and re-grade timing are agent decisions; every one is replayable in the [ledger](https://trycomplir.xyz/ledger). |
-| **Traction (30%)** | Real mainnet USDC flows (x402 settlements, proof-carrying payouts); a public, honest numbers page and signed daily report; integration PRs ready for seven projects including four Circle sample apps; a copy-paste agent prompt so any team can integrate without waiting on us. |
-| **Circle tool usage (20%)** | Nine primitives in production: Arc, USDC, Contracts, x402 Facilitator, Developer-Controlled Wallets, Gas Station, Earn Kit, CCTP, ERC-8004 ([section 7](#7-circle--arc-stack)). |
-| **Innovation (20%)** | Compliance as an on-chain primitive any contract can read; two-hop taint on Arc; verdicts that are signed, continuous and replayable; payouts that carry their proof; a company run by an agent whose product is risk. |
 
 ---
 
