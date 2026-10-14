@@ -1,31 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { PublicStats } from "@/app/api/_lib/public-types";
-import { apiFetch, fmtUsdc } from "./api";
+import { fmtUsdc } from "./api";
+import { usePublicStats } from "./usePublicStats";
 import styles from "./LiveNumbers.module.css";
-
-type S = { status: "loading" } | { status: "done"; stats: PublicStats } | { status: "error" };
 
 /**
  * Three honest counters from /api/v1/numbers (screenings, outside payers, USDC paid).
- * Graceful zeros: if the API is unreachable we show 0s, never a broken strip.
+ * Polls live (every 10 s while visible). Graceful zeros: if the API is unreachable we show 0s, never a broken strip.
  */
 export function LiveNumbers({ compact = false }: { compact?: boolean }) {
-  const [s, setS] = useState<S>({ status: "loading" });
-  useEffect(() => {
-    let alive = true;
-    apiFetch<PublicStats>("/api/v1/numbers")
-      .then((stats) => alive && setS({ status: "done", stats }))
-      .catch(() => alive && setS({ status: "error" }));
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const stats = s.status === "done" ? s.stats : null;
-  const loading = s.status === "loading";
+  const { stats, error } = usePublicStats();
+  const loading = !stats && !error;
   const v = (n: number | undefined) => (loading ? null : (n ?? 0).toLocaleString());
 
   const items: { label: string; value: string | null }[] = [

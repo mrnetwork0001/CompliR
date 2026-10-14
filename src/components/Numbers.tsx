@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { PublicStats } from "@/app/api/_lib/public-types";
-import { HttpError, apiFetch, fmtTime, fmtUsdc } from "./api";
+import { fmtTime, fmtUsdc } from "./api";
+import { usePublicStats } from "./usePublicStats";
 import styles from "./Numbers.module.css";
 
 function Stat({ label, value, hint }: { label: string; value: string | number | null; hint?: string }) {
@@ -16,18 +16,7 @@ function Stat({ label, value, hint }: { label: string; value: string | number | 
 }
 
 export function Numbers() {
-  const [stats, setStats] = useState<PublicStats | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    apiFetch<PublicStats>("/api/v1/numbers")
-      .then((s) => alive && setStats(s))
-      .catch((e) => alive && setError(e instanceof HttpError ? `${e.code}: ${e.message}` : String(e)));
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { stats, error, updatedAt } = usePublicStats();
 
   const n = (k: keyof PublicStats) => (stats ? (stats[k] as number).toLocaleString() : null);
 
@@ -39,9 +28,12 @@ export function Numbers() {
           <h1>Numbers</h1>
           <p className="muted">Public and honest. Calls from our own test wallets are excluded from every counter below.</p>
         </div>
+        <span className="muted small mono" aria-live="polite">
+          {updatedAt ? `Live · updated ${new Date(updatedAt).toLocaleTimeString()} · refreshes every 10s` : "Loading…"}
+        </span>
       </div>
 
-      {error && (
+      {error && !stats && (
         <div className="alert alertError" role="alert">
           Could not load numbers: {error}
         </div>
