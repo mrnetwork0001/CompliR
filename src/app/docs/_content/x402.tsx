@@ -31,17 +31,19 @@ const REQUIRED = `// 402 body and PAYMENT-REQUIRED (base64 of the same object)
 }`;
 
 const ENVELOPE = `// PAYMENT-SIGNATURE = base64( JSON below ). x402 v2 PaymentPayload, scheme exact on EVM.
+// amount and payTo: copy them from the 402 (the operator agent moves the price within bounds).
 {
   "x402Version": 2,
   "resource": { "url": "https://trycomplir.xyz/api/v1/screen", "description": "CompliR screen: one address", "mimeType": "application/json" },
   "accepted": {                                   // copy accepts[0] from the 402 response, unchanged
     "scheme": "exact", "network": "eip155:5042", "amount": "8100",
-    "asset": "0x3600000000000000000000000000000000000000", "payTo": "0x…",
+    "asset": "0x3600000000000000000000000000000000000000", "payTo": "0x9b0df32b9a239d392b8071f2a428b11c3b9c977e",
     "maxTimeoutSeconds": 60, "extra": { "assetTransferMethod": "eip3009", "name": "USDC", "version": "2" }
   },
   "payload": {
-    "signature": "0x…",                           // EIP-712 TransferWithAuthorization signature by "from"
-    "authorization": { "from": "0xPayer", "to": "0x…payTo", "value": "8100",
+    "signature": "0x…",   // EIP-3009 TransferWithAuthorization, EIP-712 domain
+                          // { name: "USDC", version: "2", chainId: 5042, verifyingContract: <asset> }
+    "authorization": { "from": "0xPayer", "to": "0x9b0df32b9a239d392b8071f2a428b11c3b9c977e", "value": "8100",
                        "validAfter": "0", "validBefore": "<now + 300>", "nonce": "0x<32 random bytes>" }
   }
 }

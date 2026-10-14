@@ -33,15 +33,16 @@ STEP 3 - POLICY TO IMPLEMENT
 - Inbound payer (someone paying us): HIGH → refuse the request (or refund if already settled); otherwise proceed.
 - New user/creator/vendor wallet at signup: screen it; if HIGH, flag the account; register a watch so later changes reach us.
 - Cache each verdict per address until min(attestation.validUntil, nextRescreenAt). An expired verdict is still the latest answer: use its tier and fetch again later (the GET refreshes it for free).
-- Timeouts: at least 90 s for the GET (first sight of an address) and 120 s for the POST. A shorter timeout shows up as a dropped connection. On hot paths, do not block on a first-sight screen: treat a timeout with COMPLIR_FAIL_MODE and let the screen finish server-side; the next call is instant.
-- If CompliR is unreachable or times out: follow env COMPLIR_FAIL_MODE = "open" (default: allow and log a warning) or "closed" (block).
+- Calling the GET: send ?wait=8 (seconds) on hot paths. If the address is new and its screen takes longer, you get HTTP 202 {status:"screening", retryAfterSeconds} with a Retry-After header instead of a hanging connection; the screen keeps running server-side. Without ?wait, allow at least 90 s (first sight takes ~20-60 s). Use 120 s for the POST.
+- RETRY CONTRACT (required): a check is "unreachable" only after retries. On 202, wait Retry-After seconds and GET again (up to ~60 s in total). On HTTP 502/503/504, a network error or a client timeout, retry up to 3 times with backoff (1 s, 2 s, 4 s); transient failures usually clear in under a second, and a retry after a timeout returns the finished screen. Do not retry 400/404. There is no rate limit on these routes, so you will not see 429.
+- If CompliR is still unreachable after retries: follow env COMPLIR_FAIL_MODE. Default "closed" for outbound payments (block or queue for manual review, and log it loudly); "open" (allow and log a warning) only where blocking would do more harm, such as small inbound payments. Never fail open silently: record decisionId=null and the error with the payment.
 
 STEP 4 - IMPLEMENTATION RULES
 - Put all CompliR code in ONE new module (e.g. lib/complir.ts or complir.py) exposing checkAddress(address, {amountUsdc, direction}) → {allowed, tier, maxUsdc, reason, decisionId}. Call it from the money-flow points; keep each call site to a few lines.
 - Config via env: COMPLIR_URL (default ${COMPLIR_BASE_URL}; empty = disabled → checkAddress returns allowed:true), COMPLIR_FAIL_MODE, COMPLIR_CLIENT_ID, and COMPLIR_PAYER_PRIVATE_KEY only if you add paid screens (most integrations do not). Add them to .env.example with comments.
 - Match the codebase's language, style, lint rules and error-handling patterns. Lowercase addresses before calling. Never log private keys.
 - Store decisionId alongside the payment/withdrawal record so the decision can be replayed at ${COMPLIR_BASE_URL}/log/<decisionId>.
-- Add tests with the HTTP calls mocked: HIGH blocks, MEDIUM caps, LOW passes, disabled = no-op, unreachable follows fail mode.
+- Add tests with the HTTP calls mocked: HIGH blocks, MEDIUM caps, LOW passes, disabled = no-op, 202 then 200 is retried and succeeds, a 502 then 200 is retried and succeeds, persistent failure follows fail mode.
 - Add a short README section "Counterparty screening (CompliR)".
 
 STEP 5 - VERIFY

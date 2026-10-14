@@ -1,3 +1,8 @@
+upstream complir_app {
+    server 127.0.0.1:8960 max_fails=1 fail_timeout=3s;
+    server 127.0.0.1:8961 backup;   # complir-app-standby, used while the primary restarts
+}
+
 # Host nginx site for trycomplir.xyz -> /etc/nginx/sites-available/trycomplir.xyz, linked into sites-enabled.
 # Plain HTTP first; `certbot --nginx -d trycomplir.xyz -d www.trycomplir.xyz` then adds HTTPS + redirect here.
 # Always `nginx -t` before `systemctl reload nginx`.
@@ -9,7 +14,9 @@ server {
     client_max_body_size 6m;   # invoice PDFs up to 5 MB
 
     location / {
-        proxy_pass http://127.0.0.1:8960;
+        proxy_pass http://complir_app;
+        proxy_next_upstream error timeout http_502 http_503;
+        proxy_next_upstream_tries 2;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

@@ -97,4 +97,21 @@ describe("freeVerdict", () => {
     screenOnce(A, run);
     expect(run).toHaveBeenCalledTimes(2); // cleared after completion
   });
+
+  it("with maxWaitMs, returns status:screening when a first-sight screen is slower, and the screen keeps running", async () => {
+    let release!: (v: Verdict) => void;
+    const run = vi.fn(() => new Promise<Verdict>((r) => { release = r; }));
+    const out = await freeVerdict(A, { run, maxWaitMs: 20 });
+    expect(out).toMatchObject({ status: "screening", retryAfterSeconds: 5 });
+    const again = await freeVerdict(A, { run, maxWaitMs: 20 });   // still running: shares the same screen
+    expect(again).toMatchObject({ status: "screening" });
+    expect(run).toHaveBeenCalledTimes(1);
+    release(verdict());
+  });
+
+  it("with maxWaitMs, returns the verdict when the screen finishes in time", async () => {
+    const run = vi.fn(async () => verdict({ decisionId: "dec_fast" }));
+    const out = await freeVerdict(A, { run, maxWaitMs: 1000 });
+    expect(out).toMatchObject({ source: "fresh", decisionId: "dec_fast" });
+  });
 });

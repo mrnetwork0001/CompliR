@@ -82,7 +82,10 @@ export const httpApi: DocPage = {
               { k: "source", v: "store = latest stored verdict; fresh = screened by this request." },
               { k: "attestation.registryTx", v: "Filled once the on-chain mirror lands (seconds after the screen). A fresh POST response returns null; read it later from the GET. Only on-chain callers (isAllowed) need to wait for it." },
               { k: "edd", v: "Present when the analyst opened Enhanced Due Diligence questions; MEDIUM mostly. A HIGH on a sanctions or blocklist hit has none, because answers cannot clear it." },
-              { k: "timeouts", v: "Use >= 90 s on the GET (first sight) and >= 120 s on the POST. A shorter client timeout looks like a dropped connection (curl status 000). There is no rate limit on these routes." },
+              { k: "?wait=<s>", v: "Optional on the GET (1-120). On first sight, if the screen takes longer, returns 202 {status: \"screening\", retryAfterSeconds} with a Retry-After header instead of holding the connection; the screen keeps running. Recommended on hot paths with wait=8." },
+              { k: "timeouts", v: "Without ?wait use >= 90 s on the GET (first sight) and >= 120 s on the POST. A shorter client timeout looks like a dropped connection (curl status 000); the screen still finishes and the next GET returns it." },
+              { k: "retries", v: "On 202: wait Retry-After, then GET again. On 502/503/504, a network error or a timeout: retry up to 3 times with backoff (1 s, 2 s, 4 s) before treating CompliR as unreachable. Do not retry 400/404. There is no rate limit on these routes, so there is no 429." },
+              { k: "fail mode", v: "Only after retries. Recommended default: closed for outbound payments (block or queue for review), open only for small inbound payments, and never silently." },
             ]}
           />
         </>

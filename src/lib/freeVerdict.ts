@@ -74,13 +74,26 @@ async function enrich(v: AttestationView, source: FreeVerdict["source"], refresh
   };
 }
 
+/** Returned instead of a verdict when `maxWaitMs` elapsed before a first-sight screen finished (it keeps running). */
+export interface ScreeningPending {
+  address: Address;
+  status: "screening";
+  retryAfterSeconds: number;
+  message: string;
+}
+export const PENDING_RETRY_AFTER_S = 5;
+
 export interface FreeVerdictDeps {
+  /** first sight only: give up waiting after this long and return ScreeningPending; the screen continues server-side */
+  maxWaitMs?: number;
   /** schedule work after the response is sent (Next's `after`); defaults to fire-and-forget */
   background?: (fn: () => Promise<unknown>) => void;
   run?: (a: Address) => Promise<Verdict>;
 }
 
-export async function freeVerdict(address: Address, deps: FreeVerdictDeps = {}): Promise<FreeVerdict> {
+export async function freeVerdict(address: Address, deps: FreeVerdictDeps & { maxWaitMs: number }): Promise<FreeVerdict | ScreeningPending>;
+export async function freeVerdict(address: Address, deps?: FreeVerdictDeps): Promise<FreeVerdict>;
+export async function freeVerdict(address: Address, deps: FreeVerdictDeps = {}): Promise<FreeVerdict | ScreeningPending> {
   const background = deps.background ?? ((fn) => void fn().catch(() => {}));
   const stored = await latestAttestation(address);
   if (stored) {
@@ -92,7 +105,20 @@ export async function freeVerdict(address: Address, deps: FreeVerdictDeps = {}):
     }
     return enrich(stored, "store", refreshing);
   }
-  const v = await screenOnce(address, deps.run);
+  const job = screenOnce(address, deps.run);
+  let v: Verdict;
+  if (deps.maxWaitMs !== undefined) {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timedOut = new Promise<null>((r) => { timer = setTimeout(() => r(null), deps.maxWaitMs); });
+    const first = await Promise.race([job, timedOut]).finally(() => clearTimeout(timer));
+    if (first === null) {
+      job.catch((e) => console.warn("[complir] first-sight screen failed:", (e as Error)?.message));
+      return { address, status: "screening", retryAfterSeconds: PENDING_RETRY_AFTER_S, message: "First sight of this address: the screen is running. Retry the same GET after retryAfterSeconds." };
+    }
+    v = first;
+  } else {
+    v = await job;
+  }
   const view: AttestationView = { address: v.address, score: v.score, tier: v.tier, attestation: v.attestation, decisionId: v.decisionId, screenedAt: v.screenedAt };
   const out = await enrich(view, "fresh", false);
   // the in-memory verdict is authoritative for a fresh screen (EDD row / ledger are written by the same pipeline run)

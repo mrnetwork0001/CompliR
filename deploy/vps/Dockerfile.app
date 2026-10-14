@@ -16,4 +16,5 @@ WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 COPY --from=build /app ./
 EXPOSE 3000
-CMD ["npx", "next", "start", "-p", "3000"]
+# run Next directly (not via npx) so SIGTERM reaches it and in-flight requests + after() callbacks drain on stop
+CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "3000"]

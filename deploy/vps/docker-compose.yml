@@ -1,9 +1,11 @@
 # CompliR on a shared VPS. Project name "complir"; nothing binds a public port.
 #   cd /opt/complir && docker compose -f deploy/vps/docker-compose.yml --env-file .env.production up -d --build
-# nginx (host) proxies trycomplir.xyz → 127.0.0.1:8960. The search index has NO host port (9200 belongs to another stack).
+# nginx (host) proxies trycomplir.xyz → 127.0.0.1:8960 (app), with 127.0.0.1:8961 (app-standby) as a backup upstream:
+# deploys restart the standby first, then the primary, so a restart never drops a request (scripts/deploy-vps.sh).
+# The search index has NO host port (9200 belongs to another stack).
 name: complir
 services:
-  app:
+  app: &app
     build: { context: ../.., dockerfile: deploy/vps/Dockerfile.app }
     image: complir-app:latest
     container_name: complir-app
@@ -15,8 +17,23 @@ services:
     volumes: [ "complir-data:/app/.data" ]
     ports: [ "127.0.0.1:8960:3000" ]
     mem_limit: 1g
+    init: true                 # tini as PID 1 forwards SIGTERM to Next
+    stop_grace_period: 120s    # a first-sight screen can take ~60 s; let it finish before the container stops
+    healthcheck:
+      test: [ "CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     restart: unless-stopped
     depends_on: [ yente ]
+
+  # Same image, used by nginx only while the primary is restarting (backup upstream).
+  app-standby:
+    <<: *app
+    container_name: complir-app-standby
+    ports: [ "127.0.0.1:8961:3000" ]
+    mem_limit: 768m
 
   workers:
     build: { context: ../.., dockerfile: Dockerfile.workers }

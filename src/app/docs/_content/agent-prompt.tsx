@@ -30,7 +30,7 @@ export const agentPrompt: DocPage = {
       body: (
         <ul>
           <li>One new module with <code>checkAddress(address, {"{"}amountUsdc, direction{"}"})</code>, called from each payment point in a few lines.</li>
-          <li>Env switches: <code>COMPLIR_URL</code> (empty disables it), <code>COMPLIR_FAIL_MODE</code> (open or closed), optional payer key for paid screens.</li>
+          <li>Env switches: <code>COMPLIR_URL</code> (empty disables it), <code>COMPLIR_FAIL_MODE</code> (closed by default for outbound payments; applied only after the retry contract: Retry-After on 202, three backoff retries on 5xx or timeouts), optional payer key for paid screens.</li>
           <li>The CompliR <code>decisionId</code> stored with each payment, replayable at <Link href="/ledger">/ledger</Link>.</li>
           <li>Tests for block, cap, pass, disabled and outage paths, plus a live check against a real OFAC-listed wallet.</li>
         </ul>
