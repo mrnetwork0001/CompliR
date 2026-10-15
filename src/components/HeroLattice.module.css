@@ -42,8 +42,11 @@
 .readoutLink { color: var(--acc); text-decoration: none; }
 .readoutLink:hover { text-decoration: underline; }
 @media (max-width: 900px) {
-  .wrap { max-width: 420px; margin: 0 auto; }
-  .readout { position: static; margin-top: 8px; width: 100%; }
+  /* Square drawing, but the box grows to hold the readout below it. iOS Safari does not grow an
+     aspect-ratio box to fit overflowing content (Chrome does), so the readout used to spill over the stats. */
+  .wrap { max-width: 420px; margin: 0 auto; aspect-ratio: auto; }
+  .svg { height: auto; aspect-ratio: 1 / 1; }
+  .readout { position: static; margin-top: 8px; width: 100%; min-width: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sweep { opacity: 0.35; }

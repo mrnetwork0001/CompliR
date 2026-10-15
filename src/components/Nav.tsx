@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { HealthResponse } from "@/app/api/_lib/public-types";
@@ -279,7 +280,9 @@ function LandingSheet({ onClose, returnTo }: { onClose: () => void; returnTo: Re
     const back = returnTo.current;
     return () => { document.body.style.overflow = prev; document.removeEventListener("keydown", onKey); back?.focus(); };
   }, [onClose, returnTo]);
-  return (
+  // Portal to <body>: the header's backdrop-filter makes it the containing block for position:fixed
+  // children in WebKit, which confined the sheet to the header strip on iPhone.
+  return createPortal(
     <div className={styles.sheetRoot}>
       <button type="button" className={styles.backdrop} aria-label="Close menu" onClick={onClose} tabIndex={-1} />
       <div className={styles.sheet} role="dialog" aria-modal="true" aria-label="Menu">
@@ -297,7 +300,9 @@ function LandingSheet({ onClose, returnTo }: { onClose: () => void; returnTo: Re
         <Link href="/docs" className={styles.sheetLink} onClick={onClose}>Docs</Link>
         <Link href="/app" className={`btn btnPrimary ${styles.sheetCta}`} onClick={onClose}>Launch App</Link>
       </div>
-    </div>
+    </div>,
+    document.body,
+
   );
 }
 
@@ -323,7 +328,9 @@ function Sheet({ pathname, onClose, returnTo }: { pathname: string; onClose: () 
     };
   }, [onClose, returnTo]);
 
-  return (
+  // Portal to <body>: the header's backdrop-filter makes it the containing block for position:fixed
+  // children in WebKit, which confined the sheet to the header strip on iPhone.
+  return createPortal(
     <div className={styles.sheetRoot}>
       <button type="button" className={styles.backdrop} aria-label="Close menu" onClick={onClose} tabIndex={-1} />
       <div className={styles.sheet} role="dialog" aria-modal="true" aria-label="Navigation">
@@ -383,7 +390,9 @@ function Sheet({ pathname, onClose, returnTo }: { pathname: string; onClose: () 
           <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
+
   );
 }
 
