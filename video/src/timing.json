@@ -1,0 +1,2280 @@
+{
+ "fps": 30,
+ "totalFrames": 4765,
+ "bpm": 119.5,
+ "beats": [
+  13,
+  28,
+  43,
+  58,
+  73,
+  89,
+  104,
+  119,
+  134,
+  149,
+  164,
+  179,
+  194,
+  209,
+  224,
+  239,
+  254,
+  269,
+  284,
+  299,
+  314,
+  330,
+  345,
+  360,
+  375,
+  390,
+  405,
+  420,
+  435,
+  450,
+  465,
+  480,
+  495,
+  510,
+  525,
+  540,
+  555,
+  571,
+  586,
+  601,
+  616,
+  631,
+  646,
+  661,
+  676,
+  691,
+  706,
+  721,
+  736,
+  751,
+  766,
+  781,
+  796,
+  812,
+  827,
+  842,
+  857,
+  872,
+  887,
+  902,
+  917,
+  932,
+  947,
+  962,
+  977,
+  992,
+  1007,
+  1022,
+  1037,
+  1053,
+  1068,
+  1083,
+  1098,
+  1113,
+  1128,
+  1143,
+  1158,
+  1173,
+  1188,
+  1203,
+  1218,
+  1233,
+  1248,
+  1263,
+  1278,
+  1294,
+  1309,
+  1324,
+  1339,
+  1354,
+  1369,
+  1384,
+  1399,
+  1414,
+  1429,
+  1444,
+  1459,
+  1474,
+  1489,
+  1504,
+  1519,
+  1535,
+  1550,
+  1565,
+  1580,
+  1595,
+  1610,
+  1625,
+  1640,
+  1655,
+  1670,
+  1685,
+  1700,
+  1715,
+  1730,
+  1745,
+  1760,
+  1776,
+  1791,
+  1806,
+  1821,
+  1836,
+  1851,
+  1866,
+  1881,
+  1896,
+  1911,
+  1926,
+  1941,
+  1956,
+  1971,
+  1986,
+  2001,
+  2017,
+  2032,
+  2047,
+  2062,
+  2077,
+  2092,
+  2107,
+  2122,
+  2137,
+  2152,
+  2167,
+  2182,
+  2197,
+  2212,
+  2227,
+  2242,
+  2258,
+  2273,
+  2288,
+  2303,
+  2318,
+  2333,
+  2348,
+  2363,
+  2378,
+  2393,
+  2408,
+  2423,
+  2438,
+  2453,
+  2468,
+  2483,
+  2499,
+  2514,
+  2529,
+  2544,
+  2559,
+  2574,
+  2589,
+  2604,
+  2619,
+  2634,
+  2649,
+  2664,
+  2679,
+  2694,
+  2709,
+  2724,
+  2740,
+  2755,
+  2770,
+  2785,
+  2800,
+  2815,
+  2830,
+  2845,
+  2860,
+  2875,
+  2890,
+  2905,
+  2920,
+  2935,
+  2950,
+  2966,
+  2981,
+  2996,
+  3011,
+  3026,
+  3041,
+  3056,
+  3071,
+  3086,
+  3101,
+  3116,
+  3131,
+  3146,
+  3161,
+  3176,
+  3191,
+  3207,
+  3222,
+  3237,
+  3252,
+  3267,
+  3282,
+  3297,
+  3312,
+  3327,
+  3342,
+  3357,
+  3372,
+  3387,
+  3402,
+  3417,
+  3432,
+  3448,
+  3463,
+  3478,
+  3493,
+  3508,
+  3523,
+  3538,
+  3553,
+  3568,
+  3583,
+  3598,
+  3613,
+  3628,
+  3643,
+  3658,
+  3673,
+  3689,
+  3704,
+  3719,
+  3734,
+  3749,
+  3764,
+  3779,
+  3794,
+  3809,
+  3824,
+  3839,
+  3854,
+  3869,
+  3884,
+  3899,
+  3914,
+  3930,
+  3945,
+  3960,
+  3975,
+  3990,
+  4005,
+  4020,
+  4035,
+  4050,
+  4065,
+  4080,
+  4095,
+  4110,
+  4125,
+  4140,
+  4155,
+  4171,
+  4186,
+  4201,
+  4216,
+  4231,
+  4246,
+  4261,
+  4276,
+  4291,
+  4306,
+  4321,
+  4336,
+  4351,
+  4366,
+  4381,
+  4396,
+  4412,
+  4427,
+  4442,
+  4457,
+  4472,
+  4487,
+  4502,
+  4517,
+  4532,
+  4547,
+  4562,
+  4577,
+  4592,
+  4607,
+  4622,
+  4637,
+  4653,
+  4668,
+  4683,
+  4698,
+  4713,
+  4728,
+  4743,
+  4758
+ ],
+ "music": {
+  "file": "audio/music.mp3",
+  "source": "elevenlabs-music"
+ },
+ "scenes": [
+  {
+   "id": "open",
+   "from": 0,
+   "durationInFrames": 425,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "March, twenty twenty-two. Attackers drain about six hundred million dollars from the Ronin bridge.",
+     "file": "audio/vo/open_0.mp3",
+     "startFrame": 12,
+     "durationFrames": 204,
+     "words": [
+      {
+       "word": "March,",
+       "start": 12,
+       "end": 33
+      },
+      {
+       "word": "twenty",
+       "start": 34,
+       "end": 46
+      },
+      {
+       "word": "twenty-two.",
+       "start": 48,
+       "end": 71
+      },
+      {
+       "word": "Attackers",
+       "start": 77,
+       "end": 95
+      },
+      {
+       "word": "drain",
+       "start": 96,
+       "end": 104
+      },
+      {
+       "word": "about",
+       "start": 105,
+       "end": 113
+      },
+      {
+       "word": "six",
+       "start": 116,
+       "end": 125
+      },
+      {
+       "word": "hundred",
+       "start": 127,
+       "end": 137
+      },
+      {
+       "word": "million",
+       "start": 140,
+       "end": 151
+      },
+      {
+       "word": "dollars",
+       "start": 153,
+       "end": 168
+      },
+      {
+       "word": "from",
+       "start": 170,
+       "end": 175
+      },
+      {
+       "word": "the",
+       "start": 176,
+       "end": 179
+      },
+      {
+       "word": "Ronin",
+       "start": 180,
+       "end": 190
+      },
+      {
+       "word": "bridge.",
+       "start": 192,
+       "end": 215
+      }
+     ]
+    },
+    {
+     "voice": "narrator",
+     "text": "Weeks later, the wallet that took it is on the US sanctions list. Anyone can still send it money.",
+     "file": "audio/vo/open_1.mp3",
+     "startFrame": 231,
+     "durationFrames": 179,
+     "words": [
+      {
+       "word": "Weeks",
+       "start": 231,
+       "end": 241
+      },
+      {
+       "word": "later,",
+       "start": 243,
+       "end": 256
+      },
+      {
+       "word": "the",
+       "start": 258,
+       "end": 261
+      },
+      {
+       "word": "wallet",
+       "start": 263,
+       "end": 275
+      },
+      {
+       "word": "that",
+       "start": 276,
+       "end": 280
+      },
+      {
+       "word": "took",
+       "start": 282,
+       "end": 288
+      },
+      {
+       "word": "it",
+       "start": 290,
+       "end": 293
+      },
+      {
+       "word": "is",
+       "start": 295,
+       "end": 298
+      },
+      {
+       "word": "on",
+       "start": 300,
+       "end": 302
+      },
+      {
+       "word": "the",
+       "start": 303,
+       "end": 305
+      },
+      {
+       "word": "US",
+       "start": 307,
+       "end": 315
+      },
+      {
+       "word": "sanctions",
+       "start": 317,
+       "end": 331
+      },
+      {
+       "word": "list.",
+       "start": 332,
+       "end": 344
+      },
+      {
+       "word": "Anyone",
+       "start": 354,
+       "end": 366
+      },
+      {
+       "word": "can",
+       "start": 368,
+       "end": 371
+      },
+      {
+       "word": "still",
+       "start": 372,
+       "end": 379
+      },
+      {
+       "word": "send",
+       "start": 380,
+       "end": 386
+      },
+      {
+       "word": "it",
+       "start": 388,
+       "end": 390
+      },
+      {
+       "word": "money.",
+       "start": 391,
+       "end": 409
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "problem",
+   "from": 425,
+   "durationInFrames": 402,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "Now AI agents pay in USDC. An agent sees an address. It cannot tell a vendor from a launderer.",
+     "file": "audio/vo/problem_0.mp3",
+     "startFrame": 437,
+     "durationFrames": 194,
+     "words": [
+      {
+       "word": "Now",
+       "start": 437,
+       "end": 444
+      },
+      {
+       "word": "AI",
+       "start": 447,
+       "end": 455
+      },
+      {
+       "word": "agents",
+       "start": 457,
+       "end": 468
+      },
+      {
+       "word": "pay",
+       "start": 470,
+       "end": 476
+      },
+      {
+       "word": "in",
+       "start": 478,
+       "end": 480
+      },
+      {
+       "word": "USDC.",
+       "start": 483,
+       "end": 512
+      },
+      {
+       "word": "An",
+       "start": 520,
+       "end": 524
+      },
+      {
+       "word": "agent",
+       "start": 525,
+       "end": 533
+      },
+      {
+       "word": "sees",
+       "start": 535,
+       "end": 540
+      },
+      {
+       "word": "an",
+       "start": 541,
+       "end": 544
+      },
+      {
+       "word": "address.",
+       "start": 545,
+       "end": 561
+      },
+      {
+       "word": "It",
+       "start": 563,
+       "end": 567
+      },
+      {
+       "word": "cannot",
+       "start": 568,
+       "end": 578
+      },
+      {
+       "word": "tell",
+       "start": 579,
+       "end": 584
+      },
+      {
+       "word": "a",
+       "start": 586,
+       "end": 587
+      },
+      {
+       "word": "vendor",
+       "start": 588,
+       "end": 598
+      },
+      {
+       "word": "from",
+       "start": 599,
+       "end": 604
+      },
+      {
+       "word": "a",
+       "start": 605,
+       "end": 606
+      },
+      {
+       "word": "launderer.",
+       "start": 607,
+       "end": 631
+      }
+     ]
+    },
+    {
+     "voice": "narrator",
+     "text": "And the checks that exist look at one wallet, once, and answer yes or no.",
+     "file": "audio/vo/problem_1.mp3",
+     "startFrame": 647,
+     "durationFrames": 165,
+     "words": [
+      {
+       "word": "And",
+       "start": 647,
+       "end": 651
+      },
+      {
+       "word": "the",
+       "start": 653,
+       "end": 655
+      },
+      {
+       "word": "checks",
+       "start": 656,
+       "end": 664
+      },
+      {
+       "word": "that",
+       "start": 665,
+       "end": 669
+      },
+      {
+       "word": "exist",
+       "start": 670,
+       "end": 684
+      },
+      {
+       "word": "look",
+       "start": 686,
+       "end": 692
+      },
+      {
+       "word": "at",
+       "start": 694,
+       "end": 696
+      },
+      {
+       "word": "one",
+       "start": 699,
+       "end": 706
+      },
+      {
+       "word": "wallet,",
+       "start": 707,
+       "end": 723
+      },
+      {
+       "word": "once,",
+       "start": 733,
+       "end": 747
+      },
+      {
+       "word": "and",
+       "start": 755,
+       "end": 760
+      },
+      {
+       "word": "answer",
+       "start": 762,
+       "end": 775
+      },
+      {
+       "word": "yes",
+       "start": 779,
+       "end": 787
+      },
+      {
+       "word": "or",
+       "start": 788,
+       "end": 791
+      },
+      {
+       "word": "no.",
+       "start": 793,
+       "end": 811
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "evidence",
+   "from": 827,
+   "durationInFrames": 438,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "In one day on Arc, a hundred and fifty-four million USDC moved across nearly three thousand transfers.",
+     "file": "audio/vo/evidence_0.mp3",
+     "startFrame": 839,
+     "durationFrames": 211,
+     "words": [
+      {
+       "word": "In",
+       "start": 839,
+       "end": 844
+      },
+      {
+       "word": "one",
+       "start": 846,
+       "end": 853
+      },
+      {
+       "word": "day",
+       "start": 854,
+       "end": 862
+      },
+      {
+       "word": "on",
+       "start": 866,
+       "end": 871
+      },
+      {
+       "word": "Arc,",
+       "start": 873,
+       "end": 886
+      },
+      {
+       "word": "a",
+       "start": 893,
+       "end": 895
+      },
+      {
+       "word": "hundred",
+       "start": 897,
+       "end": 905
+      },
+      {
+       "word": "and",
+       "start": 906,
+       "end": 908
+      },
+      {
+       "word": "fifty-four",
+       "start": 910,
+       "end": 924
+      },
+      {
+       "word": "million",
+       "start": 926,
+       "end": 938
+      },
+      {
+       "word": "USDC",
+       "start": 940,
+       "end": 959
+      },
+      {
+       "word": "moved",
+       "start": 967,
+       "end": 976
+      },
+      {
+       "word": "across",
+       "start": 977,
+       "end": 986
+      },
+      {
+       "word": "nearly",
+       "start": 987,
+       "end": 995
+      },
+      {
+       "word": "three",
+       "start": 997,
+       "end": 1006
+      },
+      {
+       "word": "thousand",
+       "start": 1007,
+       "end": 1020
+      },
+      {
+       "word": "transfers.",
+       "start": 1021,
+       "end": 1049
+      }
+     ]
+    },
+    {
+     "voice": "narrator",
+     "text": "Of the seven hundred and twenty-seven wallets we graded, almost half needed a limit before anyone paid them.",
+     "file": "audio/vo/evidence_1.mp3",
+     "startFrame": 1065,
+     "durationFrames": 184,
+     "words": [
+      {
+       "word": "Of",
+       "start": 1065,
+       "end": 1069
+      },
+      {
+       "word": "the",
+       "start": 1071,
+       "end": 1073
+      },
+      {
+       "word": "seven",
+       "start": 1074,
+       "end": 1082
+      },
+      {
+       "word": "hundred",
+       "start": 1083,
+       "end": 1091
+      },
+      {
+       "word": "and",
+       "start": 1092,
+       "end": 1094
+      },
+      {
+       "word": "twenty-seven",
+       "start": 1095,
+       "end": 1112
+      },
+      {
+       "word": "wallets",
+       "start": 1114,
+       "end": 1127
+      },
+      {
+       "word": "we",
+       "start": 1129,
+       "end": 1131
+      },
+      {
+       "word": "graded,",
+       "start": 1133,
+       "end": 1148
+      },
+      {
+       "word": "almost",
+       "start": 1155,
+       "end": 1168
+      },
+      {
+       "word": "half",
+       "start": 1171,
+       "end": 1179
+      },
+      {
+       "word": "needed",
+       "start": 1181,
+       "end": 1189
+      },
+      {
+       "word": "a",
+       "start": 1191,
+       "end": 1192
+      },
+      {
+       "word": "limit",
+       "start": 1194,
+       "end": 1201
+      },
+      {
+       "word": "before",
+       "start": 1203,
+       "end": 1211
+      },
+      {
+       "word": "anyone",
+       "start": 1213,
+       "end": 1223
+      },
+      {
+       "word": "paid",
+       "start": 1225,
+       "end": 1232
+      },
+      {
+       "word": "them.",
+       "start": 1233,
+       "end": 1249
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "gap",
+   "from": 1265,
+   "durationInFrames": 315,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "Money moves at machine speed. Risk checks don't. Nothing grades the counterparty, nothing keeps watching it, and no contract can check the answer.",
+     "file": "audio/vo/gap_0.mp3",
+     "startFrame": 1277,
+     "durationFrames": 287,
+     "words": [
+      {
+       "word": "Money",
+       "start": 1277,
+       "end": 1292
+      },
+      {
+       "word": "moves",
+       "start": 1294,
+       "end": 1304
+      },
+      {
+       "word": "at",
+       "start": 1305,
+       "end": 1308
+      },
+      {
+       "word": "machine",
+       "start": 1309,
+       "end": 1321
+      },
+      {
+       "word": "speed.",
+       "start": 1323,
+       "end": 1338
+      },
+      {
+       "word": "Risk",
+       "start": 1348,
+       "end": 1357
+      },
+      {
+       "word": "checks",
+       "start": 1359,
+       "end": 1370
+      },
+      {
+       "word": "don't.",
+       "start": 1373,
+       "end": 1387
+      },
+      {
+       "word": "Nothing",
+       "start": 1396,
+       "end": 1407
+      },
+      {
+       "word": "grades",
+       "start": 1409,
+       "end": 1419
+      },
+      {
+       "word": "the",
+       "start": 1420,
+       "end": 1422
+      },
+      {
+       "word": "counterparty,",
+       "start": 1423,
+       "end": 1445
+      },
+      {
+       "word": "nothing",
+       "start": 1448,
+       "end": 1458
+      },
+      {
+       "word": "keeps",
+       "start": 1460,
+       "end": 1466
+      },
+      {
+       "word": "watching",
+       "start": 1468,
+       "end": 1478
+      },
+      {
+       "word": "it,",
+       "start": 1480,
+       "end": 1485
+      },
+      {
+       "word": "and",
+       "start": 1490,
+       "end": 1496
+      },
+      {
+       "word": "no",
+       "start": 1499,
+       "end": 1505
+      },
+      {
+       "word": "contract",
+       "start": 1508,
+       "end": 1524
+      },
+      {
+       "word": "can",
+       "start": 1526,
+       "end": 1530
+      },
+      {
+       "word": "check",
+       "start": 1531,
+       "end": 1537
+      },
+      {
+       "word": "the",
+       "start": 1539,
+       "end": 1541
+      },
+      {
+       "word": "answer.",
+       "start": 1543,
+       "end": 1564
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "turn",
+   "from": 1580,
+   "durationInFrames": 180,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "Meet CompliR. Screen before you pay.",
+     "file": "audio/vo/turn_0.mp3",
+     "startFrame": 1592,
+     "durationFrames": 79,
+     "words": [
+      {
+       "word": "Meet",
+       "start": 1592,
+       "end": 1601
+      },
+      {
+       "word": "CompliR.",
+       "start": 1603,
+       "end": 1624
+      },
+      {
+       "word": "Screen",
+       "start": 1627,
+       "end": 1638
+      },
+      {
+       "word": "before",
+       "start": 1640,
+       "end": 1647
+      },
+      {
+       "word": "you",
+       "start": 1648,
+       "end": 1650
+      },
+      {
+       "word": "pay.",
+       "start": 1652,
+       "end": 1670
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "check",
+   "from": 1760,
+   "durationInFrames": 390,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "One call, before any payment. CompliR checks the sanctions lists, Circle's USDC blocklist, and the wallets that funded this one, two hops back.",
+     "file": "audio/vo/check_0.mp3",
+     "startFrame": 1772,
+     "durationFrames": 301,
+     "words": [
+      {
+       "word": "One",
+       "start": 1772,
+       "end": 1778
+      },
+      {
+       "word": "call,",
+       "start": 1779,
+       "end": 1793
+      },
+      {
+       "word": "before",
+       "start": 1796,
+       "end": 1806
+      },
+      {
+       "word": "any",
+       "start": 1808,
+       "end": 1814
+      },
+      {
+       "word": "payment.",
+       "start": 1816,
+       "end": 1832
+      },
+      {
+       "word": "CompliR",
+       "start": 1841,
+       "end": 1857
+      },
+      {
+       "word": "checks",
+       "start": 1859,
+       "end": 1868
+      },
+      {
+       "word": "the",
+       "start": 1869,
+       "end": 1871
+      },
+      {
+       "word": "sanctions",
+       "start": 1873,
+       "end": 1886
+      },
+      {
+       "word": "lists,",
+       "start": 1888,
+       "end": 1904
+      },
+      {
+       "word": "Circle's",
+       "start": 1910,
+       "end": 1923
+      },
+      {
+       "word": "USDC",
+       "start": 1926,
+       "end": 1944
+      },
+      {
+       "word": "blocklist,",
+       "start": 1949,
+       "end": 1969
+      },
+      {
+       "word": "and",
+       "start": 1971,
+       "end": 1975
+      },
+      {
+       "word": "the",
+       "start": 1976,
+       "end": 1978
+      },
+      {
+       "word": "wallets",
+       "start": 1980,
+       "end": 1991
+      },
+      {
+       "word": "that",
+       "start": 1992,
+       "end": 1996
+      },
+      {
+       "word": "funded",
+       "start": 1997,
+       "end": 2006
+      },
+      {
+       "word": "this",
+       "start": 2007,
+       "end": 2012
+      },
+      {
+       "word": "one,",
+       "start": 2014,
+       "end": 2025
+      },
+      {
+       "word": "two",
+       "start": 2034,
+       "end": 2040
+      },
+      {
+       "word": "hops",
+       "start": 2042,
+       "end": 2051
+      },
+      {
+       "word": "back.",
+       "start": 2053,
+       "end": 2073
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "verdict",
+   "from": 2150,
+   "durationInFrames": 480,
+   "lines": [
+    {
+     "voice": "oracle",
+     "text": "Don't pay. This wallet is on the OFAC sanctions list, and Circle has blocked it on USDC.",
+     "file": "audio/vo/verdict_0.mp3",
+     "startFrame": 2162,
+     "durationFrames": 161,
+     "words": [
+      {
+       "word": "Don't",
+       "start": 2162,
+       "end": 2170
+      },
+      {
+       "word": "pay.",
+       "start": 2171,
+       "end": 2183
+      },
+      {
+       "word": "This",
+       "start": 2189,
+       "end": 2195
+      },
+      {
+       "word": "wallet",
+       "start": 2196,
+       "end": 2204
+      },
+      {
+       "word": "is",
+       "start": 2206,
+       "end": 2208
+      },
+      {
+       "word": "on",
+       "start": 2209,
+       "end": 2211
+      },
+      {
+       "word": "the",
+       "start": 2212,
+       "end": 2215
+      },
+      {
+       "word": "OFAC",
+       "start": 2217,
+       "end": 2229
+      },
+      {
+       "word": "sanctions",
+       "start": 2231,
+       "end": 2242
+      },
+      {
+       "word": "list,",
+       "start": 2244,
+       "end": 2254
+      },
+      {
+       "word": "and",
+       "start": 2255,
+       "end": 2259
+      },
+      {
+       "word": "Circle",
+       "start": 2261,
+       "end": 2270
+      },
+      {
+       "word": "has",
+       "start": 2271,
+       "end": 2273
+      },
+      {
+       "word": "blocked",
+       "start": 2275,
+       "end": 2284
+      },
+      {
+       "word": "it",
+       "start": 2285,
+       "end": 2286
+      },
+      {
+       "word": "on",
+       "start": 2287,
+       "end": 2289
+      },
+      {
+       "word": "USDC.",
+       "start": 2292,
+       "end": 2322
+      }
+     ]
+    },
+    {
+     "voice": "narrator",
+     "text": "Fixed rules set the score. An AI analyst sets the limits and writes the reason. It can never change the score.",
+     "file": "audio/vo/verdict_1.mp3",
+     "startFrame": 2338,
+     "durationFrames": 212,
+     "words": [
+      {
+       "word": "Fixed",
+       "start": 2338,
+       "end": 2348
+      },
+      {
+       "word": "rules",
+       "start": 2349,
+       "end": 2362
+      },
+      {
+       "word": "set",
+       "start": 2365,
+       "end": 2371
+      },
+      {
+       "word": "the",
+       "start": 2372,
+       "end": 2375
+      },
+      {
+       "word": "score.",
+       "start": 2376,
+       "end": 2391
+      },
+      {
+       "word": "An",
+       "start": 2400,
+       "end": 2404
+      },
+      {
+       "word": "AI",
+       "start": 2407,
+       "end": 2415
+      },
+      {
+       "word": "analyst",
+       "start": 2417,
+       "end": 2430
+      },
+      {
+       "word": "sets",
+       "start": 2432,
+       "end": 2440
+      },
+      {
+       "word": "the",
+       "start": 2442,
+       "end": 2445
+      },
+      {
+       "word": "limits",
+       "start": 2447,
+       "end": 2456
+      },
+      {
+       "word": "and",
+       "start": 2458,
+       "end": 2461
+      },
+      {
+       "word": "writes",
+       "start": 2462,
+       "end": 2470
+      },
+      {
+       "word": "the",
+       "start": 2472,
+       "end": 2474
+      },
+      {
+       "word": "reason.",
+       "start": 2476,
+       "end": 2491
+      },
+      {
+       "word": "It",
+       "start": 2499,
+       "end": 2502
+      },
+      {
+       "word": "can",
+       "start": 2503,
+       "end": 2507
+      },
+      {
+       "word": "never",
+       "start": 2509,
+       "end": 2516
+      },
+      {
+       "word": "change",
+       "start": 2518,
+       "end": 2526
+      },
+      {
+       "word": "the",
+       "start": 2528,
+       "end": 2530
+      },
+      {
+       "word": "score.",
+       "start": 2531,
+       "end": 2550
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "signed",
+   "from": 2630,
+   "durationInFrames": 480,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "Every verdict is signed, written to a registry on Arc, and added to a ledger anyone can replay. A smart contract checks it in one line.",
+     "file": "audio/vo/signed_0.mp3",
+     "startFrame": 2642,
+     "durationFrames": 257,
+     "words": [
+      {
+       "word": "Every",
+       "start": 2642,
+       "end": 2651
+      },
+      {
+       "word": "verdict",
+       "start": 2653,
+       "end": 2664
+      },
+      {
+       "word": "is",
+       "start": 2666,
+       "end": 2668
+      },
+      {
+       "word": "signed,",
+       "start": 2669,
+       "end": 2684
+      },
+      {
+       "word": "written",
+       "start": 2690,
+       "end": 2699
+      },
+      {
+       "word": "to",
+       "start": 2701,
+       "end": 2703
+      },
+      {
+       "word": "a",
+       "start": 2706,
+       "end": 2706
+      },
+      {
+       "word": "registry",
+       "start": 2709,
+       "end": 2723
+      },
+      {
+       "word": "on",
+       "start": 2725,
+       "end": 2728
+      },
+      {
+       "word": "Arc,",
+       "start": 2731,
+       "end": 2742
+      },
+      {
+       "word": "and",
+       "start": 2742,
+       "end": 2747
+      },
+      {
+       "word": "added",
+       "start": 2749,
+       "end": 2759
+      },
+      {
+       "word": "to",
+       "start": 2760,
+       "end": 2762
+      },
+      {
+       "word": "a",
+       "start": 2765,
+       "end": 2766
+      },
+      {
+       "word": "ledger",
+       "start": 2767,
+       "end": 2777
+      },
+      {
+       "word": "anyone",
+       "start": 2780,
+       "end": 2791
+      },
+      {
+       "word": "can",
+       "start": 2792,
+       "end": 2795
+      },
+      {
+       "word": "replay.",
+       "start": 2797,
+       "end": 2815
+      },
+      {
+       "word": "A",
+       "start": 2822,
+       "end": 2825
+      },
+      {
+       "word": "smart",
+       "start": 2827,
+       "end": 2835
+      },
+      {
+       "word": "contract",
+       "start": 2836,
+       "end": 2853
+      },
+      {
+       "word": "checks",
+       "start": 2855,
+       "end": 2864
+      },
+      {
+       "word": "it",
+       "start": 2866,
+       "end": 2868
+      },
+      {
+       "word": "in",
+       "start": 2869,
+       "end": 2871
+      },
+      {
+       "word": "one",
+       "start": 2874,
+       "end": 2879
+      },
+      {
+       "word": "line.",
+       "start": 2880,
+       "end": 2898
+      }
+     ]
+    },
+    {
+     "voice": "narrator",
+     "text": "And it keeps watching. When Circle blacklists a wallet, its grade changes within a minute.",
+     "file": "audio/vo/signed_1.mp3",
+     "startFrame": 2914,
+     "durationFrames": 173,
+     "words": [
+      {
+       "word": "And",
+       "start": 2914,
+       "end": 2920
+      },
+      {
+       "word": "it",
+       "start": 2922,
+       "end": 2924
+      },
+      {
+       "word": "keeps",
+       "start": 2926,
+       "end": 2933
+      },
+      {
+       "word": "watching.",
+       "start": 2935,
+       "end": 2953
+      },
+      {
+       "word": "When",
+       "start": 2960,
+       "end": 2966
+      },
+      {
+       "word": "Circle",
+       "start": 2968,
+       "end": 2978
+      },
+      {
+       "word": "blacklists",
+       "start": 2979,
+       "end": 2999
+      },
+      {
+       "word": "a",
+       "start": 3001,
+       "end": 3001
+      },
+      {
+       "word": "wallet,",
+       "start": 3003,
+       "end": 3018
+      },
+      {
+       "word": "its",
+       "start": 3024,
+       "end": 3029
+      },
+      {
+       "word": "grade",
+       "start": 3031,
+       "end": 3042
+      },
+      {
+       "word": "changes",
+       "start": 3043,
+       "end": 3057
+      },
+      {
+       "word": "within",
+       "start": 3059,
+       "end": 3066
+      },
+      {
+       "word": "a",
+       "start": 3067,
+       "end": 3067
+      },
+      {
+       "word": "minute.",
+       "start": 3069,
+       "end": 3087
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "company",
+   "from": 3110,
+   "durationInFrames": 627,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "And CompliR runs itself. An agent sets the price, under a cent a call, paid in USDC over x402. Revenue sits in Circle wallets.",
+     "file": "audio/vo/company_0.mp3",
+     "startFrame": 3122,
+     "durationFrames": 304,
+     "words": [
+      {
+       "word": "And",
+       "start": 3122,
+       "end": 3128
+      },
+      {
+       "word": "CompliR",
+       "start": 3130,
+       "end": 3148
+      },
+      {
+       "word": "runs",
+       "start": 3150,
+       "end": 3159
+      },
+      {
+       "word": "itself.",
+       "start": 3160,
+       "end": 3179
+      },
+      {
+       "word": "An",
+       "start": 3188,
+       "end": 3192
+      },
+      {
+       "word": "agent",
+       "start": 3193,
+       "end": 3201
+      },
+      {
+       "word": "sets",
+       "start": 3203,
+       "end": 3210
+      },
+      {
+       "word": "the",
+       "start": 3211,
+       "end": 3213
+      },
+      {
+       "word": "price,",
+       "start": 3214,
+       "end": 3227
+      },
+      {
+       "word": "under",
+       "start": 3229,
+       "end": 3236
+      },
+      {
+       "word": "a",
+       "start": 3238,
+       "end": 3238
+      },
+      {
+       "word": "cent",
+       "start": 3240,
+       "end": 3246
+      },
+      {
+       "word": "a",
+       "start": 3247,
+       "end": 3248
+      },
+      {
+       "word": "call,",
+       "start": 3250,
+       "end": 3261
+      },
+      {
+       "word": "paid",
+       "start": 3262,
+       "end": 3269
+      },
+      {
+       "word": "in",
+       "start": 3271,
+       "end": 3272
+      },
+      {
+       "word": "USDC",
+       "start": 3275,
+       "end": 3293
+      },
+      {
+       "word": "over",
+       "start": 3300,
+       "end": 3308
+      },
+      {
+       "word": "x402.",
+       "start": 3314,
+       "end": 3352
+      },
+      {
+       "word": "Revenue",
+       "start": 3364,
+       "end": 3378
+      },
+      {
+       "word": "sits",
+       "start": 3379,
+       "end": 3386
+      },
+      {
+       "word": "in",
+       "start": 3387,
+       "end": 3389
+      },
+      {
+       "word": "Circle",
+       "start": 3392,
+       "end": 3402
+      },
+      {
+       "word": "wallets.",
+       "start": 3403,
+       "end": 3426
+      }
+     ]
+    },
+    {
+     "voice": "narrator",
+     "text": "It pays through a treasury that screens every payee. Asked to pay the Ronin wallet, it refused. When demand was low, it cut its own price. Twice.",
+     "file": "audio/vo/company_1.mp3",
+     "startFrame": 3442,
+     "durationFrames": 279,
+     "words": [
+      {
+       "word": "It",
+       "start": 3442,
+       "end": 3447
+      },
+      {
+       "word": "pays",
+       "start": 3449,
+       "end": 3457
+      },
+      {
+       "word": "through",
+       "start": 3458,
+       "end": 3466
+      },
+      {
+       "word": "a",
+       "start": 3467,
+       "end": 3468
+      },
+      {
+       "word": "treasury",
+       "start": 3470,
+       "end": 3483
+      },
+      {
+       "word": "that",
+       "start": 3484,
+       "end": 3488
+      },
+      {
+       "word": "screens",
+       "start": 3489,
+       "end": 3500
+      },
+      {
+       "word": "every",
+       "start": 3502,
+       "end": 3511
+      },
+      {
+       "word": "payee.",
+       "start": 3513,
+       "end": 3532
+      },
+      {
+       "word": "Asked",
+       "start": 3539,
+       "end": 3548
+      },
+      {
+       "word": "to",
+       "start": 3549,
+       "end": 3550
+      },
+      {
+       "word": "pay",
+       "start": 3552,
+       "end": 3555
+      },
+      {
+       "word": "the",
+       "start": 3557,
+       "end": 3559
+      },
+      {
+       "word": "Ronin",
+       "start": 3560,
+       "end": 3567
+      },
+      {
+       "word": "wallet,",
+       "start": 3569,
+       "end": 3584
+      },
+      {
+       "word": "it",
+       "start": 3585,
+       "end": 3589
+      },
+      {
+       "word": "refused.",
+       "start": 3590,
+       "end": 3611
+      },
+      {
+       "word": "When",
+       "start": 3617,
+       "end": 3623
+      },
+      {
+       "word": "demand",
+       "start": 3625,
+       "end": 3634
+      },
+      {
+       "word": "was",
+       "start": 3636,
+       "end": 3639
+      },
+      {
+       "word": "low,",
+       "start": 3642,
+       "end": 3652
+      },
+      {
+       "word": "it",
+       "start": 3655,
+       "end": 3659
+      },
+      {
+       "word": "cut",
+       "start": 3661,
+       "end": 3667
+      },
+      {
+       "word": "its",
+       "start": 3669,
+       "end": 3673
+      },
+      {
+       "word": "own",
+       "start": 3674,
+       "end": 3677
+      },
+      {
+       "word": "price.",
+       "start": 3678,
+       "end": 3695
+      },
+      {
+       "word": "Twice.",
+       "start": 3699,
+       "end": 3721
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "integrate",
+   "from": 3737,
+   "durationInFrames": 330,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "Builders paste one prompt into their coding agent, and CompliR is wired in. Our sister project, Inktoll, went live on mainnet in a day.",
+     "file": "audio/vo/integrate_0.mp3",
+     "startFrame": 3749,
+     "durationFrames": 254,
+     "words": [
+      {
+       "word": "Builders",
+       "start": 3749,
+       "end": 3763
+      },
+      {
+       "word": "paste",
+       "start": 3765,
+       "end": 3775
+      },
+      {
+       "word": "one",
+       "start": 3777,
+       "end": 3785
+      },
+      {
+       "word": "prompt",
+       "start": 3787,
+       "end": 3798
+      },
+      {
+       "word": "into",
+       "start": 3799,
+       "end": 3803
+      },
+      {
+       "word": "their",
+       "start": 3804,
+       "end": 3808
+      },
+      {
+       "word": "coding",
+       "start": 3809,
+       "end": 3818
+      },
+      {
+       "word": "agent,",
+       "start": 3820,
+       "end": 3831
+      },
+      {
+       "word": "and",
+       "start": 3832,
+       "end": 3836
+      },
+      {
+       "word": "CompliR",
+       "start": 3838,
+       "end": 3852
+      },
+      {
+       "word": "is",
+       "start": 3853,
+       "end": 3856
+      },
+      {
+       "word": "wired",
+       "start": 3858,
+       "end": 3868
+      },
+      {
+       "word": "in.",
+       "start": 3870,
+       "end": 3878
+      },
+      {
+       "word": "Our",
+       "start": 3888,
+       "end": 3892
+      },
+      {
+       "word": "sister",
+       "start": 3894,
+       "end": 3903
+      },
+      {
+       "word": "project,",
+       "start": 3905,
+       "end": 3919
+      },
+      {
+       "word": "Inktoll,",
+       "start": 3920,
+       "end": 3937
+      },
+      {
+       "word": "went",
+       "start": 3938,
+       "end": 3944
+      },
+      {
+       "word": "live",
+       "start": 3946,
+       "end": 3955
+      },
+      {
+       "word": "on",
+       "start": 3957,
+       "end": 3960
+      },
+      {
+       "word": "mainnet",
+       "start": 3962,
+       "end": 3976
+      },
+      {
+       "word": "in",
+       "start": 3977,
+       "end": 3980
+      },
+      {
+       "word": "a",
+       "start": 3982,
+       "end": 3982
+      },
+      {
+       "word": "day.",
+       "start": 3984,
+       "end": 4003
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "unique",
+   "from": 4067,
+   "durationInFrames": 360,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "What makes it different? Graded, not yes or no. Signed, not taken on trust. And run by an agent, in public.",
+     "file": "audio/vo/unique_0.mp3",
+     "startFrame": 4079,
+     "durationFrames": 235,
+     "words": [
+      {
+       "word": "What",
+       "start": 4079,
+       "end": 4085
+      },
+      {
+       "word": "makes",
+       "start": 4086,
+       "end": 4092
+      },
+      {
+       "word": "it",
+       "start": 4094,
+       "end": 4096
+      },
+      {
+       "word": "different?",
+       "start": 4097,
+       "end": 4115
+      },
+      {
+       "word": "Graded,",
+       "start": 4125,
+       "end": 4142
+      },
+      {
+       "word": "not",
+       "start": 4144,
+       "end": 4151
+      },
+      {
+       "word": "yes",
+       "start": 4153,
+       "end": 4160
+      },
+      {
+       "word": "or",
+       "start": 4162,
+       "end": 4164
+      },
+      {
+       "word": "no.",
+       "start": 4166,
+       "end": 4179
+      },
+      {
+       "word": "Signed,",
+       "start": 4186,
+       "end": 4203
+      },
+      {
+       "word": "not",
+       "start": 4205,
+       "end": 4212
+      },
+      {
+       "word": "taken",
+       "start": 4214,
+       "end": 4222
+      },
+      {
+       "word": "on",
+       "start": 4224,
+       "end": 4227
+      },
+      {
+       "word": "trust.",
+       "start": 4228,
+       "end": 4244
+      },
+      {
+       "word": "And",
+       "start": 4251,
+       "end": 4255
+      },
+      {
+       "word": "run",
+       "start": 4257,
+       "end": 4262
+      },
+      {
+       "word": "by",
+       "start": 4264,
+       "end": 4267
+      },
+      {
+       "word": "an",
+       "start": 4269,
+       "end": 4271
+      },
+      {
+       "word": "agent,",
+       "start": 4272,
+       "end": 4286
+      },
+      {
+       "word": "in",
+       "start": 4287,
+       "end": 4289
+      },
+      {
+       "word": "public.",
+       "start": 4291,
+       "end": 4313
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "close",
+   "from": 4427,
+   "durationInFrames": 338,
+   "lines": [
+    {
+     "voice": "narrator",
+     "text": "CompliR. Built on Arc, with USDC and Circle. Screen before you pay.",
+     "file": "audio/vo/close_0.mp3",
+     "startFrame": 4439,
+     "durationFrames": 176,
+     "words": [
+      {
+       "word": "CompliR.",
+       "start": 4439,
+       "end": 4464
+      },
+      {
+       "word": "Built",
+       "start": 4468,
+       "end": 4477
+      },
+      {
+       "word": "on",
+       "start": 4479,
+       "end": 4483
+      },
+      {
+       "word": "Arc,",
+       "start": 4486,
+       "end": 4497
+      },
+      {
+       "word": "with",
+       "start": 4498,
+       "end": 4503
+      },
+      {
+       "word": "USDC",
+       "start": 4505,
+       "end": 4524
+      },
+      {
+       "word": "and",
+       "start": 4531,
+       "end": 4536
+      },
+      {
+       "word": "Circle.",
+       "start": 4538,
+       "end": 4556
+      },
+      {
+       "word": "Screen",
+       "start": 4568,
+       "end": 4579
+      },
+      {
+       "word": "before",
+       "start": 4581,
+       "end": 4589
+      },
+      {
+       "word": "you",
+       "start": 4591,
+       "end": 4593
+      },
+      {
+       "word": "pay.",
+       "start": 4595,
+       "end": 4615
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

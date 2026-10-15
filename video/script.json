@@ -1,0 +1,172 @@
+{
+  "title": "CompliR: screen before you pay",
+  "model": "eleven_multilingual_v2",
+  "voices": {
+    "narrator": {
+      "name": "Sarah",
+      "id": "EXAVITQu4vr4xnSDxMaL",
+      "settings": {
+        "stability": 0.5,
+        "similarity_boost": 0.8,
+        "style": 0.22,
+        "use_speaker_boost": true
+      }
+    },
+    "oracle": {
+      "name": "River",
+      "id": "SAz9YHcvj6GT2YYXdXww",
+      "settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.8,
+        "style": 0.05,
+        "use_speaker_boost": true
+      }
+    }
+  },
+  "scenes": [
+    {
+      "id": "open",
+      "seconds": 13,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "March, twenty twenty-two. Attackers drain about six hundred million dollars from the Ronin bridge."
+        },
+        {
+          "voice": "narrator",
+          "text": "Weeks later, the wallet that took it is on the US sanctions list. Anyone can still send it money."
+        }
+      ]
+    },
+    {
+      "id": "problem",
+      "seconds": 13,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Now AI agents pay in USDC. An agent sees an address. It cannot tell a vendor from a launderer."
+        },
+        {
+          "voice": "narrator",
+          "text": "And the checks that exist look at one wallet, once, and answer yes or no."
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "seconds": 12,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "In one day on Arc, a hundred and fifty-four million USDC moved across nearly three thousand transfers."
+        },
+        {
+          "voice": "narrator",
+          "text": "Of the seven hundred and twenty-seven wallets we graded, almost half needed a limit before anyone paid them."
+        }
+      ]
+    },
+    {
+      "id": "gap",
+      "seconds": 10,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Money moves at machine speed. Risk checks don't. Nothing grades the counterparty, nothing keeps watching it, and no contract can check the answer."
+        }
+      ]
+    },
+    {
+      "id": "turn",
+      "seconds": 6,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Meet CompliR. Screen before you pay."
+        }
+      ]
+    },
+    {
+      "id": "check",
+      "seconds": 13,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "One call, before any payment. CompliR checks the sanctions lists, Circle's USDC blocklist, and the wallets that funded this one, two hops back."
+        }
+      ]
+    },
+    {
+      "id": "verdict",
+      "seconds": 16,
+      "lines": [
+        {
+          "voice": "oracle",
+          "text": "Don't pay. This wallet is on the OFAC sanctions list, and Circle has blocked it on USDC."
+        },
+        {
+          "voice": "narrator",
+          "text": "Fixed rules set the score. An AI analyst sets the limits and writes the reason. It can never change the score."
+        }
+      ]
+    },
+    {
+      "id": "signed",
+      "seconds": 16,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Every verdict is signed, written to a registry on Arc, and added to a ledger anyone can replay. A smart contract checks it in one line."
+        },
+        {
+          "voice": "narrator",
+          "text": "And it keeps watching. When Circle blacklists a wallet, its grade changes within a minute."
+        }
+      ]
+    },
+    {
+      "id": "company",
+      "seconds": 17,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "And CompliR runs itself. An agent sets the price, under a cent a call, paid in USDC over x402. Revenue sits in Circle wallets."
+        },
+        {
+          "voice": "narrator",
+          "text": "It pays through a treasury that screens every payee. Asked to pay the Ronin wallet, it refused. When demand was low, it cut its own price. Twice."
+        }
+      ]
+    },
+    {
+      "id": "integrate",
+      "seconds": 11,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "Builders paste one prompt into their coding agent, and CompliR is wired in. Our sister project, Inktoll, went live on mainnet in a day."
+        }
+      ]
+    },
+    {
+      "id": "unique",
+      "seconds": 12,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "What makes it different? Graded, not yes or no. Signed, not taken on trust. And run by an agent, in public."
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "seconds": 10,
+      "lines": [
+        {
+          "voice": "narrator",
+          "text": "CompliR. Built on Arc, with USDC and Circle. Screen before you pay."
+        }
+      ]
+    }
+  ]
+}

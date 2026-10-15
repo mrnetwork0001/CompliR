@@ -1,0 +1,184 @@
+{
+ "address": {
+  "file": "footage/address.mp4",
+  "width": 3200,
+  "height": 1800,
+  "durationFrames": 312,
+  "marks": {
+   "scrolled": 201
+  },
+  "url": "/a/0x098b716b8aaf21512996dc57eb0615e2383e2f96",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "rects": {
+   "headline": {
+    "x": 152,
+    "y": 112,
+    "w": 802,
+    "h": 47
+   }
+  },
+  "notes": "The public address page for the Ronin wallet after the check: headline, reasons, attestation; eased scroll down 620px (mark scrolled)."
+ },
+ "check": {
+  "file": "footage/check.mp4",
+  "width": 3200,
+  "height": 1800,
+  "durationFrames": 926,
+  "marks": {
+   "type": 78,
+   "submit": 172,
+   "verdict": 713,
+   "view": 846
+  },
+  "url": "/check",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "address": "0x098b716b8aaf21512996dc57eb0615e2383e2f96",
+  "rects": {
+   "form": {
+    "x": 152,
+    "y": 284,
+    "w": 1296,
+    "h": 443
+   },
+   "modal": {
+    "x": 460,
+    "y": 118,
+    "w": 680,
+    "h": 663
+   },
+   "result": {
+    "x": 460,
+    "y": 197,
+    "w": 680,
+    "h": 506
+   }
+  },
+  "notes": "Real typing of the Ronin exploiter address (mark type), a real click on Check (mark submit); the screening modal runs against the live API and the signed verdict lands (mark verdict); View full result clicked (mark view)."
+ },
+ "company": {
+  "file": "footage/company.mp4",
+  "width": 3200,
+  "height": 1800,
+  "durationFrames": 330,
+  "marks": {
+   "pricing": 207
+  },
+  "url": "/company",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "rects": {
+   "reasoning": {
+    "x": 152,
+    "y": 408,
+    "w": 1296,
+    "h": 275
+   },
+   "kpis": null,
+   "pricing": {
+    "x": 1016,
+    "y": 140,
+    "w": 432,
+    "h": 492
+   }
+  },
+  "notes": "Company page at rest (KPIs, today's reasoning), then eased scroll to Reserves / Obligations / Pricing (mark pricing; rects.pricing is at that point)."
+ },
+ "landing": {
+  "file": "footage/landing.mp4",
+  "width": 3200,
+  "height": 1800,
+  "durationFrames": 276,
+  "marks": {},
+  "url": "/",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "notes": "Landing hero at rest with the live risk lattice; nothing clicked."
+ },
+ "ledger": {
+  "file": "footage/ledger.mp4",
+  "width": 3200,
+  "height": 1800,
+  "durationFrames": 273,
+  "marks": {
+   "scrolled": 180
+  },
+  "url": "/ledger",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "rects": {
+   "badge": {
+    "x": 1161,
+    "y": 177,
+    "w": 287,
+    "h": 26
+   }
+  },
+  "notes": "The public decision ledger with its live 'chain intact' check; eased scroll (mark scrolled)."
+ },
+ "payouts": {
+  "file": "footage/payouts.mp4",
+  "width": 3200,
+  "height": 1800,
+  "durationFrames": 294,
+  "marks": {
+   "held": 165
+  },
+  "url": "/payouts",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "rects": {
+   "held": {
+    "x": 153,
+    "y": 420,
+    "w": 1452,
+    "h": 84
+   }
+  },
+  "notes": "Guarded Payouts; eased scroll to the HELD invoice addressed to the Ronin exploiter (a test invoice we created), mark held."
+ },
+ "prompt": {
+  "file": "footage/prompt.mp4",
+  "width": 3200,
+  "height": 1800,
+  "durationFrames": 339,
+  "marks": {
+   "copy": 109,
+   "prompt": 223
+  },
+  "url": "/docs/agent-prompt",
+  "deviceScale": 2,
+  "viewport": {
+   "w": 1600,
+   "h": 900
+  },
+  "rects": {
+   "code": {
+    "x": 460,
+    "y": 452,
+    "w": 756,
+    "h": 1006
+   }
+  },
+  "notes": "The 'Integrate with your AI agent' docs page; Copy clicked (mark copy), then eased scroll down the prompt (mark prompt)."
+ }
+}

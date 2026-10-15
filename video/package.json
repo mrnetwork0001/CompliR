@@ -1,0 +1,37 @@
+{
+  "name": "complir-video",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "draft": "remotion render CompliR out/draft.mp4 --scale 0.5 --crf 28",
+    "render4k": "remotion render CompliR out/complir-demo-4k-raw.mp4 --scale 2 --image-format png --codec h264 --crf 14 --x264-preset slow --pixel-format yuv420p --audio-codec aac --audio-bitrate 320k",
+    "poster": "remotion still Poster out/complir-thumbnail.png",
+    "typecheck": "tsc --noEmit",
+    "voices": "node scripts/voices.mjs",
+    "vo": "node scripts/voiceover.mjs",
+    "sfx": "node scripts/sfx.mjs",
+    "music": "node scripts/music.mjs",
+    "timing": "node scripts/timing.mjs",
+    "capture": "node scripts/capture.mjs",
+    "encode": "node scripts/encode.mjs",
+    "finish": "node scripts/finish.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.530",
+    "@remotion/google-fonts": "4.0.530",
+    "@remotion/media-utils": "4.0.530",
+    "@remotion/paths": "4.0.530",
+    "@remotion/shapes": "4.0.530",
+    "@remotion/transitions": "4.0.530",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "4.0.530"
+  },
+  "devDependencies": {
+    "@remotion/bundler": "4.0.530",
+    "@remotion/renderer": "4.0.530",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.6.0"
+  }
+}

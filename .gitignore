@@ -51,3 +51,10 @@ scripts/erc8004/agent.built.json
 # extension zip build output
 packages/extension/dist/
 PRESENTER_GUIDE.md
+
+# demo film (video/): build artefacts stay local
+video/node_modules/
+video/out/
+video/.cache/
+video/public/footage/
+video/public/stills/
