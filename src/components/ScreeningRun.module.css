@@ -1,6 +1,89 @@
 .run {
-  margin-top: 18px;
   gap: 12px;
+}
+
+/* ─── modal shell ─── */
+.modalRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: sr-in 0.18s ease-out;
+}
+.modal {
+  position: relative;
+  width: min(680px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: sr-pop 0.22s ease-out;
+}
+.modal > .run {
+  background-color: var(--panel-solid);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+/* ─── finished: the verdict ─── */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 0 2px;
+  border-top: 1px solid var(--line-2);
+}
+.resultHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.resultWord {
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+.rLOW .resultWord { color: var(--low); }
+.rMEDIUM .resultWord { color: var(--medium); }
+.rHIGH .resultWord { color: var(--high); }
+.resultTime {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--faint);
+}
+.headline {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text);
+}
+.advice {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.codes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 0;
+}
+.codes code {
+  font-size: 10.5px;
+}
+.resultActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
 }
 .dot,
 .dotDone {
@@ -155,17 +238,29 @@
   color: var(--faint);
 }
 
+@keyframes sr-in { from { opacity: 0; } }
+@keyframes sr-pop { from { opacity: 0; transform: translateY(8px) scale(0.985); } }
 @keyframes sr-spin { to { transform: rotate(360deg); } }
 @keyframes sr-blink { 50% { opacity: 0.25; } }
 @keyframes sr-sweep { from { left: -22%; } to { left: 100%; } }
 @keyframes sr-scan { 0% { background-position: -40% 0; } 100% { background-position: 140% 0; } }
 @keyframes sr-fade { 0%, 100% { opacity: 0.55; } 8%, 92% { opacity: 1; } }
 
+/* once the verdict is in, lanes shrink to one line each so the result is in view */
+.done .what,
+.done .scan {
+  display: none;
+}
+.done.lane {
+  padding: 5px 0;
+}
 @media (max-width: 560px) {
-  .lane { grid-template-columns: 16px minmax(0, 1fr); }
-  .state { grid-column: 2; padding-top: 0; }
+  .modalRoot { padding: 8px; align-items: flex-start; }
+  .modal { max-height: calc(100dvh - 16px); }
+  .lane { gap: 2px 10px; padding: 8px 0; }
+  .what { font-size: 10.5px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .dot, .railRun, .spin, .scan, .fact { animation: none; }
+  .dot, .railRun, .spin, .scan, .fact, .backdrop, .modal { animation: none; }
   .railRun { left: 0; width: 100%; opacity: 0.5; }
 }

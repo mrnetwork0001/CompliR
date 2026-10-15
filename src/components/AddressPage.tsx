@@ -1,6 +1,6 @@
 "use client";
 
-import { ScreeningRun } from "./ScreeningRun";
+import { ScreeningModal, type ScreeningResult } from "./ScreeningRun";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
@@ -73,15 +73,19 @@ export function AddressPage({ history, explorerUrl, shareUrl }: { history: Addre
     };
   }, [h.address]);
 
+  const [run, setRun] = useState<{ result: ScreeningResult | null } | null>(null);
   const recheck = useCallback(async () => {
     setState({ kind: "busy" });
+    setRun({ result: null });
     try {
       const r = await postJson<CheckResponse>("/api/v1/check", { address: h.address, source: "address", full: true });
       setLatest(r);
       if (r.verdict) setVerdict(r.verdict);
       setState({ kind: "idle" });
+      setRun({ result: { tier: r.tier, score: r.score, headline: r.headline, advice: r.advice, reasons: r.reasons } });
       router.refresh();
     } catch (e) {
+      setRun(null);
       setState({ kind: "error", message: e instanceof HttpError ? `${e.code}: ${e.message}` : e instanceof Error ? e.message : String(e) });
     }
   }, [h.address, router]);
@@ -134,7 +138,7 @@ export function AddressPage({ history, explorerUrl, shareUrl }: { history: Addre
           {state.message}
         </div>
       )}
-      {busy && <ScreeningRun address={h.address} />}
+      {run && <ScreeningModal address={h.address} result={run.result} onView={() => setRun(null)} onClose={() => setRun(null)} viewLabel="Show the updated page" />}
 
       <div className={`stats ${styles.stats}`}>
         <div className="stat">

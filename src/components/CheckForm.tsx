@@ -7,7 +7,7 @@ import type { CheckResponse, CheckSource } from "@/lib/check/plain";
 import { extractFromLink, vendorKey } from "@/lib/check/extract";
 import { ADDR_RE, HttpError, apiFetch, postJson } from "./api";
 import { Glyph } from "./Glyph";
-import { ScreeningRun } from "./ScreeningRun";
+import { ScreeningModal, type ScreeningResult } from "./ScreeningRun";
 import styles from "./CheckForm.module.css";
 
 const EXAMPLES: { label: string; address: Address; expect: string }[] = [
@@ -45,7 +45,7 @@ interface InvoiceResult {
 }
 
 type Tab = CheckSource;
-type Status = { kind: "idle" } | { kind: "busy"; what: string; done?: boolean } | { kind: "error"; message: string };
+type Status = { kind: "idle" } | { kind: "busy"; what: string; result?: ScreeningResult; path?: string } | { kind: "error"; message: string };
 
 export function CheckForm({ initialAddress = "" }: { initialAddress?: string }) {
   const router = useRouter();
@@ -111,10 +111,9 @@ export function CheckForm({ initialAddress = "" }: { initialAddress?: string }) 
             return `/a/${addr}`;
           }
         })();
-        // let the run panel show every lane done and the real total, then open the verdict
-        setStatus({ kind: "busy", what: addr, done: true });
-        await new Promise((r) => setTimeout(r, 900));
-        router.push(path);
+        // show the verdict in the modal; "View full result" opens the address page
+        router.prefetch(path);
+        setStatus({ kind: "busy", what: addr, path, result: { tier: res.tier, score: res.score, headline: res.headline, advice: res.advice, reasons: res.reasons } });
       } catch (e) {
         setStatus({ kind: "error", message: e instanceof HttpError ? `${e.code}: ${e.message}` : e instanceof Error ? e.message : String(e) });
       }
@@ -318,7 +317,15 @@ export function CheckForm({ initialAddress = "" }: { initialAddress?: string }) 
             </span>
           </div>
 
-          {status.kind === "busy" && status.what.startsWith("0x") && <ScreeningRun key={status.what} address={status.what} done={status.done} />}
+          {status.kind === "busy" && status.what.startsWith("0x") && (
+            <ScreeningModal
+              key={status.what}
+              address={status.what}
+              result={status.result ?? null}
+              onView={() => { if (status.path) router.push(status.path); }}
+              onClose={() => setStatus({ kind: "idle" })}
+            />
+          )}
           {status.kind === "busy" && !status.what.startsWith("0x") && (
             <p className={`muted small ${styles.busy}`} aria-live="polite">
               <span className="live-dot" aria-hidden="true" /> {status.what}
