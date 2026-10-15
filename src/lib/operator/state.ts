@@ -15,6 +15,7 @@ import { invoiceTotals, pendingInvoices, policyFromEnv, spentToday, treasuryStat
 import { tellerAbi, usycEnv } from "../usyc";
 import { chooseDepositVault, readYieldState, yieldBackend, yieldContext, yieldEnv, type YieldBackend, type YieldPolicy, type YieldPosition, type YieldVault } from "../earn";
 import { priceState, type PriceState } from "./pricing";
+import { isRateLimited } from "../evidence/util";
 
 export interface RevenueSnapshot {
   last24hUsdc: number;
@@ -60,7 +61,10 @@ export interface ReservesSnapshot {
   preferredVault: { address: string; name: string; apy: number; availableUsdc: number; tvlUsdc: number } | null;
   vaultsError?: string;
   circle: { enabled: boolean; reason?: string; blockchain: string | null; wallets: CircleWalletView[] };
+  /** short, human-readable reason when the chain read failed (never a raw RPC dump) */
   error?: string;
+  /** set when float/yield are the last successful read because the live read failed (ISO time of that read) */
+  floatAsOf?: string;
 }
 export interface ObligationsSnapshot {
   pendingInvoices: number;
@@ -123,14 +127,44 @@ const now = () => Math.floor(Date.now() / 1000);
 const num = (v: unknown) => Number(v ?? 0) || 0;
 const r6 = (n: number) => Math.round(n * 1e6) / 1e6;
 
+/**
+ * One short line for a public page: rate limits are named as such, viem's multi-line dumps (URL, request body,
+ * raw call arguments, docs link, version) are cut to their first sentence.
+ */
+export function friendlyError(e: unknown): string {
+  if (isRateLimited(e)) return "Arc RPC rate limit; retrying shortly";
+  const ex = e as { shortMessage?: string; message?: string } | null;
+  const raw = String(ex?.shortMessage ?? ex?.message ?? e ?? "unknown error");
+  const first = raw.split(/\n|URL:|Request body:|Raw Call Arguments:|Contract Call:|Docs:|Details:|Version:/)[0].trim();
+  return (first.length > 120 ? `${first.slice(0, 117)}...` : first) || "temporarily unavailable";
+}
+
+const sleepMs = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Retry a read when the RPC rate-limits it (0.4 s, then 1.2 s); other errors throw at once. */
+export async function withRateLimitRetry<T>(fn: () => Promise<T>, delays: number[] = [400, 1200]): Promise<T> {
+  for (let i = 0; ; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (i >= delays.length || !isRateLimited(e)) throw e;
+      await sleepMs(delays[i]);
+    }
+  }
+}
+
 async function safe<T>(name: string, errors: Record<string, string>, fn: () => Promise<T>): Promise<T | null> {
   try {
     return await fn();
   } catch (e) {
-    errors[name] = (e as Error)?.message ?? String(e);
+    errors[name] = friendlyError(e);
     return null;
   }
 }
+
+/** Last successful chain read of float/yield, served (with its age) when a live read fails. */
+let lastGoodChain: { at: number; value: { floatUsdc: number; yieldUsdc: number; positions: YieldPosition[] } } | null = null;
+const LAST_GOOD_MAX_AGE_S = 6 * 3600;
+export function __resetReservesCache(): void { lastGoodChain = null; }
 
 function ownWalletFilter(): { clause: string; args: string[] } {
   const own = (process.env.OWN_WALLETS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
@@ -185,7 +219,7 @@ async function circleView(): Promise<ReservesSnapshot["circle"]> {
       const b = status.enabled ? await circleBalances(role) : null;
       wallets.push({ role, address: w?.address ?? null, accountType: w?.accountType ?? null, policy: w?.policy ?? null, balances: b?.balances ?? [], status: b?.status ?? (w ? "dry-run" : "not-provisioned"), reason: b?.reason ?? status.reason });
     } catch (e) {
-      wallets.push({ role, address: w?.address ?? null, accountType: w?.accountType ?? null, policy: w?.policy ?? null, balances: [], status: "error", reason: (e as Error)?.message ?? String(e) });
+      wallets.push({ role, address: w?.address ?? null, accountType: w?.accountType ?? null, policy: w?.policy ?? null, balances: [], status: "error", reason: friendlyError(e) });
     }
   }
   return { enabled: status.enabled, reason: status.reason, blockchain: status.blockchain, wallets };
@@ -203,11 +237,11 @@ export async function reservesSnapshot(): Promise<ReservesSnapshot> {
     vaults: null, yieldPolicy: null, preferredVault: null,
     circle: { enabled: false, blockchain: null, wallets: [] },
   };
-  const chain = (async () => {
+  const chain = withRateLimitRetry(async () => {
     if (backend === "usyc") return usycReserves(uenv);
     const ctx = await yieldContext(yenv);
     base.vaults = ctx.vaults; base.yieldPolicy = ctx.policy;
-    if (ctx.error) base.vaultsError = ctx.error;
+    if (ctx.error) base.vaultsError = friendlyError(ctx.error);
     if (!yenv.wallet) return null;
     const st = await readYieldState(yenv.wallet, ctx.vaults, yenv.policy.pinnedVault ? [yenv.policy.pinnedVault] : []);
     const positions = st.positions.map(({ sharesRaw: _s, ...p }) => p);
@@ -216,12 +250,20 @@ export async function reservesSnapshot(): Promise<ReservesSnapshot> {
       base.preferredVault = v ? { address: v.address, name: v.name, apy: v.apy, availableUsdc: v.availableUsdc, tvlUsdc: v.tvlUsdc } : null;
     }
     return { floatUsdc: st.balanceUsdc, yieldUsdc: r6(positions.reduce((s, p) => s + p.assetsUsdc, 0)), positions };
-  })();
+  });
   const [c, circle] = await Promise.allSettled([chain, circleView()]);
-  if (c.status === "fulfilled" && c.value) Object.assign(base, c.value);
-  else if (c.status === "rejected") base.error = `chain read failed: ${(c.reason as Error)?.message ?? c.reason}`;
+  if (c.status === "fulfilled" && c.value) {
+    Object.assign(base, c.value);
+    if (backend === "earn") lastGoodChain = { at: now(), value: c.value as { floatUsdc: number; yieldUsdc: number; positions: YieldPosition[] } };
+  } else if (c.status === "rejected") {
+    base.error = friendlyError(c.reason);
+    if (lastGoodChain && now() - lastGoodChain.at <= LAST_GOOD_MAX_AGE_S) {
+      Object.assign(base, lastGoodChain.value);
+      base.floatAsOf = new Date(lastGoodChain.at * 1000).toISOString();
+    }
+  }
   if (circle.status === "fulfilled") base.circle = circle.value;
-  else base.circle = { enabled: false, reason: (circle.reason as Error)?.message ?? String(circle.reason), blockchain: null, wallets: [] };
+  else base.circle = { enabled: false, reason: friendlyError(circle.reason), blockchain: null, wallets: [] };
   return base;
 }
 

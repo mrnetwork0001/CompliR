@@ -29,7 +29,8 @@ describe("companySnapshot never throws", () => {
     // reserves: chain read fails (unreachable RPC) and Circle fails → still an object, with nulls + reasons
     expect(s.reserves).not.toBeNull();
     expect(s.reserves!.floatUsdc).toBeNull();
-    expect(s.reserves!.error).toMatch(/chain read failed/);
+    expect(s.reserves!.error).toBeTruthy();
+    expect(s.reserves!.error).not.toMatch(/URL:|Request body|Raw Call/); // short public text, never the RPC dump
     expect(s.reserves!.circle.enabled).toBe(false);
     expect(s.reserves!.circle.reason).toMatch(/circle schema failed/);
     // DB-backed sections that did not fail are populated
@@ -37,4 +38,32 @@ describe("companySnapshot never throws", () => {
     expect(s.screening).toMatchObject({ screenings24h: 0, watchesActive: 0, p95LatencyMs: null });
     expect(s.mode).toMatchObject({ treasury: "dry-run", yield: "dry", yieldBackend: "earn", x402: "disabled", paused: false });
   }, 30_000);
+});
+
+describe("friendlyError / withRateLimitRetry (public Company page text)", async () => {
+  const { friendlyError, withRateLimitRetry } = await import("./state");
+  const viemDump = Object.assign(new Error(
+    'HTTP request failed.\n\nURL: https://rpc.mainnet.arc.io\nRequest body: {"method":"eth_call","params":[{"data":"0x70a0823100"}]}\n\nRaw Call Arguments:\n  to: 0x3600\nDocs: https://viem.sh\nDetails: rate limit exceeded\nVersion: viem@2.57.4',
+  ), { details: "rate limit exceeded" });
+
+  it("names a rate limit instead of dumping the RPC request", () => {
+    const t = friendlyError(viemDump);
+    expect(t).toBe("Arc RPC rate limit; retrying shortly");
+    expect(t).not.toMatch(/Request body|Raw Call|0x70a08231/);
+  });
+
+  it("cuts other viem errors to their first line, max 120 chars", () => {
+    expect(friendlyError(new Error("Execution reverted.\n\nURL: https://x\nRequest body: {}"))).toBe("Execution reverted.");
+    expect(friendlyError(new Error("x".repeat(300))).length).toBe(120);
+  });
+
+  it("retries rate-limited reads, then succeeds; other errors throw at once", async () => {
+    let n = 0;
+    const v = await withRateLimitRetry(async () => { if (++n < 3) throw viemDump; return 42; }, [1, 1]);
+    expect(v).toBe(42);
+    expect(n).toBe(3);
+    let m = 0;
+    await expect(withRateLimitRetry(async () => { m++; throw new Error("boom"); }, [1, 1])).rejects.toThrow("boom");
+    expect(m).toBe(1);
+  });
 });

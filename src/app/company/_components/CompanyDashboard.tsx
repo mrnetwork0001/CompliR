@@ -198,7 +198,7 @@ function Strips({ s }: { s: CompanySnapshot | null }) {
   const held = res && (res.floatUsdc != null || res.yieldUsdc != null) ? (res.floatUsdc ?? 0) + (res.yieldUsdc ?? 0) : null;
   const items = [
     { label: "Earned", value: rev ? `${usdc(rev.totalUsdc, 4)} USDC` : null, sub: rev ? `${rev.callsPaid} paid calls · ${rev.payers} payers · ${usdc(rev.last24hUsdc, 4)} last 24 h` : "" },
-    { label: "Held", value: s ? (held == null ? "-" : `${usdc(held)} USDC`) : null, sub: res ? `${res.floatUsdc == null ? "float unknown" : `${usdc(res.floatUsdc)} float`} · ${res.yieldUsdc == null ? "yield unknown" : `${usdc(res.yieldUsdc)} in yield`}` : "" },
+    { label: "Held", value: s ? (held == null ? "-" : `${usdc(held)} USDC`) : null, sub: res ? `${res.floatUsdc == null ? "balance temporarily unavailable" : `${usdc(res.floatUsdc)} float${res.floatAsOf ? ` (as of ${fmtRelative(res.floatAsOf)})` : ""}`} · ${res.yieldUsdc == null ? "yield temporarily unavailable" : `${usdc(res.yieldUsdc)} in yield`}` : "" },
     { label: "Paid out", value: ob ? `${usdc(ob.paidUsdc)} USDC` : null, sub: ob ? `${ob.paidInvoices} invoice(s) · ${usdc(ob.spentTodayUsdc)} today` : "" },
     { label: "Refused", value: ob ? `${usdc(ob.heldUsdc)} USDC` : null, sub: ob ? `${ob.heldInvoices} invoice(s) held by the oracle${rev?.refunds ? ` · ${rev.refunds} refund(s)` : ""}` : "" },
   ];
@@ -222,7 +222,11 @@ function ReservesCard({ s, explorer }: { s: CompanySnapshot | null; explorer: st
       <div className={styles.cardHead}><h2>Reserves</h2>{r && <span className={`badge ${r.yieldMode === "live" ? "badgeLOW" : "badgeNeutral"}`}>{r.yieldBackend === "usyc" ? "USYC" : "Earn"} {r.yieldMode === "live" ? "live" : "dry-run"}</span>}</div>
       {!s ? <span className="skeleton" /> : !r ? <p className="muted small">unavailable</p> : (
         <dl className={styles.kv}>
-          <dt>Float (USDC)</dt><dd>{r.floatUsdc == null ? <span className="muted">unknown{r.error ? ` - ${r.error}` : ""}</span> : usdc(r.floatUsdc, 4)}</dd>
+          <dt>Float (USDC)</dt>
+          <dd>
+            {r.floatUsdc == null ? <span className="muted">balance temporarily unavailable; retrying</span> : usdc(r.floatUsdc, 4)}
+            {r.floatUsdc != null && r.floatAsOf && <span className="muted small"> · as of {fmtRelative(r.floatAsOf)} (live read retrying)</span>}
+          </dd>
           <dt>In yield</dt>
           <dd>
             {r.yieldUsdc == null ? <span className="muted">unknown</span> : `${usdc(r.yieldUsdc, 4)} USDC`}

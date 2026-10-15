@@ -203,6 +203,16 @@ claude mcp add complir -e COMPLIR_URL=https://trycomplir.xyz -- node /path/to/Co
 
 **Telegram bot** (`packages/bot`, dependency-free): `/check <address>`, `/watch <address>`, `/report`.
 
+**Live integration: Inktoll** (sister project, same builder). [Inktoll](https://github.com/mrnetwork0001/Inktoll), an x402 marketplace where AI agents pay writers in USDC on Arc, wired CompliR in with the agent prompt and runs it in production: creator payouts and withdrawals are screened, a sanctioned address is blocked with its reason codes (`SANCTIONS_DIRECT`, `USDC_BLACKLISTED`, ...), and outbound payments fail closed. It paid for screens with real USDC; it appears as the outside payer on [/numbers](https://trycomplir.xyz/numbers). Its engineers filed two written reviews; every issue was fixed and re-verified by them against the live API within a day:
+
+| Reported | Fix |
+|---|---|
+| Docs said the free GET returns 404 for unknown addresses | It always answers; the docs, prompt and MCP tool say so |
+| Free responses lacked `reasons`, `recommendedLimits`, `nextRescreenAt` | The free verdict carries the same fields as a paid screen |
+| x402 payload errors did not name the problem | Errors name the bad field; the older flat payload shape is accepted; the exact envelope is documented |
+| 502s and dropped connections | Deploys restarted the app: now zero-downtime (standby upstream, graceful drain). Client timeouts during 20-60 s first-sight screens: `?wait=` returns 202 + `Retry-After` |
+| No retry guidance; no visible rate limit | A retry contract in the prompt; first-sight screens limited at 30/min/IP with `RateLimit-*` headers and 429 + `Retry-After` |
+
 **Prepared integration PRs** (`docs/integrations/`), opt-in and non-breaking, each with `PATCH.diff`, `PR.md` and `NOTES.md`, all passing `git apply --check`:
 
 | Target | Gate added |
@@ -216,6 +226,10 @@ claude mcp add complir -e COMPLIR_URL=https://trycomplir.xyz -- node /path/to/Co
 | CeedeBooks | Agent-side check before proposing a payment + opt-in `require` in the vendor contract |
 
 ## 9. API reference
+
+**Free verdict vs paid screen.** `GET /api/v1/attestation/:address` is free and always answers: it runs the same pipeline as the paid screen and returns the same fields. A never-seen address is screened on demand (about 20-60 s); concurrent requests share one screen; an expired verdict is returned at once with `expired: true` while it re-screens in the background. Pass `?wait=8` to get 202 + `Retry-After` instead of a long hold; without it the server waits up to 25 s, then returns 503 `SCREENING_IN_PROGRESS` + `Retry-After` (never a 2xx without a verdict). Only new first-sight screens are rate-limited (30 per minute per IP, `RateLimit-*` headers, 429 + `Retry-After`); reads of known addresses are unlimited. The paid `POST /api/v1/screen` adds amount-aware limits, the payee-book lookalike check and a forced re-screen.
+
+**Retry contract for integrators.** On 202, 429 or 503 `SCREENING_IN_PROGRESS`, wait `Retry-After` and ask again: these are not oracle failures. On other 5xx, network errors or timeouts, retry three times with backoff. Only then apply the fail mode, which should be closed for outbound payments.
 
 Base URL `https://trycomplir.xyz`. Paid routes use x402 v2 on `eip155:5042` (USDC `0x3600…0000`); the price is set by the operator within bounds (screen 0.005-0.05 USDC, watch 0.02-0.2 USDC). Same-origin browser calls from the hosted UI are free. Errors are `{error:{code,message}}`.
 
@@ -333,11 +347,11 @@ npx tsx --env-file=.env.local worker/all.ts               # all background loops
 
 | Check | Result |
 |---|---|
-| `npm test` | 379 tests in 48 files, passing |
+| `npm test` | 394 tests in 49 files, passing |
 | `cd contracts && forge test` | 61 tests passing, incl. a cross-language EIP-712 test against the TypeScript signer |
 | `npx tsc --noEmit` · `npm run build` | clean |
 
-**Production:** `docker compose -f deploy/vps/docker-compose.yml --env-file .env.production --profile workers up -d --build` on any host with ~4 GB free RAM, then the nginx site in `deploy/vps/` and `certbot --nginx`. One-shot mainnet contract deployment and a live smoke test: `scripts/go-live.sh` and `scripts/go-live-check.mjs`. Details in [`docs/DEPLOY.md`](docs/DEPLOY.md).
+**Production:** `docker compose -f deploy/vps/docker-compose.yml --env-file .env.production --profile workers up -d --build` on any host with ~4 GB free RAM, then the nginx site in `deploy/vps/` and `certbot --nginx`. Later app deploys use `scripts/deploy-vps.sh`: a standby copy of the app serves as nginx's backup upstream while the primary drains in-flight requests and restarts, so a deploy never drops a request. One-shot mainnet contract deployment and a live smoke test: `scripts/go-live.sh` and `scripts/go-live-check.mjs`. Details in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## 15. Build log
 
@@ -349,10 +363,11 @@ npx tsx --env-file=.env.local worker/all.ts               # all background loops
 | Oct 12 | Circle Developer-Controlled Wallets + Gas Station relay |
 | Oct 13 | Operator agent + Company page, auto-refunds, signed daily report, network signal, blocklist reactor, MCP server, tip market, console redesign, datasheet design system; **registry and treasury deployed to Arc mainnet**; OpenSanctions live; Claude via 0G; Circle wallets, Gas Station and x402 live on mainnet; all synthetic data removed |
 | Oct 14 | Check page, address history, payment links, browser extension, Telegram bot, risk dataset, monthly report, GuardedTreasuryV2 with proof, tranches, guarantee, ERC-8004 agent #2418, CCTP inbound, Circle Earn sweep, Circle sample-app patches, production deploy at trycomplir.xyz, agent prompt and `llms.txt` |
+| Oct 15 | First live integration (Inktoll) and two rounds of its engineering feedback: full free verdict, `?wait` + `Retry-After`, visible first-sight rate limit, retry contract, zero-downtime deploys, x402 payload errors that name the field, Company page shows last-known balances instead of raw RPC errors |
 
 ## 16. Honest status
 
-- **Usage:** live on mainnet and every payment shown is real, but at the time of writing the paying callers are our own wallets (excluded from public numbers). Free screenings and the prepared integration PRs are being offered to Tameion teams.
+- **Usage:** live on mainnet and every payment shown is real. Our own wallets are excluded from public numbers. The one outside payer so far is Inktoll, a sister project by the same builder, running CompliR in production; no independent customer has paid yet. Free screenings and the prepared integration PRs are being offered to Tameion teams.
 - **Earn sweep:** live, but it only deposits once revenue exceeds the float, so no deposit has executed yet.
 - **USYC:** kept as an alternative backend; its mainnet minimum puts it out of reach at our scale.
 - **Evidence limits:** the funder trace uses public RPC within a bounded lookback; sanctions coverage of crypto addresses is only as complete as the public lists; first-seen dates fall back to RPC when the explorer API is unavailable.
