@@ -19,10 +19,10 @@ export const Turn: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: C.bg, color: C.text, fontFamily: sans }}>
       <AbsoluteFill style={{ background: "radial-gradient(40% 45% at 50% 42%, rgba(63,224,200,0.12), transparent 75%)" }} />
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", transform: "translateY(-90px)" }}>
+      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", top: -90, bottom: 90 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 46 }}>
           <Mark size={168} p={p} />
-          <div style={{ clipPath: `inset(0 ${(1 - word) * 100}% 0 0)`, opacity: word }}><Logo name="wordmark" height={96} /></div>
+          <div style={{ clipPath: `inset(0 ${(1 - word) * 100}% 0 0)`, opacity: word, mixBlendMode: "lighten" }}><Logo name="wordmark" height={96} /></div>
         </div>
       </AbsoluteFill>
       <div style={{ position: "absolute", left: 0, right: 0, top: 640, textAlign: "center", fontSize: 76, fontWeight: 300, letterSpacing: "-0.035em" }}>

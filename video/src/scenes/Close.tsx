@@ -21,7 +21,7 @@ export const Close: React.FC = () => {
       <AbsoluteFill style={{ background: "radial-gradient(45% 45% at 50% 40%, rgba(63,224,200,0.12), transparent 75%)" }} />
       <div style={{ position: "absolute", left: 0, right: 0, top: 200, display: "flex", justifyContent: "center", alignItems: "center", gap: 40 }}>
         <Mark size={132} p={p} />
-        <div style={{ clipPath: `inset(0 ${(1 - word) * 100}% 0 0)` }}><Logo name="wordmark" height={76} /></div>
+        <div style={{ clipPath: `inset(0 ${(1 - word) * 100}% 0 0)`, mixBlendMode: "lighten" }}><Logo name="wordmark" height={76} /></div>
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: 420, display: "flex", justifyContent: "center", alignItems: "center", gap: 56 }}>
         <span style={{ fontFamily: mono, fontSize: 18, letterSpacing: "0.18em", color: C.muted, opacity: ramp(f, rel("Built") - 4, rel("Built") + 8) }}>BUILT ON</span>
