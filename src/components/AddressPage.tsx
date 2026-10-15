@@ -1,5 +1,6 @@
 "use client";
 
+import { ScreeningRun } from "./ScreeningRun";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
@@ -133,11 +134,7 @@ export function AddressPage({ history, explorerUrl, shareUrl }: { history: Addre
           {state.message}
         </div>
       )}
-      {busy && (
-        <p className={`muted small ${styles.busy}`} aria-live="polite">
-          <span className="live-dot" aria-hidden="true" /> Grading: sanctions, Circle blocklist, two hops of funders, analyst, signature.
-        </p>
-      )}
+      {busy && <ScreeningRun address={h.address} />}
 
       <div className={`stats ${styles.stats}`}>
         <div className="stat">

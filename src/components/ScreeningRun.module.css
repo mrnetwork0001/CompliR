@@ -1,0 +1,171 @@
+.run {
+  margin-top: 18px;
+  gap: 12px;
+}
+.dot,
+.dotDone {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  background: var(--acc);
+}
+.dot {
+  animation: sr-blink 1.2s ease-in-out infinite;
+}
+.dotDone {
+  background: var(--low);
+}
+.addr {
+  color: var(--faint);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.clock {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+/* a thin rail with a travelling cursor */
+.rail {
+  position: relative;
+  height: 1px;
+  background: var(--line-2);
+  overflow: hidden;
+}
+.railRun,
+.railDone {
+  position: absolute;
+  top: 0;
+  height: 1px;
+}
+.railRun {
+  width: 22%;
+  background: linear-gradient(90deg, transparent, var(--acc), transparent);
+  animation: sr-sweep 1.6s linear infinite;
+}
+.railDone {
+  left: 0;
+  width: 100%;
+  background: var(--low);
+}
+
+.lanes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lane {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  transition: opacity 0.3s ease;
+}
+.lane:last-child {
+  border-bottom: 0;
+}
+.queued {
+  opacity: 0.45;
+}
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--low);
+}
+.spin {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--line-2);
+  border-top-color: var(--acc);
+  border-radius: 50%;
+  animation: sr-spin 0.8s linear infinite;
+}
+.queued .mark > span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--faint);
+}
+.body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+.name {
+  font-size: 0.92rem;
+  color: var(--text);
+}
+.what {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.scan {
+  display: block;
+  height: 1px;
+  margin-top: 6px;
+  background: linear-gradient(90deg, transparent 0, var(--acc) 50%, transparent 100%) no-repeat;
+  background-size: 30% 100%;
+  animation: sr-scan 1.4s ease-in-out infinite;
+  opacity: 0.8;
+}
+.state {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+.running .state {
+  color: var(--acc);
+}
+.done .state {
+  color: var(--low);
+}
+
+.fact {
+  margin: 4px 0 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--acc);
+  font-size: 0.9rem;
+  color: var(--text);
+  min-height: 2.6em;
+  animation: sr-fade 6s ease-in-out infinite;
+}
+.note {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  color: var(--faint);
+}
+
+@keyframes sr-spin { to { transform: rotate(360deg); } }
+@keyframes sr-blink { 50% { opacity: 0.25; } }
+@keyframes sr-sweep { from { left: -22%; } to { left: 100%; } }
+@keyframes sr-scan { 0% { background-position: -40% 0; } 100% { background-position: 140% 0; } }
+@keyframes sr-fade { 0%, 100% { opacity: 0.55; } 8%, 92% { opacity: 1; } }
+
+@media (max-width: 560px) {
+  .lane { grid-template-columns: 16px minmax(0, 1fr); }
+  .state { grid-column: 2; padding-top: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dot, .railRun, .spin, .scan, .fact { animation: none; }
+  .railRun { left: 0; width: 100%; opacity: 0.5; }
+}
