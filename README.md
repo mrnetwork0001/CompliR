@@ -37,9 +37,8 @@
 12. [Architecture](#12-architecture)
 13. [Configuration and security](#13-configuration-and-security)
 14. [Run, test, deploy](#14-run-test-deploy)
-15. [Build log](#15-build-log)
-16. [Honest status](#16-honest-status)
-17. [Roadmap](#17-roadmap)
+15. [Honest status](#15-honest-status)
+16. [Roadmap](#16-roadmap)
 
 ---
 
@@ -353,27 +352,13 @@ npx tsx --env-file=.env.local worker/all.ts               # all background loops
 
 **Production:** `docker compose -f deploy/vps/docker-compose.yml --env-file .env.production --profile workers up -d --build` on any host with ~4 GB free RAM, then the nginx site in `deploy/vps/` and `certbot --nginx`. Later app deploys use `scripts/deploy-vps.sh`: a standby copy of the app serves as nginx's backup upstream while the primary drains in-flight requests and restarts, so a deploy never drops a request. One-shot mainnet contract deployment and a live smoke test: `scripts/go-live.sh` and `scripts/go-live-check.mjs`. Details in [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
-## 15. Build log
+## 15. Honest status
 
-| Date (2026) | What shipped |
-|---|---|
-| Sep 27 | Kickoff, architecture |
-| Oct 9 | v2 spec: a risk oracle other agents call; shared types, config |
-| Oct 11 | Evidence collector, scoring, analyst, EIP-712, ledger, store, contracts (registry + treasury), x402 + SDK, explorer UI, Trust Map, Guarded Payouts, EDD |
-| Oct 12 | Circle Developer-Controlled Wallets + Gas Station relay |
-| Oct 13 | Operator agent + Company page, auto-refunds, signed daily report, network signal, blocklist reactor, MCP server, tip market, console redesign, datasheet design system; **registry and treasury deployed to Arc mainnet**; OpenSanctions live; Claude via 0G; Circle wallets, Gas Station and x402 live on mainnet; all synthetic data removed |
-| Oct 14 | Check page, address history, payment links, browser extension, Telegram bot, risk dataset, monthly report, GuardedTreasuryV2 with proof, tranches, guarantee, ERC-8004 agent #2418, CCTP inbound, Circle Earn sweep, Circle sample-app patches, production deploy at trycomplir.xyz, agent prompt and `llms.txt` |
-| Oct 15 | First live integration (Inktoll) and two rounds of its engineering feedback: full free verdict, `?wait` + `Retry-After`, visible first-sight rate limit, retry contract, zero-downtime deploys, x402 payload errors that name the field, Company page shows last-known balances instead of raw RPC errors |
+- **Usage:** live on mainnet and every payment shown is real; our own wallets are excluded from public numbers. The one outside payer so far is Inktoll, a sister project by the same builder, running CompliR in production. No independent customer has paid yet.
+- **Evidence limits:** the funder trace uses public RPC within a bounded lookback, and sanctions coverage of crypto addresses is only as complete as the public lists.
+- **Analyst:** when a relayed Claude call times out, the verdict uses the deterministic fallback and the ledger marks it as such.
 
-## 16. Honest status
-
-- **Usage:** live on mainnet and every payment shown is real. Our own wallets are excluded from public numbers. The one outside payer so far is Inktoll, a sister project by the same builder, running CompliR in production; no independent customer has paid yet. Free screenings and the prepared integration PRs are being offered to Tameion teams.
-- **Earn sweep:** live, but it only deposits once revenue exceeds the float, so no deposit has executed yet.
-- **USYC:** kept as an alternative backend; its mainnet minimum puts it out of reach at our scale.
-- **Evidence limits:** the funder trace uses public RPC within a bounded lookback; sanctions coverage of crypto addresses is only as complete as the public lists; first-seen dates fall back to RPC when the explorer API is unavailable.
-- **Analyst:** relayed Claude calls occasionally time out; those verdicts use the deterministic fallback and are marked as such in the ledger.
-
-## 17. Roadmap
+## 16. Roadmap
 
 - Public "Built with CompliR" registry and an on-chain consumer counter (contracts calling `isAllowed`).
 - Registry on additional chains (Base, Ethereum) with the same EIP-712 domain, and funder tracing there.
