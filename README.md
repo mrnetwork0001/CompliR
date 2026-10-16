@@ -8,6 +8,7 @@
 </p>
 
 <p align="center">
+  <a href="https://youtu.be/hj9CCeMT-DE"><b>▶ Watch the 2:39 demo</b></a> ·
   <a href="https://trycomplir.xyz"><b>trycomplir.xyz</b></a> ·
   <a href="https://trycomplir.xyz/check">Check an address</a> ·
   <a href="https://trycomplir.xyz/company">The agent-run company</a> ·

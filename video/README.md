@@ -1,6 +1,6 @@
 # CompliR demo film
 
-A 2:39 film made with [Remotion](https://www.remotion.dev). It shows the problem (a sanctioned wallet anyone can still pay, and AI agents that cannot tell who they are paying), what CompliR does about it, and CompliR working live on Arc mainnet.
+A 2:39 film made with [Remotion](https://www.remotion.dev). Watch it on YouTube: https://youtu.be/hj9CCeMT-DE. It shows the problem (a sanctioned wallet anyone can still pay, and AI agents that cannot tell who they are paying), what CompliR does about it, and CompliR working live on Arc mainnet.
 
 ## What is real
 
