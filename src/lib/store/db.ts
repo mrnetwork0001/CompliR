@@ -12,7 +12,10 @@ export function db(): Client {
   if (url.startsWith("file:") && !url.includes(":memory:")) {
     try { mkdirSync(dirname(url.slice(5)), { recursive: true }); } catch { /* exists */ }
   }
-  client = createClient({ url, authToken: config().DATABASE_AUTH_TOKEN });
+  // The app, its standby and the workers each open this same file. Without a busy timeout a write
+  // that meets another process's lock fails at once with SQLITE_BUSY (a user-facing 500); with it,
+  // the statement waits its turn. Remote (libsql://) clients ignore the option.
+  client = createClient({ url, authToken: config().DATABASE_AUTH_TOKEN, timeout: config().DB_BUSY_TIMEOUT_MS });
   return client;
 }
 
@@ -41,8 +44,19 @@ const SCHEMA = [
      response TEXT, status TEXT NOT NULL DEFAULT 'OPEN', created_at INTEGER NOT NULL, answered_at INTEGER)`,
 ];
 
+/**
+ * WAL lets readers proceed while one process writes, so the processes sharing the file block each
+ * other far less. The mode is stored in the file, so this only changes something the first time.
+ * Best effort: if another process holds the file right now, the next start tries again.
+ */
+async function enableWal(): Promise<void> {
+  const url = config().DATABASE_URL;
+  if (!url.startsWith("file:") || url.includes(":memory:")) return;
+  try { await db().execute("PRAGMA journal_mode=WAL"); } catch (e) { console.warn("[store] WAL not enabled:", (e as Error)?.message); }
+}
+
 export function migrate(): Promise<void> {
-  if (!migrated) migrated = (async () => { for (const s of SCHEMA) await db().execute(s); })();
+  if (!migrated) migrated = (async () => { await enableWal(); for (const s of SCHEMA) await db().execute(s); })();
   return migrated;
 }
 

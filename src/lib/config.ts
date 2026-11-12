@@ -25,6 +25,8 @@ const Env = z.object({
   YENTE_URL: z.string().url().default("http://localhost:8000"),
   DATABASE_URL: z.string().default("file:./.data/complir.db"),
   DATABASE_AUTH_TOKEN: z.string().optional(),
+  /** Local SQLite only: how long a statement waits for another process's lock before SQLITE_BUSY (app, standby and workers share one file). */
+  DB_BUSY_TIMEOUT_MS: z.coerce.number().int().min(0).default(10_000),
   // Payments
   X402_DISABLED: boolish,
   X402_NETWORK: z.string().optional(),
